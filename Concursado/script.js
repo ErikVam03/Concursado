@@ -370,7 +370,7 @@ function renderWeek() {
         "QUA",
         "QUI",
         "SEX",
-        "SÃB"
+        "SÁB"
     ];
 
 
@@ -1970,7 +1970,7 @@ function renderSettingsSubjects() {
                     class="small-btn"
                     data-edit-subject="${subject.id}"
                 >
-                    âœï¸ Editar
+                  ✏️ Editar
                 </button>
 
                 <button
@@ -1978,7 +1978,7 @@ function renderSettingsSubjects() {
                     class="danger-btn"
                     data-delete-subject="${subject.id}"
                 >
-                    ðŸ—‘ Excluir
+                  🗑️ Excluir
                 </button>
 
             </div>
