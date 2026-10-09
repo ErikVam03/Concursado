@@ -2354,22 +2354,63 @@ textarea {
     }
 }
 
-/* Ajuste dos botões no PC e no celular */
-#settingsSimulationForm > .form-actions,
-#pomodoroForm > .form-actions,
-#stopwatchForm > .form-actions,
-#manualStudyForm > .form-actions {
-position: relative !important;
-top: 3px !important;
-}
+/* Correção do alinhamento dos quatro botões */
 
-    /* Ajuste dos botões somente no PC*/
+/* Mantém os campos e botões alinhados pela base no PC */
 @media (min-width: 701px) {
-    #settingsSimulationForm > .form-actions,
+    #pomodoroForm,
+    #stopwatchForm,
+    #manualStudyForm,
+    #settingsSimulationForm {
+        align-items: end;
+        grid-auto-rows: auto;
+    }
+
     #pomodoroForm > .form-actions,
     #stopwatchForm > .form-actions,
-    #manualStudyForm > .form-actions {
-        top: 0px !important;
+    #manualStudyForm > .form-actions,
+    #settingsSimulationForm > .form-actions {
+        align-self: end;
+        position: static !important;
+        margin: 0;
+        transform: none !important;
     }
+
+    #pomodoroForm > .form-actions .primary-btn,
+    #stopwatchForm > .form-actions .primary-btn,
+    #manualStudyForm > .form-actions .primary-btn,
+    #settingsSimulationForm > .form-actions .primary-btn {
+        min-height: 46px;
+    }
+}
+
+/* Mantém o layout adequado no celular */
+@media (max-width: 700px) {
+    #pomodoroForm,
+    #stopwatchForm,
+    #manualStudyForm,
+    #settingsSimulationForm {
+        align-items: stretch;
+        grid-auto-rows: auto;
+    }
+
+    #pomodoroForm > .form-actions,
+    #stopwatchForm > .form-actions,
+    #manualStudyForm > .form-actions,
+    #settingsSimulationForm > .form-actions {
+        position: static !important;
+        top: auto !important;
+        margin: 0;
+        width: 100%;
+    }
+
+    #pomodoroForm > .form-actions button,
+    #stopwatchForm > .form-actions button,
+    #manualStudyForm > .form-actions button,
+    #settingsSimulationForm > .form-actions button {
+        width: 100%;
+        min-height: 46px;
+    }
+}
 
 }
