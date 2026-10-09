@@ -1956,7 +1956,7 @@ function renderSettingsSubjects() {
 
                 <span class="settings-item-meta">
                     ${Number(subject.hours || 0)}h planejadas
-                    â€¢
+                    •
                     ${Number(subject.questions || 0)} questões
                 </span>
 
