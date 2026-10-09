@@ -2369,7 +2369,7 @@ top: 3px !important;
     #pomodoroForm > .form-actions,
     #stopwatchForm > .form-actions,
     #manualStudyForm > .form-actions {
-        top: 8px !important;
+        top: 0px !important;
     }
 
 }
