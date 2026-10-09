@@ -2363,4 +2363,13 @@ position: relative !important;
 top: 3px !important;
 }
 
+    /* Ajuste dos botões somente no PC*/
+@media (min-width: 701px) {
+    #settingsSimulationForm > .form-actions,
+    #pomodoroForm > .form-actions,
+    #stopwatchForm > .form-actions,
+    #manualStudyForm > .form-actions {
+        top: 8px !important;
+    }
+
 }
