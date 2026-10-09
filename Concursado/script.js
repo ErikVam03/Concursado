@@ -1955,9 +1955,9 @@ function renderSettingsSubjects() {
                 </span>
 
                 <span class="settings-item-meta">
-                    ${Number(subject.hours || 0)}h planejadas
+                    ${Number(subject.hours || 0)}h
                     •
-                    ${Number(subject.questions || 0)} questões
+                    ${Number(subject.questions || 0)} questões planejadas
                 </span>
 
             </div>
