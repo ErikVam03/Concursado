@@ -1,0 +1,1981 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="theme-color"
+        content="#07110d"
+    >
+
+    <meta
+        name="description"
+        content="Concursado — organize seus estudos, acompanhe seu desempenho e evolua.
+    >
+
+    <link
+        rel="manifest"
+        href="manifest.json"
+    >
+
+    <title>CONCURSADO</title>
+
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link
+        rel="stylesheet"
+        href="style.css"
+    >
+
+<style>
+/* Janela de registro ao finalizar Pomodoro/Cronômetro */
+.study-completion-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(6px);
+}
+
+.study-completion-overlay.hidden {
+    display: none;
+}
+
+.study-completion-modal {
+    width: min(560px, 100%);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    margin: 0;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+    animation: studyCompletionIn 0.18s ease-out;
+}
+
+.completion-modal-open {
+    overflow: hidden;
+}
+
+@keyframes studyCompletionIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.completion-time-hint {
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+</style>
+</head>
+
+
+<body>
+
+
+<!-- =====================================================
+     HEADER
+===================================================== -->
+
+<header class="topbar">
+
+    <div class="brand">
+
+        <span class="brand-flag">
+            ⭐
+        </span>
+
+        <strong>
+            CONCURSADO
+        </strong>
+
+    </div>
+
+
+    <!-- MENU DESKTOP -->
+
+    <nav class="desktop-nav">
+
+        <button
+            data-section="inicio"
+            class="active"
+        >
+            🚀 Painel
+        </button>
+
+        <button
+            data-section="iniciar"
+        >
+            ✅ Iniciar
+        </button>
+
+        <button
+            data-section="ciclo"
+        >
+            📚 Ciclo
+        </button>
+
+        <button
+            data-section="historico"
+        >
+            💾 Histórico
+        </button>
+
+        <button
+            data-section="estatisticas"
+        >
+            🔥 Estatísticas
+        </button>
+
+        <button
+            data-section="simulado"
+        >
+            ✏️ Simulado
+        </button>
+
+        <button
+            data-section="configuracoes"
+        >
+            ⚙️ Configurações
+        </button>
+
+        <button data-section="creditos">
+            ✨ Créditos
+        </button>
+
+    </nav>
+
+
+    <div class="top-actions">
+
+        <button
+            id="installBtn"
+            class="install-btn"
+        >
+            📱 Instalar
+        </button>
+
+        <button
+            id="menuBtn"
+            class="icon-btn"
+            aria-label="Abrir menu"
+        >
+            ☰
+        </button>
+
+    </div>
+
+</header>
+
+
+
+<!-- =====================================================
+     MENU MOBILE
+===================================================== -->
+
+<div
+    id="mobileMenu"
+    class="mobile-menu"
+>
+
+    <button
+        data-section="inicio"
+        class="active"
+    >
+        🚀 Painel
+    </button>
+
+    <button
+        data-section="iniciar"
+    >
+        ✅ Iniciar
+    </button>
+
+    <button
+        data-section="ciclo"
+    >
+        📚 Ciclo
+    </button>
+
+    <button
+        data-section="historico"
+    >
+        💾 Histórico
+    </button>
+
+    <button
+        data-section="estatisticas"
+    >
+        🔥 Estatísticas
+    </button>
+
+    <button
+        data-section="simulado"
+    >
+        ✏️ Simulado
+    </button>
+
+    <button
+        data-section="configuracoes"
+    >
+        ⚙️ Configurações
+    </button>
+
+    <button data-section="creditos">
+        ✨ Créditos
+    </button>
+
+</div>
+
+
+
+<!-- =====================================================
+     MAIN
+===================================================== -->
+
+<main>
+
+    
+
+<!-- =====================================================
+     PAINEL
+===================================================== -->
+
+<section
+    id="inicio"
+    class="section active"
+>
+
+
+    <div class="welcome">
+
+        <span class="eyebrow">
+             SEU PLANO DE ESTUDOS
+        </span>
+
+        <h1 id="greeting">
+            Bom dia!
+        </h1>
+
+        <p>
+            Organize seus estudos e acompanhe sua evolução.
+        </p>
+
+        <button
+            class="primary-btn"
+            data-section="iniciar"
+        >
+            🚀 Começar a estudar
+        </button>
+
+    </div>
+
+
+
+    <!-- RESUMO DO CICLO -->
+
+    <div class="dashboard-grid">
+
+
+        <div class="card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <span class="eyebrow">
+                        CICLO ATUAL
+                    </span>
+
+                    <h2>
+                        Seu progresso
+                    </h2>
+
+                </div>
+
+                <button
+                    class="text-btn"
+                    data-section="ciclo"
+                >
+                    Ver ciclo →
+                </button>
+
+            </div>
+
+
+            <div class="cycle-content">
+
+
+                <div
+                    class="donut"
+                    id="cycleDonut"
+                >
+
+                    <div>
+
+                        <strong id="cyclePercent">
+                            0%
+                        </strong>
+
+                        <span>
+                            estudado
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+
+                <div class="next-activity">
+
+                    <span class="eyebrow">
+                        PRÓXIMA ATIVIDADE
+                    </span>
+
+                    <h3 id="nextSubject">
+                        Nenhuma matéria cadastrada
+                    </h3>
+
+                    <p>
+                        Restam
+                        <strong id="nextRemaining">
+                            0h
+                        </strong>
+                    </p>
+
+                    <button
+                        class="primary-btn small"
+                        data-section="iniciar"
+                    >
+                        Estudar agora
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <!-- ACOMPANHAMENTO -->
+
+        <div class="card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <span class="eyebrow">
+                        ACOMPANHAMENTO
+                    </span>
+
+                    <h2>
+                        Últimos 7 dias
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <!--
+                IMPORTANTE:
+
+                A SEMANA SEMPRE COMEÇA DOMINGO.
+
+                O JavaScript vai preencher
+                os dias.
+
+                Quando o mês começar, por exemplo,
+                numa quinta-feira:
+
+                DOM | SEG | TER | QUA | QUI | SEX | SÁB
+                    |     |     |     |  1  |  2  |  3
+
+                Os espaços anteriores ficam vazios.
+            -->
+
+            <div
+                class="week-days"
+                id="weekDays"
+            >
+
+                <!-- preenchido pelo JavaScript -->
+
+            </div>
+
+
+            <div class="week-summary">
+
+                <span>
+                    Horas
+                </span>
+
+                <strong id="weekHours">
+                    0h
+                </strong>
+
+                <span>
+                    Questões
+                </span>
+
+                <strong id="weekQuestions">
+                    0
+                </strong>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- RESUMO RÁPIDO -->
+
+    <div class="card">
+
+        <div class="card-title">
+
+            <div>
+
+                <span class="eyebrow">
+                    RESUMO
+                </span>
+
+                <h2>
+                    Seu desempenho
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="stats-grid">
+
+
+            <div class="stat-card">
+
+                <span>
+                    Tempo estudado
+                </span>
+
+                <strong id="totalStudyTime">
+                    0h
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Questões
+                </span>
+
+                <strong id="totalQuestions">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Aproveitamento
+                </span>
+
+                <strong id="totalAccuracy">
+                    0%
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Sessões registradas
+                </span>
+
+                <strong id="totalSessions">
+                    0
+                </strong>
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     INICIAR
+===================================================== -->
+
+<section
+    id="iniciar"
+    class="section"
+>
+
+    <div class="page-heading">
+        <span class="eyebrow">ESTUDO</span>
+        <h1>Iniciar estudo</h1>
+        <p>Escolha como deseja registrar seu estudo.</p>
+    </div>
+
+    <!-- MODOS DE ESTUDO -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" data-study-mode="pomodoro">🍅 Pomodoro</button>
+        <button class="mode-tab" data-study-mode="stopwatch">⏱️ Cronômetro</button>
+        <button class="mode-tab" data-study-mode="manual">✍️ Inserir manualmente</button>
+    </div>
+
+    <!-- POMODORO -->
+    <div id="pomodoroModeBox" class="study-mode-box">
+        <div class="card">
+            <form id="pomodoroForm" class="form-grid">
+                <label>
+                    Matéria
+                    <select id="sessionSubject" required>
+                        <option value="">Selecione uma matéria</option>
+                    </select>
+                </label>
+
+                <label>
+                    Tempo total
+                    <input type="text" id="sessionTotalMinutes" inputmode="numeric" autocomplete="off" placeholder="02:00:00" value="02:00:00" required>
+                </label>
+
+                <label>
+                    Tempo de foco por ciclo
+                    <input type="text" id="sessionFocusMinutes" inputmode="numeric" autocomplete="off" placeholder="00:50:00" value="00:50:00" required>
+                </label>
+
+                <label>
+                    Tempo de pausa por ciclo
+                    <input type="text" id="sessionBreakMinutes" inputmode="numeric" autocomplete="off" placeholder="00:10:00" value="00:10:00" required>
+                </label>
+
+                <div class="form-actions">
+                    <button type="submit" id="startPomodoroBtn" class="primary-btn">▶ Iniciar Pomodoro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- CRONÔMETRO-->
+    <div id="stopwatchModeBox" class="study-mode-box hidden">
+        <div class="card">
+            <form id="stopwatchForm" class="form-grid">
+                <label>
+                    Matéria
+                    <select id="stopwatchSubject" required>
+                        <option value="">Selecione uma matéria</option>
+                    </select>
+                </label>
+
+                <div class="form-actions">
+                    <button type="submit" class="primary-btn">▶ Iniciar cronômetro</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- INSERÇÃO MANUAL-->
+    <div id="manualModeBox" class="study-mode-box hidden">
+        <div class="card">
+            <form id="manualStudyForm" class="form-grid">
+                <label>
+                    Matéria
+                    <select id="manualSubject" required>
+                        <option value="">Selecione uma matéria</option>
+                    </select>
+                </label>
+
+                <label>
+                    Tempo de estudo
+                    <input
+                        type="text"
+                        id="manualTime"
+                        inputmode="numeric"
+                        autocomplete="off"
+                        placeholder="00:00:00"
+                        value="00:00:00"
+                        aria-label="Tempo de estudo no formato horas:minutos:segundos"
+                    >
+
+                </label>
+
+                <label>
+                    Quantidade de questões
+                    <input type="number" id="manualQuestions" min="0" value="0">
+                </label>
+
+                <label>
+                    Acertos
+                    <input type="number" id="manualCorrect" min="0" value="0">
+                </label>
+
+                <div class="form-actions">
+                    <button type="submit" class="primary-btn"> 💾Registrar estudo</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TIMER DO POMODORO -->
+    <div id="studyTimerCard" class="card timer-card hidden">
+        <span class="eyebrow" id="timerModeLabel">FOCO</span>
+        <h2 id="timerSubject">-</h2>
+        <div id="timerDisplay">50:00</div>
+        <p id="timerStatus">Sessão em andamento</p>
+        <div class="timer-actions">
+            <button id="pauseTimer" class="secondary-btn">⏸ Pausar</button>
+            <button id="finishTimer" class="danger-btn">⏹ Finalizar</button>
+        </div>
+    </div>
+
+    <!-- TIMER DO CRONÔMETRO-->
+    <div id="stopwatchCard" class="card timer-card hidden">
+        <span class="eyebrow">CRONÔMETRO</span>
+        <h2 id="stopwatchSubjectLabel">-</h2>
+        <div id="stopwatchDisplay">00:00:00</div>
+        <p id="stopwatchStatus">Cronômetro em andamento</p>
+        <div class="timer-actions">
+            <button id="pauseStopwatch" class="secondary-btn">⏸ Pausar</button>
+            <button id="finishStopwatch" class="danger-btn">⏹ Finalizar</button>
+        </div>
+    </div>
+
+    <!-- JANELA DE FINALIZAÇÃO: APARECE APENAS AO FINALIZAR POMODORO/CRONÔMETRO -->
+    <div id="studyCompletionOverlay" class="study-completion-overlay hidden">
+        <div id="studyCompletionCard" class="card study-completion-modal">
+        <div class="card-title">
+            <div>
+                <span class="eyebrow">ATIVIDADE FINALIZADA</span>
+                <h2>Como foi seu estudo?</h2>
+                <p>Informe as questões, os acertos e o tipo de estudo para salvar nas estatísticas.</p>
+            </div>
+        </div>
+
+        <form id="studyCompletionForm" class="form-grid">
+            <label>
+                Matéria
+                <input type="text" id="completionSubject" readonly>
+            </label>
+
+            <label>
+                Tempo estudado
+                <input
+                    type="text"
+                    id="completionTime"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    placeholder="00:00:00"
+                    aria-label="Tempo estudado no formato horas:minutos:segundos"
+                >
+                <small class="completion-time-hint">Edite se precisar corrigir o tempo (HH:MM:SS).</small>
+            </label>
+
+            <label>
+                Quantidade de questões
+                <input type="number" id="completionQuestions" min="0" value="0" required>
+            </label>
+
+            <label>
+                Acertos
+                <input type="number" id="completionCorrect" min="0" value="0" required>
+            </label>
+
+            <label>
+                Tipo de estudo
+                <select id="completionCategory">
+                    <option value="Teoria">Teoria</option>
+                    <option value="Questões">Questões</option>
+
+                </select>
+            </label>
+
+            <div class="form-actions">
+                <button type="submit" class="primary-btn">✅ Salvar estudo</button>
+            </div>
+        </form>
+        </div>
+    </div>
+
+    <datalist id="subjectsDatalist"></datalist>
+
+</section>
+
+
+
+<!-- =====================================================
+     CICLO
+===================================================== -->
+
+<section
+    id="ciclo"
+    class="section"
+>
+
+
+    <div class="page-heading">
+
+        <span class="eyebrow">
+            PLANO DE ESTUDOS
+        </span>
+
+        <h1>
+            Seu ciclo
+        </h1>
+
+        <p>
+            Veja quanto você já estudou de cada matéria.
+        </p>
+
+    </div>
+
+
+
+    <!-- RESUMO DO CICLO -->
+
+    <div class="cycle-page-summary">
+
+
+        <div class="cycle-summary-box">
+
+            <span>
+                PROGRESSO TOTAL
+            </span>
+
+            <strong id="cyclePagePercent">
+                0%
+            </strong>
+
+        </div>
+
+
+        <div class="cycle-summary-box">
+
+            <span>
+                PRÓXIMA ATIVIDADE
+            </span>
+
+            <strong id="cyclePageNextSubject">
+                Nenhuma matéria cadastrada
+            </strong>
+
+            <p id="cyclePageNextRemaining">
+                0h restantes
+            </p>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- MATÉRIAS-->
+
+    <div class="card">
+
+        <div class="card-title">
+
+            <div>
+
+                <span class="eyebrow">
+                    MATÉRIAS
+                </span>
+
+                <h2>
+                    Progresso por matéria
+                </h2>
+
+            </div>
+
+
+            <button
+                class="text-btn"
+                data-section="configuracoes"
+            >
+                ⚙️ Configurar
+            </button>
+
+        </div>
+
+
+        <div
+            id="cycleSubjectsList"
+            class="cycle-subjects-list"
+        >
+
+            <!-- preenchido pelo JavaScript -->
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     HISTÓRICO
+===================================================== -->
+
+<section
+    id="historico"
+    class="section"
+>
+
+
+    <div class="page-heading">
+
+        <span class="eyebrow">
+            REGISTROS
+        </span>
+
+        <h1>
+            Histórico
+        </h1>
+
+        <p>
+            Veja tudo o que você já estudou.
+        </p>
+
+    </div>
+
+
+
+    <!-- FILTROS -->
+
+    <div class="stats-filters">
+
+        <button
+            class="stats-filter active"
+            data-history-filter="today"
+        >
+            Hoje
+        </button>
+
+        <button
+            class="stats-filter"
+            data-history-filter="week"
+        >
+            Semana
+        </button>
+
+        <button
+            class="stats-filter"
+            data-history-filter="month"
+        >
+            Mês
+        </button>
+
+        <button
+            class="stats-filter"
+            data-history-filter="all"
+        >
+            Tudo
+        </button>
+
+    </div>
+
+
+
+    <!--
+        O JAVASCRIPT VAI ORGANIZAR ASSIM:
+
+        HOJE — 07 OUT
+
+        ┌─────────────────────────────┐
+        │ Direito Constitucional     │
+        │ Teoria                     │
+        │                             │
+        │ 01h 20min  |  30 questões │
+        │ 24 acertos                 │
+        └─────────────────────────────┘
+
+
+        ONTEM — 06 OUT
+
+        ┌─────────────────────────────┐
+        │ Português                  │
+        │ Questões                   │
+        │                             │
+        │ 00h 50min  |  25 questões │
+        │ 20 acertos                 │
+        └─────────────────────────────┘
+    -->
+
+    <div
+        id="historyList"
+        class="history-list"
+    >
+
+        <!-- preenchido pelo JavaScript -->
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     ESTATÍSTICAS
+===================================================== -->
+
+<section
+    id="estatisticas"
+    class="section"
+>
+
+
+    <div class="page-heading">
+
+        <span class="eyebrow">
+            DESEMPENHO
+        </span>
+
+        <h1>
+            Estatísticas
+        </h1>
+
+        <p>
+            Analise sua evolução nos estudos.
+        </p>
+
+    </div>
+
+
+
+    <!-- FILTROS -->
+
+    <div class="stats-filters">
+
+        <button
+            class="stats-filter active"
+            data-filter="day"
+        >
+            Dia
+        </button>
+
+        <button
+            class="stats-filter"
+            data-filter="week"
+        >
+            Semana
+        </button>
+
+        <button
+            class="stats-filter premium"
+            data-filter="month"
+        >
+            Mês 🔒
+        </button>
+
+        <button
+            class="stats-filter premium"
+            data-filter="year"
+        >
+            Ano 🔒
+        </button>
+
+        <button
+            class="stats-filter premium"
+            data-filter="all"
+        >
+            Tudo 🔒
+        </button>
+
+        <button
+            class="stats-filter premium"
+            data-filter="custom"
+        >
+            Personalizado 🔒
+        </button>
+
+    </div>
+
+
+
+    <!-- SUBTABS -->
+
+    <div class="stats-tabs">
+
+        <button
+            class="stats-tab active"
+            data-stats="tempo"
+        >
+            ⏱ Tempo
+        </button>
+
+        <button
+            class="stats-tab"
+            data-stats="categoria"
+        >
+            📚 Categoria
+        </button>
+
+        <button
+            class="stats-tab"
+            data-stats="desempenho"
+        >
+            🎯 Desempenho
+        </button>
+
+        <button
+            class="stats-tab"
+            data-stats="simulado"
+        >
+            ✏️ Simulados
+        </button>
+
+    </div>
+
+
+
+    <!-- TEMPO -->
+
+    <div
+        id="statsTempo"
+        class="stats-content active"
+    >
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+
+                <span>
+                    Tempo estudado
+                </span>
+
+                <strong id="statsStudyTime">
+                    0h
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Sessões
+                </span>
+
+                <strong id="statsSessions">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Média por sessão
+                </span>
+
+                <strong id="statsAverageSession">
+                    0min
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-box">
+
+            <h2>
+                Tempo estudado
+            </h2>
+
+            <div
+                id="timeChart"
+                class="fake-chart"
+            >
+                Gráfico será exibido aqui.
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- CATEGORIA -->
+
+    <div
+        id="statsCategoria"
+        class="stats-content"
+    >
+
+        <div class="chart-box">
+
+            <h2>
+                Tempo por categoria
+            </h2>
+
+            <div
+                id="categoryBars"
+                class="category-bars"
+            >
+                <!-- preenchido pelo JS -->
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- DESEMPENHO -->
+
+    <div
+        id="statsDesempenho"
+        class="stats-content"
+    >
+
+        <div class="stats-grid">
+
+            <div class="stat-card">
+
+                <span>
+                    Questões
+                </span>
+
+                <strong id="statsQuestions">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Acertos
+                </span>
+
+                <strong id="statsCorrect">
+                    0
+                </strong>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <span>
+                    Aproveitamento
+                </span>
+
+                <strong id="statsAccuracy">
+                    0%
+                </strong>
+
+            </div>
+
+        </div>
+
+
+        <div class="chart-box">
+
+            <h2>
+                Desempenho
+            </h2>
+
+            <div
+                id="performanceChart"
+                class="fake-chart"
+            >
+                Gráfico será exibido aqui.
+            </div>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- SIMULADOS -->
+
+    <div
+        id="statsSimulado"
+        class="stats-content"
+    >
+
+
+        <div class="chart-box">
+
+            <div class="simulation-header">
+
+                <div>
+
+                    <span class="eyebrow">
+                        EVOLUÇÃO
+                    </span>
+
+                    <h2>
+                        Desempenho nos simulados
+                    </h2>
+
+                </div>
+
+
+                <select id="simulationSelect">
+
+                    <option value="">
+                        Selecione um simulado
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <div class="line-chart">
+
+                <svg
+                    viewBox="0 0 800 260"
+                    preserveAspectRatio="none"
+                >
+
+                    <defs>
+
+                        <linearGradient
+                            id="lineGradient"
+                            x1="0"
+                            y1="0"
+                            x2="0"
+                            y2="1"
+                        >
+
+                            <stop
+                                offset="0%"
+                                stop-opacity=".35"
+                            />
+
+                            <stop
+                                offset="100%"
+                                stop-opacity="0"
+                            />
+
+                        </linearGradient>
+
+                    </defs>
+
+
+                    <path
+                        id="simulationChartArea"
+                        class="chart-area"
+                        d=""
+                    ></path>
+
+
+                    <path
+                        id="simulationChartLine"
+                        class="chart-line"
+                        d=""
+                    ></path>
+
+
+                    <g id="simulationChartPoints">
+                        <!-- pontos gerados pelo JS -->
+                    </g>
+
+                </svg>
+
+
+                <div
+                    id="simulationChartLabels"
+                    class="line-labels"
+                >
+                    <!-- labels -->
+                </div>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="chart-box">
+
+            <h2>
+                Aproveitamento por matéria
+            </h2>
+
+
+            <div
+                id="simulationSubjectBars"
+                class="simulation-bars"
+            >
+                <!-- preenchido pelo JS -->
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     SIMULADO
+===================================================== -->
+
+<section
+    id="simulado"
+    class="section"
+>
+
+
+    <div class="page-heading">
+
+        <span class="eyebrow">
+            SIMULADOS
+        </span>
+
+        <h1>
+            Simulado
+        </h1>
+
+        <p>
+            Faça um simulado salvo ou monte um novo.
+        </p>
+
+    </div>
+
+
+
+    <!-- MODOS -->
+
+    <div class="mode-tabs">
+
+        <button
+            class="mode-tab active"
+            data-simulation-mode="existing"
+        >
+            📂 Usar simulado criado
+        </button>
+
+        <button
+            class="mode-tab"
+            data-simulation-mode="new"
+        >
+            ➕ Criar novo
+        </button>
+
+    </div>
+
+
+
+    <!-- =================================================
+         USAR SIMULADO CRIADO
+    ================================================== -->
+
+    <div
+        id="existingSimulationBox"
+        class="simulation-mode-box"
+    >
+
+        <div class="card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <span class="eyebrow">
+                        SIMULADOS SALVOS
+                    </span>
+
+                    <h2>
+                        Escolha um simulado
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <form
+                id="existingSimulationForm"
+                class="form-grid"
+            >
+
+                <label>
+
+                    Simulado
+
+                    <select
+                        id="existingSimulationSelect"
+                        required
+                    >
+
+                        <option value="">
+                            Selecione um simulado
+                        </option>
+
+                    </select>
+
+                </label>
+
+
+                <div
+                    id="selectedSimulationInfo"
+                    class="simulation-info"
+                >
+                    Selecione um simulado para ver os detalhes.
+                </div>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                    >
+                        ▶ Iniciar simulado
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =================================================
+         CRIAR NOVO SIMULADO
+    ================================================== -->
+
+    <div
+        id="newSimulationBox"
+        class="simulation-mode-box hidden"
+    >
+
+        <div class="card">
+
+            <div class="card-title">
+
+                <div>
+
+                    <span class="eyebrow">
+                        NOVO SIMULADO
+                    </span>
+
+                    <h2>
+                        Montar simulado
+                    </h2>
+
+                </div>
+
+            </div>
+
+
+            <form
+                id="simulationForm"
+                class="form-grid"
+            >
+
+
+                <label>
+
+                    Nome
+
+                    <input
+                        type="text"
+                        id="simulationName"
+                        placeholder="Ex: Simulado PMMA"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Horas
+
+                    <input
+                        type="number"
+                        id="simulationHours"
+                        min="0"
+                        value="1"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Minutos
+
+                    <input
+                        type="number"
+                        id="simulationMinutes"
+                        min="0"
+                        max="59"
+                        value="0"
+                        required
+                    >
+
+                </label>
+
+
+                <label>
+
+                    Quantidade de questões
+
+                    <input
+                        type="number"
+                        id="simulationQuestionCount"
+                        min="1"
+                        placeholder="Ex: 50"
+                        required
+                    >
+
+                </label>
+
+
+                <div class="form-actions">
+
+                    <button
+                        type="submit"
+                        class="primary-btn"
+                    >
+                        💾 Criar e salvar
+                    </button>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+
+    <!-- TIMER DO SIMULADO -->
+
+    <div
+        id="simulationTimer"
+        class="card simulation-timer hidden"
+    >
+
+        <span class="eyebrow">
+            SIMULADO EM ANDAMENTO
+        </span>
+
+
+        <h2 id="simulationTimerName">
+            Simulado
+        </h2>
+
+
+        <span id="simulationTimerDisplay">
+            00:00:00
+        </span>
+
+
+        <p id="simulationTimerStatus">
+            Tempo restante
+        </p>
+
+
+        <div class="timer-actions">
+
+            <button
+                id="finishSimulation"
+                class="danger-btn"
+            >
+                ⏹ Finalizar simulado
+            </button>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =====================================================
+     CONFIGURAÇÕES
+===================================================== -->
+
+<section
+    id="configuracoes"
+    class="section"
+>
+
+
+    <div class="page-heading">
+
+        <span class="eyebrow">
+            PERSONALIZAÇÃO
+        </span>
+
+        <h1>
+            Configurações
+        </h1>
+
+        <p>
+            Configure suas matérias e seus simulados.
+        </p>
+
+    </div>
+
+
+
+    <!-- =================================================
+         MATÉRIAS
+    ================================================== -->
+
+    <div class="card settings-section">
+
+        <div class="settings-section-header">
+
+            <div>
+
+                <span class="eyebrow">
+                    CICLO DE ESTUDOS
+                </span>
+
+                <h2>
+                    Matérias
+                </h2>
+
+                <p>
+                    Adicione as matérias que fazem parte da sua preparação.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form
+            id="subjectForm"
+            class="form-grid"
+        >
+
+
+            <label>
+
+                Matéria
+
+                <input
+                    type="text"
+                    id="subjectName"
+                    placeholder="Ex: Direito Constitucional"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                Horas planejadas
+
+                <input
+                    type="number"
+                    id="subjectHours"
+                    min="0"
+                    step="0.1"
+                    placeholder="Ex: 20"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                Questões planejadas
+
+                <input
+                    type="number"
+                    id="subjectQuestions"
+                    min="0"
+                    placeholder="Ex: 300"
+                >
+
+            </label>
+
+
+            <div class="form-actions">
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                >
+                    ➕ Adicionar matéria
+                </button>
+
+            </div>
+
+        </form>
+
+
+
+        <div
+            id="settingsSubjectsList"
+            class="settings-list"
+        >
+
+            <!-- preenchido pelo JS -->
+
+        </div>
+
+    </div>
+
+
+
+    <!-- =================================================
+         SIMULADOS CONFIGURADOS
+    ================================================== -->
+
+    <div class="card settings-section">
+
+        <div class="settings-section-header">
+
+            <div>
+
+                <span class="eyebrow">
+                    BANCO DE SIMULADOS
+                </span>
+
+                <h2>
+                    Meus simulados
+                </h2>
+
+                <p>
+                    Crie simulados que poderão ser reutilizados na área Simulado.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <form
+            id="settingsSimulationForm"
+            class="form-grid"
+        >
+
+
+            <label>
+
+                Nome do simulado
+
+                <input
+                    type="text"
+                    id="settingsSimulationName"
+                    placeholder="Ex: PMMA — Geral"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                Horas
+
+                <input
+                    type="number"
+                    id="settingsSimulationHours"
+                    min="0"
+                    value="1"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                Minutos
+
+                <input
+                    type="number"
+                    id="settingsSimulationMinutes"
+                    min="0"
+                    max="59"
+                    value="0"
+                    required
+                >
+
+            </label>
+
+
+            <label>
+
+                Quantidade de questões
+
+                <input
+                    type="number"
+                    id="settingsSimulationQuestions"
+                    min="1"
+                    placeholder="Ex: 60"
+                    required
+                >
+
+            </label>
+
+
+            <div class="form-actions">
+
+                <button
+                    type="submit"
+                    class="primary-btn"
+                >
+                    ➕ Criar simulado
+                </button>
+
+            </div>
+
+        </form>
+
+
+
+        <div
+            id="settingsSimulationsList"
+            class="settings-list"
+        >
+
+            <!-- preenchido pelo JS -->
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- =====================================================
+     CRÉDITOS
+===================================================== -->
+<section id="creditos" class="section credits-page">
+    <div class="page-heading">
+        <span class="eyebrow">CONCURSADO</span>
+        <h1>Créditos</h1>
+        <p>Conheça quem inspira e quem está por trás deste projeto.</p>
+    </div>
+
+    <div class="credits-grid">
+        <article class="card credits-instagram">
+            <span class="credits-kicker">CONTEÚDO DE ESTUDOS</span>
+            <div class="credits-profile">
+                <img src="bizu-de-mat.jpg" alt="Avatar provisório do perfil Bizu de Mat" class="credits-avatar">
+                <div>
+                    <h2>Bizu de Mat</h2>
+                    <p>@bizu_de_mat</p>
+                </div>
+            </div>
+            <p class="credits-description">Acompanhe o perfil para ver conteúdos e dicas de estudo.</p>
+            <a class="credits-link" href="https://www.instagram.com/bizu_de_mat/" target="_blank" rel="noopener noreferrer">
+                <span aria-hidden="true">📸</span> Visitar Instagram <span aria-hidden="true">↗</span>
+            </a>
+            <small class="credits-photo-note">Perfil oficial no Instagram</small>
+        </article>
+
+        <article class="card credits-created">
+            <span class="credits-kicker">DESENVOLVIMENTO</span>
+            <p class="credits-creator">
+                <h2>
+                    <span>💡 Asp R2 Romeu — Idealizador</span>
+                </h2>
+                
+                <h2>
+                    <span>💻 Asp R2 Erik — Desenvolvedor</span>
+                </h2>
+            </p>
+            <p class="credits-description">Projeto criado para ajudar na organização, constância e evolução dos estudos.</p>
+        </article>
+
+        <article class="card credits-verse">
+            <span class="credits-kicker">PALAVRA DE MOTIVAÇÃO</span>
+            <div class="credits-quote-mark" aria-hidden="true">✦</div>
+            <blockquote>Para que todos vejam, e saibam, e considerem, e juntamente entendam que a mão do Senhor fez isto, e o Santo de Israel o criou.</blockquote>
+            <p class="credits-reference">Isaí­as 41:20</p>
+        </article>
+    </div>
+
+    <footer class="credits-footer">
+        <span class="credits-footer-brand">⭐CONCURSADO</span>
+        <p>© 2026 CONCURSADO • Todos os direitos reservados.</p>
+    </footer>
+</section>
+
+
+</main>
+
+
+<div id="toast" class="toast">
+    Salvo com sucesso!
+</div>
+
+<!-- =====================================================
+     TOAST
+===================================================== -->
+
+<div
+    id="toast"
+    class="toast"
+>
+    Salvo com sucesso!
+</div>
+
+
+<!-- =====================================================
+     SCRIPT
+===================================================== -->
+
+<script src="script.js"></script>
+
+
+</body>
+
+</html>
