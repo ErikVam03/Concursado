@@ -90,6 +90,14 @@ let subjects = loadJSON(
     []
 );
 
+const SUBJECT_PALETTE = ['#22c55e','#3b82f6','#f59e0b','#a855f7','#ef4444','#06b6d4','#ec4899','#eab308','#14b8a6','#f97316'];
+function validSubjectColor(value) { return /^#[0-9a-fA-F]{6}$/.test(String(value || '')); }
+function getSubjectColor(name) {
+    const index = subjects.findIndex(s => String(s.name || '').toLocaleLowerCase('pt-BR') === String(name || '').toLocaleLowerCase('pt-BR'));
+    if (index < 0) return '#22c55e';
+    return validSubjectColor(subjects[index].color) ? subjects[index].color : SUBJECT_PALETTE[index % SUBJECT_PALETTE.length];
+}
+function nextSubjectColor() { return SUBJECT_PALETTE[subjects.length % SUBJECT_PALETTE.length]; }
 let studies = loadJSON(
     "aprovado_studies",
     []
@@ -370,7 +378,7 @@ function renderWeek() {
         "QUA",
         "QUI",
         "SEX",
-        "SÁB"
+        "SÃB"
     ];
 
 
@@ -1413,7 +1421,7 @@ function getMonthName(month) {
 function renderCycle() {
 
     const totalPlannedMinutes =
-        subjects.reduce(
+        cycleActiveSubjects().reduce(
             (sum, subject) =>
                 sum +
                 Number(subject.hours || 0) * 60,
@@ -1421,27 +1429,14 @@ function renderCycle() {
         );
 
 
-    const totalStudiedMinutes =
-        studies.reduce(
-            (sum, study) =>
-                sum + getStudyMinutes(study),
-            0
+    const activeNames = new Set(cycleActiveSubjects().map(s => s.name.toLowerCase()));
+    const totalStudiedMinutes = studies.filter(study => activeNames.has(String(study.subject).toLowerCase())).reduce(
+            (sum, study) => sum + getStudyMinutes(study), 0
         );
 
 
-    const percent =
-        totalPlannedMinutes > 0
-            ? Math.min(
-                100,
-                Math.round(
-                    (
-                        totalStudiedMinutes /
-                        totalPlannedMinutes
-                    ) * 100
-                )
-            )
-            : 0;
-
+    const activeCycle = cycleActiveSubjects();
+    const percent = activeCycle.length ? Math.round(activeCycle.reduce((sum, s) => sum + cyclePercentFor(s), 0) / activeCycle.length) : 0;
 
     setText(
         "cyclePercent",
@@ -1663,7 +1658,7 @@ function renderCycleSubjects() {
     }
 
 
-    if (!subjects.length) {
+    if (!cycleActiveSubjects().length) {
 
         container.innerHTML = `
             <div class="settings-empty">
@@ -1680,7 +1675,7 @@ function renderCycleSubjects() {
     container.innerHTML = "";
 
 
-    subjects.forEach(subject => {
+    cycleActiveSubjects().forEach(subject => {
 
         const planned =
             Number(
@@ -1694,18 +1689,7 @@ function renderCycleSubjects() {
             );
 
 
-        const percent =
-            planned > 0
-                ? Math.min(
-                    100,
-                    Math.round(
-                        (
-                            studied /
-                            planned
-                        ) * 100
-                    )
-                )
-                : 0;
+        const percent = cyclePercentFor(subject);
 
 
         const row =
@@ -1723,7 +1707,7 @@ function renderCycleSubjects() {
             <div class="cycle-subject-top">
 
                 <span class="cycle-subject-name">
-                    ${escapeHTML(
+                    <span class="subject-color-dot" style="background:${getSubjectColor(subject.name)}"></span>${escapeHTML(
                         subject.name
                     )}
                 </span>
@@ -1739,7 +1723,7 @@ function renderCycleSubjects() {
 
                 <div
                     class="progress-fill"
-                    style="width:${percent}%"
+                    style="width:${percent}%;background:${getSubjectColor(subject.name)}"
                 ></div>
 
             </div>
@@ -1754,7 +1738,7 @@ function renderCycleSubjects() {
 
                 <span>
                     Meta:
-                    ${formatStudyDuration(planned)}
+                    ${subject.cycleMode === 'questions' ? subject.questions + ' questões' : subject.cycleMode === 'both' ? formatStudyDuration(planned) + ' + ' + subject.questions + ' questões' : formatStudyDuration(planned)}
                 </span>
 
             </div>
@@ -1827,6 +1811,7 @@ if (subjectForm) {
             }
 
 
+            const color = document.getElementById('subjectColor')?.value;
             if (editingId) {
 
                 const subject =
@@ -1839,6 +1824,7 @@ if (subjectForm) {
 
                 if (subject) {
 
+                    subject.color = validSubjectColor(color) ? color : getSubjectColor(subject.name);
                     subject.name =
                         name;
 
@@ -1862,6 +1848,7 @@ if (subjectForm) {
                     id: Date.now(),
 
                     name,
+                    color: validSubjectColor(color) ? color : nextSubjectColor(),
 
                     hours:
                         Math.max(
@@ -1884,6 +1871,7 @@ if (subjectForm) {
 
 
             resetSubjectForm();
+            if (document.getElementById('subjectColor')) document.getElementById('subjectColor').value = nextSubjectColor();
 
 
             renderSettingsSubjects();
@@ -1891,6 +1879,7 @@ if (subjectForm) {
             updateSubjectDatalist();
 
             renderCycle();
+            if (typeof updateAll === 'function') updateAll();
 
             showToast(
                 editingId
@@ -1949,7 +1938,7 @@ function renderSettingsSubjects() {
             <div class="settings-item-info">
 
                 <span class="settings-item-title">
-                    ${escapeHTML(
+                    <span class="subject-color-dot" style="background:${getSubjectColor(subject.name)}"></span>${escapeHTML(
                         subject.name
                     )}
                 </span>
@@ -1970,7 +1959,7 @@ function renderSettingsSubjects() {
                     class="small-btn"
                     data-edit-subject="${subject.id}"
                 >
-                  ✏️ Editar
+                    ✏️ Editar
                 </button>
 
                 <button
@@ -1978,7 +1967,7 @@ function renderSettingsSubjects() {
                     class="danger-btn"
                     data-delete-subject="${subject.id}"
                 >
-                  🗑️ Excluir
+                    🗑️ Excluir
                 </button>
 
             </div>
@@ -2035,96 +2024,58 @@ function renderSettingsSubjects() {
 
 
 function editSubject(id) {
+    const subject = subjects.find(item => String(item.id) === String(id));
+    const overlay = document.getElementById("subjectEditOverlay");
+    if (!subject || !overlay) return;
 
-    const subject =
-        subjects.find(
-            item =>
-                String(item.id) ===
-                String(id)
-        );
+    document.getElementById("modalSubjectId").value = subject.id;
+    document.getElementById("modalSubjectName").value = subject.name || "";
+    document.getElementById("modalSubjectColor").value = getSubjectColor(subject.name);
+    document.getElementById("modalSubjectHours").value = Number(subject.hours || 0);
+    document.getElementById("modalSubjectQuestions").value = Number(subject.questions || 0);
+    overlay.classList.remove("hidden");
+    document.body.classList.add("subject-edit-open");
+    document.getElementById("modalSubjectName").focus();
+}
 
+function closeSubjectEditModal() {
+    document.getElementById("subjectEditOverlay")?.classList.add("hidden");
+    document.body.classList.remove("subject-edit-open");
+}
 
-    if (!subject) {
-        return;
-    }
-
-
-    const editing =
-        document.getElementById(
-            "editingSubjectId"
-        );
-
-
-    if (editing) {
-        editing.value =
-            subject.id;
-    }
-
-
-    const name =
-        document.getElementById(
-            "subjectName"
-        );
-
-
-    const hours =
-        document.getElementById(
-            "subjectHours"
-        );
-
-
-    const questions =
-        document.getElementById(
-            "subjectQuestions"
-        );
-
-
-    if (name) {
-        name.value =
-            subject.name;
-    }
-
-
-    if (hours) {
-        hours.value =
-            subject.hours;
-    }
-
-
-    if (questions) {
-        questions.value =
-            subject.questions || 0;
-    }
-
-
-    const submit =
-        subjectForm?.querySelector(
-            'button[type="submit"]'
-        );
-
-
-    if (submit) {
-        submit.textContent =
-            "💾 Salvar alterações";
-    }
-
-
-    const cancel =
-        document.getElementById(
-            "cancelSubjectEdit"
-        );
-
-
-    if (cancel) {
-        cancel.classList.remove(
-            "hidden"
-        );
-    }
-
-
-    subjectForm?.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
+const subjectEditModalForm = document.getElementById("subjectEditModalForm");
+if (subjectEditModalForm) {
+    subjectEditModalForm.addEventListener("submit", event => {
+        event.preventDefault();
+        const id = document.getElementById("modalSubjectId").value;
+        const subject = subjects.find(item => String(item.id) === String(id));
+        if (!subject) return;
+        const name = document.getElementById("modalSubjectName").value.trim();
+        const hours = Number(document.getElementById("modalSubjectHours").value);
+        const questions = Number(document.getElementById("modalSubjectQuestions").value);
+        if (!name || !Number.isFinite(hours) || hours < 0 || !Number.isFinite(questions) || questions < 0 || !Number.isInteger(questions)) {
+            showToast("Preencha os dados da matéria corretamente.");
+            return;
+        }
+        subject.color = document.getElementById('modalSubjectColor').value;
+        subject.name = name;
+        subject.hours = hours;
+        subject.questions = questions;
+        saveSubjects();
+        closeSubjectEditModal();
+        renderSettingsSubjects();
+        updateSubjectDatalist();
+        renderCycle();
+        if (typeof updateAll === "function") updateAll();
+        showToast("Matéria atualizada!");
+    });
+    document.getElementById("closeSubjectEdit")?.addEventListener("click", closeSubjectEditModal);
+    document.getElementById("cancelSubjectModal")?.addEventListener("click", closeSubjectEditModal);
+    document.getElementById("subjectEditOverlay")?.addEventListener("click", event => {
+        if (event.target.id === "subjectEditOverlay") closeSubjectEditModal();
+    });
+    document.addEventListener("keydown", event => {
+        if (event.key === "Escape") closeSubjectEditModal();
     });
 }
 
@@ -2796,6 +2747,16 @@ function renderTimeChart(
         </div>
 
     `;
+    const bySubject = {};
+    filtered.forEach(study => {
+        const name = study.subject || 'Sem matéria';
+        bySubject[name] = (bySubject[name] || 0) + getStudyMinutes(study);
+    });
+    const total = Object.values(bySubject).reduce((sum, n) => sum + n, 0);
+    if (total > 0) {
+        container.insertAdjacentHTML('beforeend', `<div class="subject-chart-breakdown"><h3 style="margin:20px 0 12px">Tempo por matéria</h3>${Object.entries(bySubject).sort((a,b)=>b[1]-a[1]).map(([name,minutes])=>`<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:6px"><span><span class="subject-color-dot" style="background:${getSubjectColor(name)}"></span>${escapeHTML(name)}</span><strong>${formatStudyDuration(minutes)}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${minutes/total*100}%;background:${getSubjectColor(name)}"></div></div></div>`).join('')}</div>`);
+    }
+
 }
 
 
@@ -2943,12 +2904,7 @@ function renderPerformance(
                                 style="
                                     width:${row.percent}%;
                                     height:100%;
-                                    background:
-                                        linear-gradient(
-                                            90deg,
-                                            var(--green),
-                                            var(--green-light)
-                                        );
+                                    background:${getSubjectColor(row.name)};
                                     border-radius:inherit;
                                 "
                             ></div>
@@ -3194,6 +3150,12 @@ function updateDashboardSummary() {
         "totalAccuracy",
         `${accuracy}%`
     );
+
+    // A contagem usa o mesmo histórico das outras abas.
+    setText(
+        "totalSessions",
+        studies.length
+    );
 }
 
 
@@ -3423,40 +3385,21 @@ function renderExistingSimulationInfo() {
         );
 
 
-    info.innerHTML = `
+    
+info.innerHTML = `
 
-        <strong>
-            ${escapeHTML(
-                simulation.name
-            )}
-        </strong>
+    <strong>
+        ${escapeHTML(simulation.name)}
+    </strong>
 
-        <br>
+    <br>
 
-        Tempo:
-        ${hours}h ${String(minutes).padStart(2, "0")}min
+    Tempo:
+    ${hours}h ${String(minutes).padStart(2, "0")}min
 
-        <br>
-
-        Questões:
-        ${Number(
-            simulation.questions || 0
-        )}
-
-        ${
-            simulation.correct !== undefined
-                ? `
-                    <br>
-                    Acertos:
-                    ${Number(
-                        simulation.correct || 0
-                    )}
-                `
-                : ""
-        }
-
-    `;
+`;
 }
+
 
 
 /* =========================================================
@@ -3609,172 +3552,71 @@ if (existingSimulationForm) {
 }
 
 
+
 /* =========================================================
    CRIAR NOVO SIMULADO
 ========================================================= */
 
-const simulationForm =
-    document.getElementById(
-        "simulationForm"
-    );
-
+const simulationForm = document.getElementById("simulationForm");
 
 if (simulationForm) {
+    simulationForm.addEventListener("submit", event => {
+        event.preventDefault();
 
-    simulationForm.addEventListener(
-        "submit",
-        event => {
+        const name = document.getElementById("simulationName")?.value.trim();
+        const duration = document.getElementById("simulationDuration")?.value.trim();
 
-            event.preventDefault();
-
-
-            const name =
-                document.getElementById(
-                    "simulationName"
-                )?.value.trim();
-
-
-            const hours =
-                Number(
-                    document.getElementById(
-                        "simulationHours"
-                    )?.value || 0
-                );
-
-
-            const minutes =
-                Number(
-                    document.getElementById(
-                        "simulationMinutes"
-                    )?.value || 0
-                );
-
-
-            const questions =
-                Number(
-                    document.getElementById(
-                        "simulationQuestionCount"
-                    )?.value || 0
-                );
-
-
-            if (!name) {
-
-                showToast(
-                    "Informe o nome do simulado."
-                );
-
-                return;
-            }
-
-
-            if (
-                hours <= 0 &&
-                minutes <= 0
-            ) {
-
-                showToast(
-                    "Informe um tempo válido."
-                );
-
-                return;
-            }
-
-
-            if (questions <= 0) {
-
-                showToast(
-                    "Informe a quantidade de questões."
-                );
-
-                return;
-            }
-
-
-            const simulation = {
-
-                id:
-                    Date.now(),
-
-                name,
-
-                date:
-                    formatDateShort(
-                        new Date()
-                    ),
-
-                hours:
-                    Math.max(
-                        0,
-                        hours
-                    ),
-
-                minutes:
-                    Math.min(
-                        59,
-                        Math.max(
-                            0,
-                            minutes
-                        )
-                    ),
-
-                questions:
-                    Math.max(
-                        1,
-                        questions
-                    ),
-
-                correct: 0,
-
-                subjects: []
-
-            };
-
-
-            simulations.push(
-                simulation
-            );
-
-
-            saveSimulations();
-
-
-            renderSimulationSelect();
-
-            renderSavedSimulations();
-
-            renderSettingsSimulations();
-
-            renderSimulationStatistics();
-
-
-            simulationForm.reset();
-
-
-            showToast(
-                "Simulado criado!"
-            );
-
-
-            startSimulationTimer(
-
-                (
-                    simulation.hours *
-                    3600
-                ) +
-                (
-                    simulation.minutes *
-                    60
-                ),
-
-                simulation.name
-
-            );
-
+        if (!name) {
+            showToast("Informe o nome do simulado.");
+            return;
         }
-    );
 
+        const match = duration?.match(/^(\d+):([0-5]\d):([0-5]\d)$/);
+
+        if (!match) {
+            showToast("Use o formato HH:MM:SS.");
+            return;
+        }
+
+        const hours = Number(match[1]);
+        const minutes = Number(match[2]);
+        const seconds = Number(match[3]);
+
+        const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+        if (totalSeconds <= 0) {
+            showToast("Informe um tempo maior que zero.");
+            return;
+        }
+
+        const simulation = {
+            id: Date.now(),
+            name,
+            date: formatDateShort(new Date()),
+            hours,
+            minutes,
+            seconds,
+            questions: 0,
+            correct: 0,
+            subjects: []
+        };
+
+        simulations.push(simulation);
+        saveSimulations();
+
+        renderSimulationSelect();
+        renderSavedSimulations();
+        renderSettingsSimulations();
+        renderSimulationStatistics();
+
+        simulationForm.reset();
+
+        showToast("Simulado criado!");
+
+        startSimulationTimer(totalSeconds, simulation.name);
+    });
 }
+
 
 
 /* =========================================================
@@ -3968,20 +3810,11 @@ if (settingsSimulationForm) {
                 )?.value.trim();
 
 
-            const hours =
-                Number(
-                    document.getElementById(
-                        "settingsSimulationHours"
-                    )?.value || 0
-                );
+            const time =
+                document.getElementById("settingsSimulationTime")?.value || "00:00:00";
 
-
-            const minutes =
-                Number(
-                    document.getElementById(
-                        "settingsSimulationMinutes"
-                    )?.value || 0
-                );
+            const [hours, minutes, seconds] =
+                time.split(":").map(Number);
 
 
             const questions =
@@ -4315,16 +4148,8 @@ function editSimulation(id) {
         );
 
 
-    const hours =
-        document.getElementById(
-            "settingsSimulationHours"
-        );
-
-
-    const minutes =
-        document.getElementById(
-            "settingsSimulationMinutes"
-        );
+    const time =
+    document.getElementById("settingsSimulationTime");
 
 
     const questions =
@@ -4986,229 +4811,139 @@ function renderSimulationSubjects() {
    TIMER DO SIMULADO
 ========================================================= */
 
-let simulationInterval =
-    null;
+const SIMULATION_MARKS = [
+    [18000, "5h"], [16200, "4h30"], [14400, "4h"],
+    [12600, "3h30"], [10800, "3h"], [9000, "2h30"],
+    [7200, "2h"], [5400, "1h30"], [3600, "1h"],
+    [2700, "45min"], [1800, "30min"], [900, "15min"], [0, "0h"]
+];
+let simulationInterval = null;
+let simulationRemaining = 0;
+let simulationRunning = false;
+let simulationStarted = false;
+let simulationDeadline = 0;
 
+function simulationButtons() {
+    const toggle = (id, show) => {
+        const el = document.getElementById(id);
+        if (el) el.classList.toggle("hidden", !show);
+    };
+    toggle("startSimulation", !simulationStarted);
+    toggle("pauseSimulation", simulationStarted && simulationRunning);
+    toggle("continueSimulation", simulationStarted && !simulationRunning && simulationRemaining > 0);
+}
 
-let simulationRemaining =
-    0;
-
-
-let simulationRunning =
-    false;
-
-
-function startSimulationTimer(
-    seconds,
-    name
-) {
-
-    simulationRemaining =
-        Math.max(
-            0,
-            Number(seconds || 0)
-        );
-
-
-    simulationRunning =
-        true;
-
-
-    const card =
-        document.getElementById(
-            "simulationTimer"
-        );
-
-
-    const nameElement =
-        document.getElementById(
-            "simulationTimerName"
-        );
-
-
-    if (card) {
-
-        card.classList.remove(
-            "hidden"
-        );
-
-    }
-
-
-    if (nameElement) {
-
-        nameElement.textContent =
-            name || "Simulado";
-
-    }
-
-
+function startSimulationTimer(seconds, name) {
+    clearInterval(simulationInterval);
+    simulationInterval = null;
+    simulationRemaining = Math.max(0, Math.floor(Number(seconds) || 0));
+    simulationRunning = false;
+    simulationStarted = false;
+    document.getElementById("simulationTimer")?.classList.remove("hidden");
+    document.getElementById("simulationEndOverlay")?.classList.add("hidden");
+    setText("simulationTimerName", name || "Simulado");
     updateSimulationTimerUI();
-
-
-    clearInterval(
-        simulationInterval
-    );
-
-
-    simulationInterval =
-        setInterval(
-            () => {
-
-                if (
-                    !simulationRunning
-                ) {
-                    return;
-                }
-
-
-                simulationRemaining =
-                    Math.max(
-                        0,
-                        simulationRemaining - 1
-                    );
-
-
-                updateSimulationTimerUI();
-
-
-                if (
-                    simulationRemaining <= 0
-                ) {
-
-                    finishSimulationTimer(
-                        true
-                    );
-
-                }
-
-            },
-            1000
-        );
+    simulationButtons();
 }
 
 
 function updateSimulationTimerUI() {
-
-    const display =
-        document.getElementById(
-            "simulationTimerDisplay"
-        );
-
-
-    if (!display) {
-        return;
-    }
-
-
-    const total =
-        Math.max(
-            0,
-            Math.floor(
-                simulationRemaining
-            )
-        );
-
-
-    const hours =
-        Math.floor(
-            total / 3600
-        );
-
-
-    const minutes =
-        Math.floor(
-            (
-                total % 3600
-            ) / 60
-        );
-
-
-    const seconds =
-        total % 60;
-
-
-    display.textContent =
-        `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
-
+    const total = Math.max(0, Math.ceil(simulationRemaining));
 
     setText(
         "simulationTimerStatus",
-        simulationRemaining > 0
-            ? "Tempo restante"
-            : "Tempo encerrado"
-    );
-}
-
-
-function finishSimulationTimer(
-    automatic = false
-) {
-
-    clearInterval(
-        simulationInterval
+        total === 0
+            ? "Tempo encerrado"
+            : simulationRunning
+                ? "Prova em andamento"
+                : simulationStarted
+                    ? "Simulado pausado"
+                    : "Pronto para iniciar"
     );
 
+    // Esconde o relógio digital
+    const digitalClock = document.getElementById(
+        "simulationTimerDisplay"
+    );
 
-    simulationInterval =
-        null;
-
-
-    simulationRunning =
-        false;
-
-
-    simulationRemaining =
-        0;
-
-
-    updateSimulationTimerUI();
-
-
-    const card =
-        document.getElementById(
-            "simulationTimer"
-        );
-
-
-    if (card) {
-
-        card.classList.add(
-            "hidden"
-        );
-
+    if (digitalClock) {
+        digitalClock.style.display = "none";
     }
 
-
-    showToast(
-        automatic
-            ? "Tempo do simulado encerrado."
-            : "Simulado finalizado."
+    // Quadro de horários
+    const board = document.getElementById(
+        "simulationTimeBoard"
     );
+
+    if (board) {
+        board.innerHTML = total === 0
+            ? ""
+            : SIMULATION_MARKS
+                .filter(([seconds]) => {
+                    // Exibe somente horários ainda não atingidos
+                    return seconds < total;
+                })
+                .map(([, label]) =>
+                    `<span class="simulation-time-mark">${label}</span>`
+                )
+                .join("");
+    }
 }
 
 
-const finishSimulation =
-    document.getElementById(
-        "finishSimulation"
-    );
-
-
-if (finishSimulation) {
-
-    finishSimulation.addEventListener(
-        "click",
-        () => {
-
-            finishSimulationTimer(
-                false
-            );
-
-        }
-    );
-
+function tickSimulation() {
+    if (!simulationRunning) return;
+    simulationRemaining = Math.max(0, Math.ceil((simulationDeadline - Date.now()) / 1000));
+    updateSimulationTimerUI();
+    if (simulationRemaining <= 0) finishSimulationTimer(true);
 }
 
+function runSimulation() {
+    if (simulationRemaining <= 0 || simulationRunning) return;
+    simulationStarted = true;
+    simulationRunning = true;
+    simulationDeadline = Date.now() + simulationRemaining * 1000;
+    clearInterval(simulationInterval);
+    simulationInterval = setInterval(tickSimulation, 250);
+    simulationButtons();
+    updateSimulationTimerUI();
+}
+
+function pauseSimulationTimer() {
+    if (!simulationRunning) return;
+    tickSimulation();
+    if (!simulationRunning) return;
+    simulationRunning = false;
+    clearInterval(simulationInterval);
+    simulationInterval = null;
+    simulationButtons();
+    updateSimulationTimerUI();
+}
+
+function finishSimulationTimer(automatic = false) {
+    clearInterval(simulationInterval);
+    simulationInterval = null;
+    simulationRunning = false;
+    simulationStarted = false;
+    simulationRemaining = 0;
+    updateSimulationTimerUI();
+    simulationButtons();
+    if (automatic) {
+        document.getElementById("simulationEndOverlay")?.classList.remove("hidden");
+    } else {
+        document.getElementById("simulationTimer")?.classList.add("hidden");
+        document.getElementById("simulationEndOverlay")?.classList.add("hidden");
+        showToast("Simulado finalizado.");
+    }
+}
+
+document.getElementById("startSimulation")?.addEventListener("click", runSimulation);
+document.getElementById("pauseSimulation")?.addEventListener("click", pauseSimulationTimer);
+document.getElementById("continueSimulation")?.addEventListener("click", runSimulation);
+document.getElementById("finishSimulation")?.addEventListener("click", () => finishSimulationTimer(false));
+document.getElementById("dismissSimulationEnd")?.addEventListener("click", () => {
+    document.getElementById("simulationEndOverlay")?.classList.add("hidden");
+});
 
 /* =========================================================
    POMODORO / SESSÃO DE ESTUDO
@@ -6881,6 +6616,9 @@ function initializeApp() {
 
     updateGreeting();
 
+    // Preenche o resumo logo na abertura, inclusive com dados já salvos.
+    updateDashboardSummary();
+
     renderWeek();
 
     renderCycle();
@@ -6945,3 +6683,127 @@ initializeApp();
 /* =========================================================
    FIM
 ========================================================= */
+/* CONFIGURAÇÕES — ALTERNAR ABAS SEM ALTERAR OS DADOS */
+(function initSettingsTabs() {
+    const tabs = document.querySelectorAll('[data-settings-tab]');
+    const panels = document.querySelectorAll('[data-settings-panel]');
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            const selected = tab.dataset.settingsTab;
+            tabs.forEach(item => {
+                const active = item.dataset.settingsTab === selected;
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-selected', String(active));
+            });
+            panels.forEach(panel => {
+                panel.hidden = panel.dataset.settingsPanel !== selected;
+            });
+        });
+    });
+})();
+
+/* =========================================================
+   CONFIGURAÇÃO DO CICLO — SEM APAGAR MATÉRIAS OU HISTÓRICO
+========================================================= */
+function cycleActiveSubjects() {
+    return subjects.filter(subject => subject.cycleEnabled !== false);
+}
+function cycleQuestionsDone(name) {
+    return studies.filter(study => String(study.subject).toLowerCase() === String(name).toLowerCase())
+        .reduce((sum, study) => sum + Number(study.questions || 0), 0);
+}
+function cyclePercentFor(subject) {
+    const mode = subject.cycleMode || 'time';
+    const timeGoal = Math.max(0, Number(subject.hours || 0) * 60);
+    const questionGoal = Math.max(0, Number(subject.questions || 0));
+    const timeRatio = timeGoal ? Math.min(1, getSubjectStudiedMinutes(subject.name) / timeGoal) : 0;
+    const questionRatio = questionGoal ? Math.min(1, cycleQuestionsDone(subject.name) / questionGoal) : 0;
+    if (mode === 'questions') return Math.round(questionRatio * 100);
+    if (mode === 'both') return Math.round((timeRatio + questionRatio) * 50);
+    return Math.round(timeRatio * 100);
+}
+function cycleFormatGoal(hours) {
+    const secs = Math.max(0, Math.round(Number(hours || 0) * 3600));
+    return [Math.floor(secs/3600),Math.floor(secs%3600/60),secs%60].map(n=>String(n).padStart(2,'0')).join(':');
+}
+function renderCycleSettings() {
+    const container = document.getElementById('cycleSettingsList');
+    if (!container) return;
+    if (!subjects.length) {
+        container.innerHTML = '<div class="settings-empty">Cadastre primeiro suas matérias na aba 📚 Matérias.</div>';
+        return;
+    }
+    container.innerHTML = '';
+    subjects.forEach(subject => {
+        const row = document.createElement('div');
+        row.className = 'cycle-setting-row';
+        row.dataset.subjectId = String(subject.id);
+        row.innerHTML = `
+          <div class="cycle-setting-top">
+            <label class="cycle-enabled"><input type="checkbox" class="cycle-check" ${subject.cycleEnabled !== false ? 'checked' : ''}> <span><span class="subject-color-dot" style="background:${getSubjectColor(subject.name)}"></span>${escapeHTML(subject.name)}</span></label>
+            <label class="cycle-mode-label">Configurar por
+              <select class="cycle-mode" aria-label="Tipo de meta de ${escapeHTML(subject.name)}">
+                <option value="time">Tempo</option><option value="questions">Questões</option><option value="both">Ambos</option>
+              </select>
+            </label>
+          </div>
+          <div class="cycle-setting-fields">
+            <label class="cycle-time-field">Meta de estudoㅤㅤㅤ<input type="text" class="cycle-time" inputmode="numeric" value="${cycleFormatGoal(subject.hours)}" placeholder="00:00:00"></label>
+            <label class="cycle-questions-field">Meta de questõesㅤㅤㅤ<input type="number" class="cycle-questions" min="0" step="1" value="${Math.max(0,Number(subject.questions || 0))}"></label>
+          </div>`;
+        const modeSelect = row.querySelector('.cycle-mode');
+        modeSelect.value = ['time', 'questions', 'both'].includes(subject.cycleMode) ? subject.cycleMode : 'time';
+        const updateFields = () => {
+            const mode = modeSelect.value;
+            const enabled = row.querySelector('.cycle-check').checked;
+            row.querySelector('.cycle-time-field').hidden = mode === 'questions' || !enabled;
+            row.querySelector('.cycle-questions-field').hidden = mode === 'time' || !enabled;
+            row.querySelector('.cycle-setting-fields').hidden = !enabled;
+            modeSelect.disabled = !enabled;
+        };
+        modeSelect.addEventListener('change', updateFields);
+        row.querySelector('.cycle-check').addEventListener('change', updateFields);
+        updateFields();
+        container.appendChild(row);
+    });
+}
+document.getElementById('saveCycleSettings')?.addEventListener('click', () => {
+    const changes = [];
+    for (const row of document.querySelectorAll('.cycle-setting-row')) {
+        const subject = subjects.find(s => String(s.id) === row.dataset.subjectId);
+        if (!subject) continue;
+        const mode = row.querySelector('.cycle-mode').value;
+        const enabled = row.querySelector('.cycle-check').checked;
+        const usesTime = mode === 'time' || mode === 'both';
+        const usesQuestions = mode === 'questions' || mode === 'both';
+        const value = row.querySelector('.cycle-time').value.trim();
+        const match = /^(\d{1,4}):([0-5]\d):([0-5]\d)$/.exec(value);
+        if (enabled && usesTime && !match) { showToast('Informe o tempo no formato HH:MM:SS.'); return; }
+        const hours = match ? Number(match[1]) + Number(match[2])/60 + Number(match[3])/3600 : Number(subject.hours || 0);
+        const enteredQuestions = Number(row.querySelector('.cycle-questions').value);
+        if (enabled && usesQuestions && (!Number.isSafeInteger(enteredQuestions) || enteredQuestions < 0)) {
+            showToast('Informe uma quantidade válida de questões.'); return;
+        }
+        const questions = Number.isSafeInteger(enteredQuestions) && enteredQuestions >= 0 ? enteredQuestions : Number(subject.questions || 0);
+        if (enabled && ((usesTime && !hours) || (usesQuestions && !questions))) {
+            showToast('Preencha as metas da matéria selecionada.'); return;
+        }
+        changes.push({subject, enabled:row.querySelector('.cycle-check').checked, hours, questions, mode});
+    }
+    changes.forEach(({subject,enabled,hours,questions,mode}) => {
+        subject.cycleEnabled=enabled; subject.hours=hours; subject.questions=questions; subject.cycleMode=mode;
+    });
+    saveSubjects(); updateAll(); showToast('Ciclo salvo com sucesso!');
+});
+/* Atualiza a aba quando as matérias forem cadastradas ou editadas. */
+const originalRenderSettingsSubjects = renderSettingsSubjects;
+renderSettingsSubjects = function(...args) { const result = originalRenderSettingsSubjects(...args); renderCycleSettings(); return result; };
+/* Progresso do ciclo respeita somente as matérias selecionadas. */
+getSubjectProgress = function(name) {
+    const subject = subjects.find(s => String(s.name).toLowerCase() === String(name).toLowerCase());
+    return subject && subject.cycleEnabled !== false ? cyclePercentFor(subject) : 0;
+};
+getNextSubject = function() {
+    return [...cycleActiveSubjects()].sort((a,b)=>cyclePercentFor(a)-cyclePercentFor(b))[0] || null;
+};
+renderCycleSettings();
