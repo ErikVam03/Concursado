@@ -1,3 +1,11 @@
+// Os registros de cada conta permanecem separados no navegador.
+// Os registros legados sem prefixo não são apagados nem importados automaticamente.
+function userStorageKey(key) {
+    const uid = window.CONCURSADO_USER_ID;
+    if (!uid) throw new Error("Sessão necessária para acessar dados locais.");
+    return `concursado_${uid}_${key}`;
+}
+
 /* =========================================================
    CONCURSADO
    Sistema principal
@@ -81,12 +89,12 @@ const defaultSimulations = [
 
 
 let simulations = loadJSON(
-    "aprovado_simulations",
+    userStorageKey("aprovado_simulations"),
     defaultSimulations
 );
 
 let subjects = loadJSON(
-    "aprovado_subjects",
+    userStorageKey("aprovado_subjects"),
     []
 );
 
@@ -99,7 +107,7 @@ function getSubjectColor(name) {
 }
 function nextSubjectColor() { return SUBJECT_PALETTE[subjects.length % SUBJECT_PALETTE.length]; }
 let studies = loadJSON(
-    "aprovado_studies",
+    userStorageKey("aprovado_studies"),
     []
 );
 
@@ -134,7 +142,7 @@ function loadJSON(key, fallback) {
 
 function saveStudies() {
     localStorage.setItem(
-        "aprovado_studies",
+        userStorageKey("aprovado_studies"),
         JSON.stringify(studies)
     );
 }
@@ -142,7 +150,7 @@ function saveStudies() {
 
 function saveSubjects() {
     localStorage.setItem(
-        "aprovado_subjects",
+        userStorageKey("aprovado_subjects"),
         JSON.stringify(subjects)
     );
 }
@@ -150,7 +158,7 @@ function saveSubjects() {
 
 function saveSimulations() {
     localStorage.setItem(
-        "aprovado_simulations",
+        userStorageKey("aprovado_simulations"),
         JSON.stringify(simulations)
     );
 }
@@ -5038,7 +5046,7 @@ document.getElementById("dismissSimulationEnd")?.addEventListener("click", () =>
 ========================================================= */
 
 const SESSION_STORAGE_KEY =
-    "aprovado_active_session";
+    userStorageKey("aprovado_active_session");
 
 
 let timerInterval =
@@ -5423,8 +5431,8 @@ let stopwatchAccumulatedSeconds = 0;
 let stopwatchStartedAt = null;
 let pendingCompletion = null;
 
-const PENDING_COMPLETION_KEY = "aprovado_pending_completion";
-const STOPWATCH_STORAGE_KEY = "aprovado_active_stopwatch";
+const PENDING_COMPLETION_KEY = userStorageKey("aprovado_pending_completion");
+const STOPWATCH_STORAGE_KEY = userStorageKey("aprovado_active_stopwatch");
 
 
 function formatSecondsHMS(totalSeconds) {

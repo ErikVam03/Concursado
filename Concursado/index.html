@@ -18,15 +18,13 @@
 
 
 
-    <meta name="description" content="Concursado — organize seus estudos, acompanhe seu desempenho e evolua.
-
-    >
+    <meta name="description" content="Concursado — organize seus estudos, acompanhe seu desempenho e evolua.">
 
 
 
     <link
 
-        rel=" manifest" href="manifest.json">
+        rel="manifest" href="manifest.json">
 
 
 
@@ -34,15 +32,15 @@
 
 
 
-    <link rel="preconnect" href="https\://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
 
 
 
-    <link rel="preconnect" href="https\://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
 
 
-    <link href="https\://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 
 
@@ -144,7 +142,8 @@
 
 
 
-<body>
+<body class="auth-locked">
+<div id="authScreen" class="auth-screen"><div class="auth-panel"><div class="auth-logo">✦ CONCURSADO</div><h1 id="authHeading">Entre para continuar</h1><p class="auth-subtitle">Seu espaço para evoluir nos estudos.</p><p id="authStatus" class="auth-status" role="status">Conectando...</p><form id="authForm" hidden><label>E-mail<input id="authEmail" type="email" autocomplete="email" required></label><label>Senha<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></label><button class="auth-primary" id="authSubmit" type="submit">Entrar</button></form><button id="authGoogle" class="auth-google" hidden type="button">Continuar com Google</button><div class="auth-links"><button id="authSwitch" hidden type="button">Criar uma conta</button><button id="authForgot" hidden type="button">Esqueci minha senha</button></div></div></div><div id="authAccount" class="auth-account" hidden><span id="authUserEmail"></span><button id="authLogout" type="button">Sair</button></div>
 
 
 
@@ -3117,7 +3116,7 @@
 
                     <p class="credits-description">Acompanhe o perfil para ver conteúdos e dicas de estudo.</p>
 
-                    <a class="credits-link" href="https\://www\.instagram.com/bizu_de_mat/" target="\_blank"
+                    <a class="credits-link" href="https://www.instagram.com/bizu_de_mat/" target="_blank"
                         rel="noopener noreferrer">
 
                         <span aria-hidden="true">📸</span> Visitar Instagram <span aria-hidden="true">↗</span>
@@ -3323,7 +3322,8 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="auth.js"></script>
 
 
 

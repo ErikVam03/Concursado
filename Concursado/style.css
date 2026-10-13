@@ -5032,3 +5032,9 @@ input[placeholder="00:00:00"] {
     font-size: 13px;
     font-family: monospace;
 }
+/* Acesso e autenticação */
+body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:none !important; }
+.auth-screen{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:#07110d;padding:20px;color:#f2f7f3;font-family:Inter,Arial,sans-serif}
+.auth-screen[hidden],.auth-account[hidden]{display:none!important}
+.auth-panel{width:min(100%,420px);padding:34px;border:1px solid #294536;border-radius:22px;background:#111e17;box-shadow:0 20px 70px #0008}
+.auth-logo{color:#4ade80;font-weight:800;letter-spacing:1px;margin-bottom:28px}.auth-panel h1{font-size:26px;margin:0 0 8px}.auth-subtitle{color:#a1b5a8;margin:0 0 22px}.auth-panel label{display:block;margin:14px 0;font-size:13px}.auth-panel input{display:block;width:100%;margin-top:7px;box-sizing:border-box;padding:13px;border-radius:10px;border:1px solid #3b5946;background:#09140d;color:white}.auth-primary,.auth-google{display:block;width:100%;padding:13px;border-radius:10px;cursor:pointer;font-weight:700;margin-top:16px}.auth-primary{background:#22c55e;color:#06200f;border:0}.auth-google{background:#f6faf7;color:#18231c;border:0}.auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:20px}.auth-links button{border:0;background:none;color:#86efac;cursor:pointer}.auth-status{font-size:13px;color:#facc15;min-height:18px}.auth-account{position:fixed;right:12px;bottom:12px;z-index:9000;background:#14251b;color:white;padding:8px 12px;border:1px solid #355d43;border-radius:12px;font-size:12px;display:flex;gap:12px;align-items:center;max-width:calc(100vw - 24px)}.auth-account span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.auth-account button{background:#265d3a;color:white;border:0;border-radius:7px;padding:8px;cursor:pointer}
