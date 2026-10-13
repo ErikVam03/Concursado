@@ -90,7 +90,7 @@ let subjects = loadJSON(
     []
 );
 
-const SUBJECT_PALETTE = ['#22c55e','#3b82f6','#f59e0b','#a855f7','#ef4444','#06b6d4','#ec4899','#eab308','#14b8a6','#f97316'];
+const SUBJECT_PALETTE = ['#22c55e', '#3b82f6', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4', '#ec4899', '#eab308', '#14b8a6', '#f97316'];
 function validSubjectColor(value) { return /^#[0-9a-fA-F]{6}$/.test(String(value || '')); }
 function getSubjectColor(name) {
     const index = subjects.findIndex(s => String(s.name || '').toLocaleLowerCase('pt-BR') === String(name || '').toLocaleLowerCase('pt-BR'));
@@ -1017,75 +1017,145 @@ function parseTimeInputToMinutes(value) {
    HISTÓRICO
 ========================================================= */
 
-const historyFilters =
-    document.querySelectorAll(
-        "[data-history-filter]"
-    );
+/* =========================================================
+   FILTROS DO HISTÓRICO
+========================================================= */
 
+const historyFilters = document.querySelectorAll(
+    "[data-history-filter]"
+);
+
+// Temporário: futuramente será definido pelo login e assinatura.
+const historyPremiumActive = false;
+
+let historyCustomStart = null;
+let historyCustomEnd = null;
+
+const premiumHistoryFilters = [
+    "month",
+    "year",
+    "all",
+    "custom"
+];
 
 historyFilters.forEach(button => {
+    button.addEventListener("click", () => {
+        const filter = button.dataset.historyFilter;
 
-    button.addEventListener(
-        "click",
-        () => {
-
-            historyFilters.forEach(
-                item =>
-                    item.classList.remove(
-                        "active"
-                    )
+        if (
+            premiumHistoryFilters.includes(filter) &&
+            !historyPremiumActive
+        ) {
+            alert(
+                "🔒 Recurso Premium!\n\n" +
+                "Assine o CONCURSADO Premium para acessar " +
+                "os filtros Mês, Ano, Tudo e Personalizado."
             );
-
-
-            button.classList.add(
-                "active"
-            );
-
-
-            renderHistory(
-                button.dataset.historyFilter
-            );
-
+            return;
         }
-    );
 
+        if (filter === "custom") {
+            openHistoryDateModal();
+            return;
+        }
+
+        historyFilters.forEach(item => {
+            item.classList.remove("active");
+        });
+
+        button.classList.add("active");
+        renderHistory(filter);
+    });
 });
 
 
-function getHistoryStartDate(filter) {
+function openHistoryDateModal() {
+    const overlay = document.getElementById("historyDateOverlay");
+    if (!overlay) return;
+    const today = getDateKey(new Date());
+    document.getElementById("historyDateStart").value = historyCustomStart || today;
+    document.getElementById("historyDateEnd").value = historyCustomEnd || today;
+    document.getElementById("historyDateError").classList.add("hidden");
+    overlay.classList.remove("hidden");
+    document.body.classList.add("conc-modal-open");
+    document.getElementById("historyDateStart").focus();
+}
 
-    const today =
-        new Date();
+function closeHistoryDateModal() {
+    document.getElementById("historyDateOverlay")?.classList.add("hidden");
+    document.body.classList.remove("conc-modal-open");
+}
 
-    today.setHours(
-        0,
-        0,
-        0,
-        0
+const historyDateForm = document.getElementById("historyDateForm");
+historyDateForm?.addEventListener("submit", event => {
+    event.preventDefault();
+    const start = document.getElementById("historyDateStart").value;
+    const end = document.getElementById("historyDateEnd").value;
+    const error = document.getElementById("historyDateError");
+    if (!start || !end || start > end) {
+        error.classList.remove("hidden");
+        return;
+    }
+    error.classList.add("hidden");
+    historyCustomStart = start;
+    historyCustomEnd = end;
+    historyFilters.forEach(item => item.classList.toggle("active", item.dataset.historyFilter === "custom"));
+    closeHistoryDateModal();
+    renderHistory("custom");
+});
+for (const id of ["closeHistoryDates", "cancelHistoryDates"]) {
+    document.getElementById(id)?.addEventListener("click", closeHistoryDateModal);
+}
+document.getElementById("historyDateOverlay")?.addEventListener("click", event => {
+    if (event.target.id === "historyDateOverlay") closeHistoryDateModal();
+});
+
+function parseHistoryInputDate(value) {
+    const match = String(value).trim().match(
+        /^(\d{2})\/(\d{2})\/(\d{4})$/
     );
 
+    if (!match) return null;
+
+    const day = Number(match[1]);
+    const month = Number(match[2]);
+    const year = Number(match[3]);
+
+    const date = new Date(year, month - 1, day);
+
+    if (
+        date.getFullYear() !== year ||
+        date.getMonth() !== month - 1 ||
+        date.getDate() !== day
+    ) {
+        return null;
+    }
+
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
+
+function getHistoryStartDate(filter) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
     if (filter === "today") {
         return today;
     }
 
-
     if (filter === "week") {
+        const start = new Date(today);
 
-        const start =
-            new Date(today);
-
+        // Semana começa no domingo
         start.setDate(
-            today.getDate() -
-            today.getDay()
+            today.getDate() - today.getDay()
         );
 
         return start;
     }
 
-
     if (filter === "month") {
-
         return new Date(
             today.getFullYear(),
             today.getMonth(),
@@ -1093,6 +1163,13 @@ function getHistoryStartDate(filter) {
         );
     }
 
+    if (filter === "year") {
+        return new Date(
+            today.getFullYear(),
+            0,
+            1
+        );
+    }
 
     return null;
 }
@@ -1111,27 +1188,40 @@ function renderHistory(filter = "today") {
     }
 
 
-    const startDate =
-        getHistoryStartDate(
-            filter
-        );
+    // Proteção de interface para filtros Premium
+    if (
+        premiumHistoryFilters.includes(filter) &&
+        !historyPremiumActive
+    ) {
+        filter = "today";
+    }
 
+    const startDate = getHistoryStartDate(filter);
 
-    let filtered =
-        [...studies];
+    let filtered = [...studies];
 
+    if (filter === "custom") {
 
-    if (startDate) {
-
-        const startKey =
-            getDateKey(startDate);
-
-
-        filtered =
-            filtered.filter(
-                study =>
-                    study.date >= startKey
+        filtered = filtered.filter(study => {
+            return (
+                historyCustomStart &&
+                historyCustomEnd &&
+                study.date >= historyCustomStart &&
+                study.date <= historyCustomEnd
             );
+        });
+
+    } else if (startDate) {
+
+        const startKey = getDateKey(startDate);
+        const todayKey = getDateKey(new Date());
+
+        filtered = filtered.filter(study => {
+            return (
+                study.date >= startKey &&
+                study.date <= todayKey
+            );
+        });
     }
 
 
@@ -1260,16 +1350,16 @@ function renderHistory(filter = "today") {
 
                             <span class="history-entry-subject">
                                 ${escapeHTML(
-                                    study.subject ||
-                                    "Sem matéria"
-                                )}
+                        study.subject ||
+                        "Sem matéria"
+                    )}
                             </span>
 
                             <span class="history-entry-category">
                                 ${escapeHTML(
-                                    study.category ||
-                                    "Teoria"
-                                )}
+                        study.category ||
+                        "Teoria"
+                    )}
                             </span>
 
                         </div>
@@ -1280,8 +1370,8 @@ function renderHistory(filter = "today") {
                                 <span>Tempo</span>
                                 <strong>
                                     ${formatStudyDuration(
-                                        getStudyMinutes(study)
-                                    )}
+                        getStudyMinutes(study)
+                    )}
                                 </strong>
                             </div>
 
@@ -1297,8 +1387,8 @@ function renderHistory(filter = "today") {
                                 <strong>
                                     ${correct}
                                     ${questions > 0
-                                        ? ` (${percent}%)`
-                                        : ""}
+                            ? ` (${percent}%)`
+                            : ""}
                                 </strong>
                             </div>
 
@@ -1431,8 +1521,8 @@ function renderCycle() {
 
     const activeNames = new Set(cycleActiveSubjects().map(s => s.name.toLowerCase()));
     const totalStudiedMinutes = studies.filter(study => activeNames.has(String(study.subject).toLowerCase())).reduce(
-            (sum, study) => sum + getStudyMinutes(study), 0
-        );
+        (sum, study) => sum + getStudyMinutes(study), 0
+    );
 
 
     const activeCycle = cycleActiveSubjects();
@@ -1708,8 +1798,8 @@ function renderCycleSubjects() {
 
                 <span class="cycle-subject-name">
                     <span class="subject-color-dot" style="background:${getSubjectColor(subject.name)}"></span>${escapeHTML(
-                        subject.name
-                    )}
+            subject.name
+        )}
                 </span>
 
                 <span class="cycle-subject-percent">
@@ -1785,12 +1875,9 @@ if (subjectForm) {
                 )?.value.trim();
 
 
-            const hours =
-                Number(
-                    document.getElementById(
-                        "subjectHours"
-                    )?.value || 0
-                );
+            const hours = textoParaHoras(
+                document.getElementById("subjectHours").value
+            );
 
 
             const questions =
@@ -1939,8 +2026,8 @@ function renderSettingsSubjects() {
 
                 <span class="settings-item-title">
                     <span class="subject-color-dot" style="background:${getSubjectColor(subject.name)}"></span>${escapeHTML(
-                        subject.name
-                    )}
+            subject.name
+        )}
                 </span>
 
                 <span class="settings-item-meta">
@@ -2031,9 +2118,8 @@ function editSubject(id) {
     document.getElementById("modalSubjectId").value = subject.id;
     document.getElementById("modalSubjectName").value = subject.name || "";
     document.getElementById("modalSubjectColor").value = getSubjectColor(subject.name);
-    document.getElementById("modalSubjectHours").value = Number(subject.hours || 0);
-    document.getElementById("modalSubjectQuestions").value = Number(subject.questions || 0);
-    overlay.classList.remove("hidden");
+    document.getElementById("modalSubjectHours").value =
+        horasParaTexto(subject.hours); overlay.classList.remove("hidden");
     document.body.classList.add("subject-edit-open");
     document.getElementById("modalSubjectName").focus();
 }
@@ -2051,10 +2137,12 @@ if (subjectEditModalForm) {
         const subject = subjects.find(item => String(item.id) === String(id));
         if (!subject) return;
         const name = document.getElementById("modalSubjectName").value.trim();
-        const hours = Number(document.getElementById("modalSubjectHours").value);
+        const hours = textoParaHoras(
+            document.getElementById("modalSubjectHours").value
+        );
         const questions = Number(document.getElementById("modalSubjectQuestions").value);
-        if (!name || !Number.isFinite(hours) || hours < 0 || !Number.isFinite(questions) || questions < 0 || !Number.isInteger(questions)) {
-            showToast("Preencha os dados da matéria corretamente.");
+        if (!Number.isFinite(hours) || hours < 0) {
+            alert("Informe um tempo válido no formato HH:MM:SS.");
             return;
         }
         subject.color = document.getElementById('modalSubjectColor').value;
@@ -2671,25 +2759,25 @@ function renderTimeChart(
         >
 
             ${entries.map(
-                ([date, minutes]) => {
+        ([date, minutes]) => {
 
-                    const height =
-                        Math.max(
-                            5,
-                            (
-                                minutes /
-                                max
-                            ) * 170
-                        );
-
-
-                    const dateObj =
-                        parseStudyDate({
-                            date
-                        });
+            const height =
+                Math.max(
+                    5,
+                    (
+                        minutes /
+                        max
+                    ) * 170
+                );
 
 
-                    return `
+            const dateObj =
+                parseStudyDate({
+                    date
+                });
+
+
+            return `
 
                         <div
                             style="
@@ -2733,16 +2821,16 @@ function renderTimeChart(
                                 "
                             >
                                 ${String(
-                                    dateObj.getDate()
-                                ).padStart(2, "0")}
+                dateObj.getDate()
+            ).padStart(2, "0")}
                             </small>
 
                         </div>
 
                     `;
 
-                }
-            ).join("")}
+        }
+    ).join("")}
 
         </div>
 
@@ -2754,7 +2842,7 @@ function renderTimeChart(
     });
     const total = Object.values(bySubject).reduce((sum, n) => sum + n, 0);
     if (total > 0) {
-        container.insertAdjacentHTML('beforeend', `<div class="subject-chart-breakdown"><h3 style="margin:20px 0 12px">Tempo por matéria</h3>${Object.entries(bySubject).sort((a,b)=>b[1]-a[1]).map(([name,minutes])=>`<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:6px"><span><span class="subject-color-dot" style="background:${getSubjectColor(name)}"></span>${escapeHTML(name)}</span><strong>${formatStudyDuration(minutes)}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${minutes/total*100}%;background:${getSubjectColor(name)}"></div></div></div>`).join('')}</div>`);
+        container.insertAdjacentHTML('beforeend', `<div class="subject-chart-breakdown"><h3 style="margin:20px 0 12px">Tempo por matéria</h3>${Object.entries(bySubject).sort((a, b) => b[1] - a[1]).map(([name, minutes]) => `<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:6px"><span><span class="subject-color-dot" style="background:${getSubjectColor(name)}"></span>${escapeHTML(name)}</span><strong>${formatStudyDuration(minutes)}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${minutes / total * 100}%;background:${getSubjectColor(name)}"></div></div></div>`).join('')}</div>`);
     }
 
 }
@@ -2865,7 +2953,7 @@ function renderPerformance(
         >
 
             ${rows.map(
-                row => `
+        row => `
 
                     <div
                         style="
@@ -2887,8 +2975,8 @@ function renderPerformance(
                             "
                         >
                             ${escapeHTML(
-                                row.name
-                            )}
+            row.name
+        )}
                         </span>
 
                         <div
@@ -2923,7 +3011,7 @@ function renderPerformance(
                     </div>
 
                 `
-            ).join("")}
+    ).join("")}
 
         </div>
 
@@ -3015,8 +3103,8 @@ function renderCategories(
 
                             <span class="bar-label">
                                 ${escapeHTML(
-                                    category
-                                )}
+                        category
+                    )}
                             </span>
 
                             <div class="bar-track">
@@ -3032,8 +3120,8 @@ function renderCategories(
 
                             <span class="bar-value">
                                 ${formatStudyDuration(
-                                    minutes
-                                )}
+                        minutes
+                    )}
                             </span>
 
                         </div>
@@ -3189,18 +3277,18 @@ function renderSimulationSelect() {
             </option>
 
             ${simulations.map(
-                simulation => `
+            simulation => `
 
                     <option
                         value="${simulation.id}"
                     >
                         ${escapeHTML(
-                            simulation.name
-                        )}
+                simulation.name
+            )}
                     </option>
 
                 `
-            ).join("")}
+        ).join("")}
         `;
 
 
@@ -3232,18 +3320,18 @@ function renderSimulationSelect() {
             </option>
 
             ${simulations.map(
-                simulation => `
+            simulation => `
 
                     <option
                         value="${simulation.id}"
                     >
                         ${escapeHTML(
-                            simulation.name
-                        )}
+                simulation.name
+            )}
                     </option>
 
                 `
-            ).join("")}
+        ).join("")}
         `;
 
 
@@ -3385,8 +3473,8 @@ function renderExistingSimulationInfo() {
         );
 
 
-    
-info.innerHTML = `
+
+    info.innerHTML = `
 
     <strong>
         ${escapeHTML(simulation.name)}
@@ -3674,19 +3762,19 @@ function renderSimulationList(
 
                             <strong>
                                 ${escapeHTML(
-                                    simulation.name
-                                )}
+                    simulation.name
+                )}
                             </strong>
 
                             <span>
                                 ${simulation.hours || 0}h
                                 ${String(
-                                    simulation.minutes || 0
-                                ).padStart(2, "0")}min
+                    simulation.minutes || 0
+                ).padStart(2, "0")}min
                                 •
                                 ${Number(
-                                    simulation.questions || 0
-                                )} questões
+                    simulation.questions || 0
+                )} questões
                             </span>
 
                         </div>
@@ -4003,19 +4091,19 @@ function renderSettingsSimulations() {
 
                             <span class="settings-item-title">
                                 ${escapeHTML(
-                                    simulation.name
-                                )}
+                    simulation.name
+                )}
                             </span>
 
                             <span class="settings-item-meta">
                                 ${simulation.hours || 0}h
                                 ${String(
-                                    simulation.minutes || 0
-                                ).padStart(2, "0")}min
+                    simulation.minutes || 0
+                ).padStart(2, "0")}min
                                 •
                                 ${Number(
-                                    simulation.questions || 0
-                                )} questões
+                    simulation.questions || 0
+                )} questões
                             </span>
 
                         </div>
@@ -4149,7 +4237,7 @@ function editSimulation(id) {
 
 
     const time =
-    document.getElementById("settingsSimulationTime");
+        document.getElementById("settingsSimulationTime");
 
 
     const questions =
@@ -4640,12 +4728,12 @@ function renderSimulationEvolution() {
                     >
                         <title>
                             ${escapeHTML(
-                                point.simulation.name
-                            )}
+                    point.simulation.name
+                )}
                             —
                             ${Math.round(
-                                point.percent
-                            )}%
+                    point.percent
+                )}%
                         </title>
                     </circle>
 
@@ -4661,8 +4749,8 @@ function renderSimulationEvolution() {
 
                     <span>
                         ${escapeHTML(
-                            point.simulation.name
-                        )}
+                    point.simulation.name
+                )}
                     </span>
 
                 `
@@ -6724,7 +6812,7 @@ function cyclePercentFor(subject) {
 }
 function cycleFormatGoal(hours) {
     const secs = Math.max(0, Math.round(Number(hours || 0) * 3600));
-    return [Math.floor(secs/3600),Math.floor(secs%3600/60),secs%60].map(n=>String(n).padStart(2,'0')).join(':');
+    return [Math.floor(secs / 3600), Math.floor(secs % 3600 / 60), secs % 60].map(n => String(n).padStart(2, '0')).join(':');
 }
 function renderCycleSettings() {
     const container = document.getElementById('cycleSettingsList');
@@ -6749,7 +6837,7 @@ function renderCycleSettings() {
           </div>
           <div class="cycle-setting-fields">
             <label class="cycle-time-field">Meta de estudoㅤㅤㅤ<input type="text" class="cycle-time" inputmode="numeric" value="${cycleFormatGoal(subject.hours)}" placeholder="00:00:00"></label>
-            <label class="cycle-questions-field">Meta de questõesㅤㅤㅤ<input type="number" class="cycle-questions" min="0" step="1" value="${Math.max(0,Number(subject.questions || 0))}"></label>
+            <label class="cycle-questions-field">Meta de questõesㅤㅤㅤ<input type="number" class="cycle-questions" min="0" step="1" value="${Math.max(0, Number(subject.questions || 0))}"></label>
           </div>`;
         const modeSelect = row.querySelector('.cycle-mode');
         modeSelect.value = ['time', 'questions', 'both'].includes(subject.cycleMode) ? subject.cycleMode : 'time';
@@ -6779,7 +6867,7 @@ document.getElementById('saveCycleSettings')?.addEventListener('click', () => {
         const value = row.querySelector('.cycle-time').value.trim();
         const match = /^(\d{1,4}):([0-5]\d):([0-5]\d)$/.exec(value);
         if (enabled && usesTime && !match) { showToast('Informe o tempo no formato HH:MM:SS.'); return; }
-        const hours = match ? Number(match[1]) + Number(match[2])/60 + Number(match[3])/3600 : Number(subject.hours || 0);
+        const hours = match ? Number(match[1]) + Number(match[2]) / 60 + Number(match[3]) / 3600 : Number(subject.hours || 0);
         const enteredQuestions = Number(row.querySelector('.cycle-questions').value);
         if (enabled && usesQuestions && (!Number.isSafeInteger(enteredQuestions) || enteredQuestions < 0)) {
             showToast('Informe uma quantidade válida de questões.'); return;
@@ -6788,22 +6876,231 @@ document.getElementById('saveCycleSettings')?.addEventListener('click', () => {
         if (enabled && ((usesTime && !hours) || (usesQuestions && !questions))) {
             showToast('Preencha as metas da matéria selecionada.'); return;
         }
-        changes.push({subject, enabled:row.querySelector('.cycle-check').checked, hours, questions, mode});
+        changes.push({ subject, enabled: row.querySelector('.cycle-check').checked, hours, questions, mode });
     }
-    changes.forEach(({subject,enabled,hours,questions,mode}) => {
-        subject.cycleEnabled=enabled; subject.hours=hours; subject.questions=questions; subject.cycleMode=mode;
+    changes.forEach(({ subject, enabled, hours, questions, mode }) => {
+        subject.cycleEnabled = enabled; subject.hours = hours; subject.questions = questions; subject.cycleMode = mode;
     });
     saveSubjects(); updateAll(); showToast('Ciclo salvo com sucesso!');
 });
 /* Atualiza a aba quando as matérias forem cadastradas ou editadas. */
 const originalRenderSettingsSubjects = renderSettingsSubjects;
-renderSettingsSubjects = function(...args) { const result = originalRenderSettingsSubjects(...args); renderCycleSettings(); return result; };
+renderSettingsSubjects = function (...args) { const result = originalRenderSettingsSubjects(...args); renderCycleSettings(); return result; };
 /* Progresso do ciclo respeita somente as matérias selecionadas. */
-getSubjectProgress = function(name) {
+getSubjectProgress = function (name) {
     const subject = subjects.find(s => String(s.name).toLowerCase() === String(name).toLowerCase());
     return subject && subject.cycleEnabled !== false ? cyclePercentFor(subject) : 0;
 };
-getNextSubject = function() {
-    return [...cycleActiveSubjects()].sort((a,b)=>cyclePercentFor(a)-cyclePercentFor(b))[0] || null;
+getNextSubject = function () {
+    return [...cycleActiveSubjects()].sort((a, b) => cyclePercentFor(a) - cyclePercentFor(b))[0] || null;
 };
 renderCycleSettings();
+
+/* PALETA PERSONALIZADA — mantém os valores hexadecimais já usados pelo sistema */
+let activeSubjectColorInput = null;
+let selectedSubjectPaletteColor = "#22c55e";
+const paletteOverlay = document.getElementById("subjectPaletteOverlay");
+const paletteHex = document.getElementById("subjectPaletteHex");
+const paletteOptions = document.getElementById("subjectPaletteOptions");
+const subjectHue = document.getElementById("subjectHue");
+const subjectSaturation = document.getElementById("subjectSaturation");
+const subjectLightness = document.getElementById("subjectLightness");
+const subjectColorPreview =
+    document.getElementById("subjectColorPreview");
+
+const subjectColorPreviewHex =
+    document.getElementById("subjectColorPreviewHex");
+
+function updateSubjectColorPreview(color) {
+    if (!validSubjectColor(color)) return;
+
+    if (subjectColorPreview) {
+        subjectColorPreview.style.backgroundColor = color;
+    }
+
+    if (subjectColorPreviewHex) {
+        subjectColorPreviewHex.textContent = color.toUpperCase();
+    }
+}
+function hslToSubjectHex(h, s, l) {
+    s /= 100;
+    l /= 100;
+
+    const a = s * Math.min(l, 1 - l);
+
+    const convert = n => {
+        const k = (n + h / 30) % 12;
+        const color = l - a * Math.max(
+            -1,
+            Math.min(k - 3, 9 - k, 1)
+        );
+
+        return Math.round(255 * color)
+            .toString(16)
+            .padStart(2, "0");
+    };
+
+    return `#${convert(0)}${convert(8)}${convert(4)}`;
+}
+
+function subjectHexToHsl(hex) {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const difference = max - min;
+
+    let h = 0;
+    let s = 0;
+    const l = (max + min) / 2;
+
+    if (difference !== 0) {
+        s = difference / (1 - Math.abs(2 * l - 1));
+
+        switch (max) {
+            case r:
+                h = ((g - b) / difference) % 6;
+                break;
+            case g:
+                h = (b - r) / difference + 2;
+                break;
+            default:
+                h = (r - g) / difference + 4;
+        }
+
+        h *= 60;
+        if (h < 0) h += 360;
+    }
+
+    return [
+        Math.round(h),
+        Math.round(s * 100),
+        Math.round(l * 100)
+    ];
+}
+
+function syncSubjectColorSliders(color) {
+    if (!validSubjectColor(color)) return;
+    updateSubjectColorPreview(color);
+
+    const [h, s, l] = subjectHexToHsl(color);
+
+    if (subjectHue) subjectHue.value = h;
+    if (subjectSaturation) subjectSaturation.value = s;
+    if (subjectLightness) subjectLightness.value = l;
+}
+
+function updateCustomSubjectColor() {
+    if (!subjectHue || !subjectSaturation || !subjectLightness) return;
+
+    selectedSubjectPaletteColor = hslToSubjectHex(
+        Number(subjectHue.value),
+        Number(subjectSaturation.value),
+        Number(subjectLightness.value)
+    );
+    updateSubjectColorPreview(selectedSubjectPaletteColor);
+
+    if (paletteHex) {
+        paletteHex.value = selectedSubjectPaletteColor;
+        paletteHex.setCustomValidity("");
+    }
+
+    renderSubjectPalette();
+}
+
+[subjectHue, subjectSaturation, subjectLightness].forEach(slider => {
+    slider?.addEventListener("input", updateCustomSubjectColor);
+});
+
+function syncSubjectColorTriggers() {
+    document.querySelectorAll("[data-color-for]").forEach(trigger => {
+        const input = document.getElementById(trigger.dataset.colorFor);
+        const dot = trigger.querySelector(".conc-color-dot");
+        if (input && dot) dot.style.backgroundColor = input.value;
+    });
+}
+
+function renderSubjectPalette() {
+    if (!paletteOptions) return;
+    paletteOptions.innerHTML = "";
+    SUBJECT_PALETTE.forEach(color => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "conc-color-option" + (color.toLowerCase() === selectedSubjectPaletteColor.toLowerCase() ? " selected" : "");
+        button.style.backgroundColor = color;
+        button.setAttribute("aria-label", `Selecionar cor ${color}`);
+        button.setAttribute("aria-pressed", String(color.toLowerCase() === selectedSubjectPaletteColor.toLowerCase()));
+        button.textContent = color.toLowerCase() === selectedSubjectPaletteColor.toLowerCase() ? "✓" : "";
+        button.addEventListener("click", () => {
+            selectedSubjectPaletteColor = color;
+            paletteHex.value = color;
+            syncSubjectColorSliders(color);
+            renderSubjectPalette();
+        });
+        paletteOptions.appendChild(button);
+    });
+}
+
+function closeSubjectPaletteModal() {
+    paletteOverlay?.classList.add("hidden");
+    document.body.classList.remove("conc-modal-open");
+    activeSubjectColorInput = null;
+}
+
+document.querySelectorAll("[data-color-for]").forEach(trigger => {
+    trigger.addEventListener("click", () => {
+        activeSubjectColorInput = document.getElementById(trigger.dataset.colorFor);
+        if (!activeSubjectColorInput || !paletteOverlay) return;
+        selectedSubjectPaletteColor = activeSubjectColorInput.value || "#22c55e";
+        paletteHex.value = selectedSubjectPaletteColor;
+        paletteHex.setCustomValidity("");
+        syncSubjectColorSliders(selectedSubjectPaletteColor);
+        renderSubjectPalette();
+        paletteOverlay.classList.remove("hidden");
+        document.body.classList.add("conc-modal-open");
+    });
+});
+paletteHex?.addEventListener("input", () => {
+    if (validSubjectColor(paletteHex.value)) {
+        selectedSubjectPaletteColor = paletteHex.value;
+        paletteHex.setCustomValidity("");
+        syncSubjectColorSliders(selectedSubjectPaletteColor);
+        renderSubjectPalette();
+    }
+});
+document.getElementById("applySubjectPalette")?.addEventListener("click", () => {
+    const value = paletteHex.value.trim();
+    if (!validSubjectColor(value)) {
+        paletteHex.setCustomValidity("Informe uma cor como #22c55e.");
+        paletteHex.reportValidity();
+        return;
+    }
+    paletteHex.setCustomValidity("");
+    if (activeSubjectColorInput) {
+        activeSubjectColorInput.value = value;
+        activeSubjectColorInput.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    syncSubjectColorTriggers();
+    closeSubjectPaletteModal();
+});
+for (const id of ["closeSubjectPalette", "cancelSubjectPalette"]) {
+    document.getElementById(id)?.addEventListener("click", closeSubjectPaletteModal);
+}
+paletteOverlay?.addEventListener("click", event => {
+    if (event.target === paletteOverlay) closeSubjectPaletteModal();
+});
+document.addEventListener("keydown", event => {
+    if (event.key !== "Escape") return;
+    if (!paletteOverlay?.classList.contains("hidden")) closeSubjectPaletteModal();
+    else if (!document.getElementById("historyDateOverlay")?.classList.contains("hidden")) closeHistoryDateModal();
+});
+
+// Mantém os indicadores atualizados após a abertura da edição e o cadastro.
+document.addEventListener("click", event => {
+    if (event.target.closest("[data-edit-subject], [data-color-for], [data-settings-tab]")) {
+        queueMicrotask(syncSubjectColorTriggers);
+    }
+});
+syncSubjectColorTriggers();

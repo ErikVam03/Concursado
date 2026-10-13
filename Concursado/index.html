@@ -10,31 +10,15 @@
 
 
 
-    <meta
-
-        name="viewport"
-
-        content="width=device-width, initial-scale=1.0"
-
-    >
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 
 
-    <meta
-
-        name="theme-color"
-
-        content="#07110d"
-
-    >
+    <meta name="theme-color" content="#07110d">
 
 
 
-    <meta
-
-        name="description"
-
-        content="Concursado — organize seus estudos, acompanhe seu desempenho e evolua.
+    <meta name="description" content="Concursado — organize seus estudos, acompanhe seu desempenho e evolua.
 
     >
 
@@ -42,11 +26,7 @@
 
     <link
 
-        rel="manifest"
-
-        href="manifest.json"
-
-    >
+        rel=" manifest" href="manifest.json">
 
 
 
@@ -54,131 +34,109 @@
 
 
 
-    <link
+    <link rel="preconnect" href="https\://fonts.googleapis.com">
 
-        rel="preconnect"
 
-        href="https\://fonts.googleapis.com"
 
-    >
+    <link rel="preconnect" href="https\://fonts.gstatic.com" crossorigin>
 
 
 
-    <link
+    <link href="https\://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-        rel="preconnect"
 
-        href="https\://fonts.gstatic.com"
 
-        crossorigin
+    <link rel="stylesheet" href="style.css">
 
-    >
 
 
+    <style>
+        /* Janela de registro ao finalizar Pomodoro/Cronômetro */
 
-    <link
+        .study-completion-overlay {
 
-        href="https\://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            position: fixed;
 
-        rel="stylesheet"
+            inset: 0;
 
-    >
+            z-index: 9999;
 
+            display: flex;
 
+            align-items: center;
 
-    <link
+            justify-content: center;
 
-        rel="stylesheet"
+            padding: 20px;
 
-        href="style.css"
+            background: rgba(0, 0, 0, 0.72);
 
-    >
+            backdrop-filter: blur(6px);
 
+        }
 
 
-<style>
 
-/* Janela de registro ao finalizar Pomodoro/Cronômetro */
+        .study-completion-overlay.hidden {
 
-.study-completion-overlay {
+            display: none;
 
-    position: fixed;
+        }
 
-    inset: 0;
 
-    z-index: 9999;
 
-    display: flex;
+        .study-completion-modal {
 
-    align-items: center;
+            width: min(560px, 100%);
 
-    justify-content: center;
+            max-height: calc(100vh - 40px);
 
-    padding: 20px;
+            overflow-y: auto;
 
-    background: rgba(0, 0, 0, 0.72);
+            margin: 0;
 
-    backdrop-filter: blur(6px);
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 
-}
+            animation: studyCompletionIn 0.18s ease-out;
 
+        }
 
 
-.study-completion-overlay.hidden {
 
-    display: none;
+        .completion-modal-open {
 
-}
+            overflow: hidden;
 
+        }
 
 
-.study-completion-modal {
 
-    width: min(560px, 100%);
+        @keyframes studyCompletionIn {
 
-    max-height: calc(100vh - 40px);
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.98);
+            }
 
-    overflow-y: auto;
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
 
-    margin: 0;
+        }
 
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
 
-    animation: studyCompletionIn 0.18s ease-out;
 
-}
+        .completion-time-hint {
 
+            color: var(--muted);
 
+            font-size: 11px;
 
-.completion-modal-open {
+            line-height: 1.4;
 
-    overflow: hidden;
-
-}
-
-
-
-@keyframes studyCompletionIn {
-
-    from { opacity: 0; transform: translateY(12px) scale(0.98); }
-
-    to { opacity: 1; transform: translateY(0) scale(1); }
-
-}
-
-
-
-.completion-time-hint {
-
-    color: var(--muted);
-
-    font-size: 11px;
-
-    line-height: 1.4;
-
-}
-
-</style>
+        }
+    </style>
 
 </head>
 
@@ -192,7 +150,7 @@
 
 
 
-<!-- =====================================================
+    <!-- =====================================================
 
      HEADER
 
@@ -200,51 +158,159 @@
 
 
 
-<header class="topbar">
+    <header class="topbar">
 
 
 
-    <div class="brand">
+        <div class="brand">
 
 
 
-        <span class="brand-flag">
+            <span class="brand-flag">
 
-            ⭐
+                ⭐
 
-        </span>
-
-
-
-        <strong>
-
-            CONCURSADO
-
-        </strong>
+            </span>
 
 
 
-    </div>
+            <strong>
+
+                CONCURSADO
+
+            </strong>
+
+
+
+        </div>
 
 
 
 
 
-    <!-- MENU DESKTOP -->
+        <!-- MENU DESKTOP -->
 
 
 
-    <nav class="desktop-nav">
+        <nav class="desktop-nav">
 
 
 
-        <button
+            <button data-section="inicio" class="active">
 
-            data-section="inicio"
+                🚀 Painel
 
-            class="active"
+            </button>
 
-        >
+
+
+            <button data-section="iniciar">
+
+                ✅ Iniciar
+
+            </button>
+
+
+
+            <button data-section="ciclo">
+
+                📚 Ciclo
+
+            </button>
+
+
+
+            <button data-section="historico">
+
+                💾 Histórico
+
+            </button>
+
+
+
+            <button data-section="estatisticas">
+
+                🔥 Estatísticas
+
+            </button>
+
+
+
+            <button data-section="simulado">
+
+                ✏️ Simulado
+
+            </button>
+
+
+
+            <button data-section="configuracoes">
+
+                ⚙️ Configurações
+
+            </button>
+
+
+
+            <button data-section="creditos">
+
+                ✨ Créditos
+
+            </button>
+
+
+
+        </nav>
+
+
+
+
+
+        <div class="top-actions">
+
+
+
+            <button id="installBtn" class="install-btn">
+
+                📱 Instalar
+
+            </button>
+
+
+
+            <button id="menuBtn" class="icon-btn" aria-label="Abrir menu">
+
+                ☰
+
+            </button>
+
+
+
+        </div>
+
+
+
+    </header>
+
+
+
+
+
+
+
+    <!-- =====================================================
+
+     MENU MOBILE
+
+\===================================================== -->
+
+
+
+    <div id="mobileMenu" class="mobile-menu">
+
+
+
+        <button data-section="inicio" class="active">
 
             🚀 Painel
 
@@ -252,11 +318,7 @@
 
 
 
-        <button
-
-            data-section="iniciar"
-
-        >
+        <button data-section="iniciar">
 
             ✅ Iniciar
 
@@ -264,11 +326,7 @@
 
 
 
-        <button
-
-            data-section="ciclo"
-
-        >
+        <button data-section="ciclo">
 
             📚 Ciclo
 
@@ -276,11 +334,7 @@
 
 
 
-        <button
-
-            data-section="historico"
-
-        >
+        <button data-section="historico">
 
             💾 Histórico
 
@@ -288,11 +342,7 @@
 
 
 
-        <button
-
-            data-section="estatisticas"
-
-        >
+        <button data-section="estatisticas">
 
             🔥 Estatísticas
 
@@ -300,11 +350,7 @@
 
 
 
-        <button
-
-            data-section="simulado"
-
-        >
+        <button data-section="simulado">
 
             ✏️ Simulado
 
@@ -312,11 +358,7 @@
 
 
 
-        <button
-
-            data-section="configuracoes"
-
-        >
+        <button data-section="configuracoes">
 
             ⚙️ Configurações
 
@@ -332,179 +374,15 @@
 
 
 
-    </nav>
-
-
-
-
-
-    <div class="top-actions">
-
-
-
-        <button
-
-            id="installBtn"
-
-            class="install-btn"
-
-        >
-
-            📱 Instalar
-
-        </button>
-
-
-
-        <button
-
-            id="menuBtn"
-
-            class="icon-btn"
-
-            aria-label="Abrir menu"
-
-        >
-
-            ☰
-
-        </button>
-
-
-
     </div>
 
 
 
-</header>
 
 
 
 
-
-
-
-<!-- =====================================================
-
-     MENU MOBILE
-
-\===================================================== -->
-
-
-
-<div
-
-    id="mobileMenu"
-
-    class="mobile-menu"
-
->
-
-
-
-    <button
-
-        data-section="inicio"
-
-        class="active"
-
-    >
-
-        🚀 Painel
-
-    </button>
-
-
-
-    <button
-
-        data-section="iniciar"
-
-    >
-
-        ✅ Iniciar
-
-    </button>
-
-
-
-    <button
-
-        data-section="ciclo"
-
-    >
-
-        📚 Ciclo
-
-    </button>
-
-
-
-    <button
-
-        data-section="historico"
-
-    >
-
-        💾 Histórico
-
-    </button>
-
-
-
-    <button
-
-        data-section="estatisticas"
-
-    >
-
-        🔥 Estatísticas
-
-    </button>
-
-
-
-    <button
-
-        data-section="simulado"
-
-    >
-
-        ✏️ Simulado
-
-    </button>
-
-
-
-    <button
-
-        data-section="configuracoes"
-
-    >
-
-        ⚙️ Configurações
-
-    </button>
-
-
-
-    <button data-section="creditos">
-
-        ✨ Créditos
-
-    </button>
-
-
-
-</div>
-
-
-
-
-
-
-
-<!-- =====================================================
+    <!-- =====================================================
 
      MAIN
 
@@ -512,7 +390,7 @@
 
 
 
-<main>
+    <main>
 
 
 
@@ -520,7 +398,7 @@
 
 
 
-<!-- =====================================================
+        <!-- =====================================================
 
      PAINEL
 
@@ -528,119 +406,43 @@
 
 
 
-<section
+        <section id="inicio" class="section active">
 
-    id="inicio"
 
-    class="section active"
 
->
 
 
+            <div class="welcome">
 
 
 
-    <div class="welcome">
+                <span class="eyebrow">
 
+                    SEU PLANO DE ESTUDOS
 
+                </span>
 
-        <span class="eyebrow">
 
-             SEU PLANO DE ESTUDOS
 
-        </span>
+                <h1 id="greeting">
 
+                    Bom dia!
 
+                </h1>
 
-        <h1 id="greeting">
 
-            Bom dia!
 
-        </h1>
+                <p>
 
+                    Organize seus estudos e acompanhe sua evolução.
 
+                </p>
 
-        <p>
 
-            Organize seus estudos e acompanhe sua evolução.
 
-        </p>
+                <button class="primary-btn" data-section="iniciar">
 
-
-
-        <button
-
-            class="primary-btn"
-
-            data-section="iniciar"
-
-        >
-
-            🚀 Começar a estudar
-
-        </button>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- RESUMO DO CICLO -->
-
-
-
-    <div class="dashboard-grid">
-
-
-
-
-
-        <div class="card">
-
-
-
-            <div class="card-title">
-
-
-
-                <div>
-
-
-
-                    <span class="eyebrow">
-
-                        CICLO ATUAL
-
-                    </span>
-
-
-
-                    <h2>
-
-                        Seu progresso
-
-                    </h2>
-
-
-
-                </div>
-
-
-
-                <button
-
-                    class="text-btn"
-
-                    data-section="ciclo"
-
-                >
-
-                    Ver ciclo →
+                    🚀 Começar a estudar
 
                 </button>
 
@@ -652,39 +454,149 @@
 
 
 
-            <div class="cycle-content">
+
+
+            <!-- RESUMO DO CICLO -->
+
+
+
+            <div class="dashboard-grid">
 
 
 
 
 
-                <div
-
-                    class="donut"
-
-                    id="cycleDonut"
-
-                >
+                <div class="card">
 
 
 
-                    <div>
+                    <div class="card-title">
 
 
 
-                        <strong id="cyclePercent">
-
-                            0%
-
-                        </strong>
+                        <div>
 
 
 
-                        <span>
+                            <span class="eyebrow">
 
-                            estudado
+                                CICLO ATUAL
 
-                        </span>
+                            </span>
+
+
+
+                            <h2>
+
+                                Seu progresso
+
+                            </h2>
+
+
+
+                        </div>
+
+
+
+                        <button class="text-btn" data-section="ciclo">
+
+                            Ver ciclo →
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="cycle-content">
+
+
+
+
+
+                        <div class="donut" id="cycleDonut">
+
+
+
+                            <div>
+
+
+
+                                <strong id="cyclePercent">
+
+                                    0%
+
+                                </strong>
+
+
+
+                                <span>
+
+                                    estudado
+
+                                </span>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+
+
+
+
+                        <div class="next-activity">
+
+
+
+                            <span class="eyebrow">
+
+                                PRÓXIMA ATIVIDADE
+
+                            </span>
+
+
+
+                            <h3 id="nextSubject">
+
+                                Nenhuma matéria cadastrada
+
+                            </h3>
+
+
+
+                            <p>
+
+                                Restam
+
+                                <strong id="nextRemaining">
+
+                                    0h
+
+                                </strong>
+
+                            </p>
+
+
+
+                            <button class="primary-btn small" data-section="iniciar">
+
+                                Estudar agora
+
+                            </button>
+
+
+
+                        </div>
 
 
 
@@ -700,113 +612,49 @@
 
 
 
-                <div class="next-activity">
+                <!-- ACOMPANHAMENTO -->
 
 
 
-                    <span class="eyebrow">
+                <div class="card">
 
-                        PRÓXIMA ATIVIDADE
 
-                    </span>
 
+                    <div class="card-title">
 
 
-                    <h3 id="nextSubject">
 
-                        Nenhuma matéria cadastrada
+                        <div>
 
-                    </h3>
 
 
+                            <span class="eyebrow">
 
-                    <p>
+                                ACOMPANHAMENTO
 
-                        Restam
+                            </span>
 
-                        <strong id="nextRemaining">
 
-                            0h
 
-                        </strong>
+                            <h2>
 
-                    </p>
+                                Últimos 7 dias
 
+                            </h2>
 
 
-                    <button
 
-                        class="primary-btn small"
+                        </div>
 
-                        data-section="iniciar"
 
-                    >
 
-                        Estudar agora
+                    </div>
 
-                    </button>
 
 
 
-                </div>
 
-
-
-            </div>
-
-
-
-        </div>
-
-
-
-
-
-
-
-        <!-- ACOMPANHAMENTO -->
-
-
-
-        <div class="card">
-
-
-
-            <div class="card-title">
-
-
-
-                <div>
-
-
-
-                    <span class="eyebrow">
-
-                        ACOMPANHAMENTO
-
-                    </span>
-
-
-
-                    <h2>
-
-                        Últimos 7 dias
-
-                    </h2>
-
-
-
-                </div>
-
-
-
-            </div>
-
-
-
-
-
-            <!--
+                    <!--
 
                 IMPORTANTE:
 
@@ -840,17 +688,61 @@
 
 
 
-            <div
-
-                class="week-days"
-
-                id="weekDays"
-
-            >
+                    <div class="week-days" id="weekDays">
 
 
 
-                <!-- preenchido pelo JavaScript -->
+                        <!-- preenchido pelo JavaScript -->
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="week-summary">
+
+
+
+                        <span>
+
+                            Horas
+
+                        </span>
+
+
+
+                        <strong id="weekHours">
+
+                            0h
+
+                        </strong>
+
+
+
+                        <span>
+
+                            Questões
+
+                        </span>
+
+
+
+                        <strong id="weekQuestions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+                </div>
 
 
 
@@ -860,39 +752,161 @@
 
 
 
-            <div class="week-summary">
+
+
+            <!-- RESUMO RÁPIDO -->
 
 
 
-                <span>
-
-                    Horas
-
-                </span>
+            <div class="card">
 
 
 
-                <strong id="weekHours">
-
-                    0h
-
-                </strong>
+                <div class="card-title">
 
 
 
-                <span>
-
-                    Questões
-
-                </span>
+                    <div>
 
 
 
-                <strong id="weekQuestions">
+                        <span class="eyebrow">
 
-                    0
+                            RESUMO
 
-                </strong>
+                        </span>
+
+
+
+                        <h2>
+
+                            Seu desempenho
+
+                        </h2>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <div class="stats-grid">
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Tempo estudado
+
+                        </span>
+
+
+
+                        <strong id="totalStudyTime">
+
+                            0h
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Questões
+
+                        </span>
+
+
+
+                        <strong id="totalQuestions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Aproveitamento
+
+                        </span>
+
+
+
+                        <strong id="totalAccuracy">
+
+                            0%
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Sessões registradas
+
+                        </span>
+
+
+
+                        <strong id="totalSessions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                </div>
 
 
 
@@ -900,187 +914,15 @@
 
 
 
-        </div>
+        </section>
 
 
 
-    </div>
 
 
 
 
-
-
-
-    <!-- RESUMO RÁPIDO -->
-
-
-
-    <div class="card">
-
-
-
-        <div class="card-title">
-
-
-
-            <div>
-
-
-
-                <span class="eyebrow">
-
-                    RESUMO
-
-                </span>
-
-
-
-                <h2>
-
-                    Seu desempenho
-
-                </h2>
-
-
-
-            </div>
-
-
-
-        </div>
-
-
-
-
-
-        <div class="stats-grid">
-
-
-
-
-
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Tempo estudado
-
-                </span>
-
-
-
-                <strong id="totalStudyTime">
-
-                    0h
-
-                </strong>
-
-
-
-            </div>
-
-
-
-
-
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Questões
-
-                </span>
-
-
-
-                <strong id="totalQuestions">
-
-                    0
-
-                </strong>
-
-
-
-            </div>
-
-
-
-
-
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Aproveitamento
-
-                </span>
-
-
-
-                <strong id="totalAccuracy">
-
-                    0%
-
-                </strong>
-
-
-
-            </div>
-
-
-
-
-
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Sessões registradas
-
-                </span>
-
-
-
-                <strong id="totalSessions">
-
-                    0
-
-                </strong>
-
-
-
-            </div>
-
-
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-</section>
-
-
-
-
-
-
-
-<!-- =====================================================
+        <!-- =====================================================
 
      INICIAR
 
@@ -1088,393 +930,363 @@
 
 
 
-<section
+        <section id="iniciar" class="section">
 
-    id="iniciar"
 
-    class="section"
 
->
+            <div class="page-heading">
 
+                <span class="eyebrow">ESTUDO</span>
 
+                <h1>Iniciar estudo</h1>
 
-    <div class="page-heading">
-
-        <span class="eyebrow">ESTUDO</span>
-
-        <h1>Iniciar estudo</h1>
-
-        <p>Escolha como deseja registrar seu estudo.</p>
-
-    </div>
-
-
-
-    <!-- MODOS DE ESTUDO -->
-
-    <div class="mode-tabs">
-
-        <button class="mode-tab active" data-study-mode="pomodoro">🍅 Pomodoro</button>
-
-        <button class="mode-tab" data-study-mode="stopwatch">⏱️ Cronômetro</button>
-
-        <button class="mode-tab" data-study-mode="manual">✍️ Inserir manualmente</button>
-
-    </div>
-
-
-
-    <!-- POMODORO -->
-
-    <div id="pomodoroModeBox" class="study-mode-box">
-
-        <div class="card">
-
-            <form id="pomodoroForm" class="form-grid">
-
-                <label>
-
-                    Matéria
-
-                    <select id="sessionSubject" required>
-
-                        <option value="">Selecione uma matéria</option>
-
-                    </select>
-
-                </label>
-
-
-
-                <label>
-
-                    Tempo total
-
-                    <input type="text" id="sessionTotalMinutes" inputmode="numeric" autocomplete="off" placeholder="02:00:00" value="02:00:00" required>
-
-                </label>
-
-
-
-                <label>
-
-                    Tempo de foco por ciclo
-
-                    <input type="text" id="sessionFocusMinutes" inputmode="numeric" autocomplete="off" placeholder="00:50:00" value="00:50:00" required>
-
-                </label>
-
-
-
-                <label>
-
-                    Tempo de pausa por ciclo
-
-                    <input type="text" id="sessionBreakMinutes" inputmode="numeric" autocomplete="off" placeholder="00:10:00" value="00:10:00" required>
-
-                </label>
-
-
-
-                <div class="form-actions">
-
-                    <button type="submit" id="startPomodoroBtn" class="primary-btn">▶ Iniciar Pomodoro</button>
-
-                </div>
-
-            </form>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- CRONÔMETRO-->
-
-    <div id="stopwatchModeBox" class="study-mode-box hidden">
-
-        <div class="card">
-
-            <form id="stopwatchForm" class="form-grid">
-
-                <label>
-
-                    Matéria
-
-                    <select id="stopwatchSubject" required>
-
-                        <option value="">Selecione uma matéria</option>
-
-                    </select>
-
-                </label>
-
-
-
-                <div class="form-actions">
-
-                    <button type="submit" class="primary-btn">▶ Iniciar cronômetro</button>
-
-                </div>
-
-            </form>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- INSERÇÃO MANUAL-->
-
-    <div id="manualModeBox" class="study-mode-box hidden">
-
-        <div class="card">
-
-            <form id="manualStudyForm" class="form-grid">
-
-                <label>
-
-                    Matéria
-
-                    <select id="manualSubject" required>
-
-                        <option value="">Selecione uma matéria</option>
-
-                    </select>
-
-                </label>
-
-
-
-                <label>
-
-                    Tempo de estudo
-
-                    <input
-
-                        type="text"
-
-                        id="manualTime"
-
-                        inputmode="numeric"
-
-                        autocomplete="off"
-
-                        placeholder="00:00:00"
-
-                        value="00:00:00"
-
-                        aria-label="Tempo de estudo no formato horas:minutos:segundos"
-
-                    >
-
-
-
-                </label>
-
-
-
-                <label>
-
-                    Quantidade de questões
-
-                    <input type="number" id="manualQuestions" min="0" value="0">
-
-                </label>
-
-
-
-                <label>
-
-                    Acertos
-
-                    <input type="number" id="manualCorrect" min="0" value="0">
-
-                </label>
-
-
-
-                <div class="form-actions">
-
-                    <button type="submit" class="primary-btn"> 💾Registrar estudo</button>
-
-                </div>
-
-            </form>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- TIMER DO POMODORO -->
-
-    <div id="studyTimerCard" class="card timer-card hidden">
-
-        <span class="eyebrow" id="timerModeLabel">FOCO</span>
-
-        <h2 id="timerSubject">-</h2>
-
-        <div id="timerDisplay">50:00</div>
-
-        <p id="timerStatus">Sessão em andamento</p>
-
-        <div class="timer-actions">
-
-            <button id="pauseTimer" class="secondary-btn">⏸ Pausar</button>
-
-            <button id="finishTimer" class="danger-btn">⏹ Finalizar</button>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- TIMER DO CRONÔMETRO-->
-
-    <div id="stopwatchCard" class="card timer-card hidden">
-
-        <span class="eyebrow">CRONÔMETRO</span>
-
-        <h2 id="stopwatchSubjectLabel">-</h2>
-
-        <div id="stopwatchDisplay">00:00:00</div>
-
-        <p id="stopwatchStatus">Cronômetro em andamento</p>
-
-        <div class="timer-actions">
-
-            <button id="pauseStopwatch" class="secondary-btn">⏸ Pausar</button>
-
-            <button id="finishStopwatch" class="danger-btn">⏹ Finalizar</button>
-
-        </div>
-
-    </div>
-
-
-
-    <!-- JANELA DE FINALIZAÇÃO: APARECE APENAS AO FINALIZAR POMODORO/CRONÔMETRO -->
-
-    <div id="studyCompletionOverlay" class="study-completion-overlay hidden">
-
-        <div id="studyCompletionCard" class="card study-completion-modal">
-
-        <div class="card-title">
-
-            <div>
-
-                <span class="eyebrow">ATIVIDADE FINALIZADA</span>
-
-                <h2>Como foi seu estudo?</h2>
-
-                <p>Informe as questões, os acertos e o tipo de estudo para salvar nas estatísticas.</p>
+                <p>Escolha como deseja registrar seu estudo.</p>
 
             </div>
 
-        </div>
 
 
+            <!-- MODOS DE ESTUDO -->
 
-        <form id="studyCompletionForm" class="form-grid">
+            <div class="mode-tabs">
 
-            <label>
+                <button class="mode-tab active" data-study-mode="pomodoro">🍅 Pomodoro</button>
 
-                Matéria
+                <button class="mode-tab" data-study-mode="stopwatch">⏱️ Cronômetro</button>
 
-                <input type="text" id="completionSubject" readonly>
-
-            </label>
-
-
-
-            <label>
-
-                Tempo estudado
-
-                <input
-
-                    type="text"
-
-                    id="completionTime"
-
-                    inputmode="numeric"
-
-                    autocomplete="off"
-
-                    placeholder="00:00:00"
-
-                    aria-label="Tempo estudado no formato horas:minutos:segundos"
-
-                >
-
-                <small class="completion-time-hint">Edite se precisar corrigir o tempo (HH:MM:SS).</small>
-
-            </label>
-
-
-
-            <label>
-
-                Quantidade de questões
-
-                <input type="number" id="completionQuestions" min="0" value="0" required>
-
-            </label>
-
-
-
-            <label>
-
-                Acertos
-
-                <input type="number" id="completionCorrect" min="0" value="0" required>
-
-            </label>
-
-
-
-            <label>
-
-                Tipo de estudo
-
-                <select id="completionCategory">
-
-                    <option value="Teoria">Teoria</option>
-
-                    <option value="Questões">Questões</option>
-
-
-
-                </select>
-
-            </label>
-
-
-
-            <div class="form-actions">
-
-                <button type="submit" class="primary-btn">✅ Salvar estudo</button>
+                <button class="mode-tab" data-study-mode="manual">✍️ Inserir manualmente</button>
 
             </div>
 
-        </form>
-
-        </div>
-
-    </div>
 
 
+            <!-- POMODORO -->
 
-    <datalist id="subjectsDatalist"></datalist>
+            <div id="pomodoroModeBox" class="study-mode-box">
+
+                <div class="card">
+
+                    <form id="pomodoroForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <select id="sessionSubject" required>
+
+                                <option value="">Selecione uma matéria</option>
+
+                            </select>
+
+                        </label>
 
 
 
-</section>
+                        <label>
+
+                            Tempo total
+
+                            <input type="text" id="sessionTotalMinutes" inputmode="numeric" autocomplete="off"
+                                placeholder="02:00:00" value="02:00:00" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo de foco por ciclo
+
+                            <input type="text" id="sessionFocusMinutes" inputmode="numeric" autocomplete="off"
+                                placeholder="00:50:00" value="00:50:00" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo de pausa por ciclo
+
+                            <input type="text" id="sessionBreakMinutes" inputmode="numeric" autocomplete="off"
+                                placeholder="00:10:00" value="00:10:00" required>
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" id="startPomodoroBtn" class="primary-btn">▶ Iniciar Pomodoro</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- CRONÔMETRO-->
+
+            <div id="stopwatchModeBox" class="study-mode-box hidden">
+
+                <div class="card">
+
+                    <form id="stopwatchForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <select id="stopwatchSubject" required>
+
+                                <option value="">Selecione uma matéria</option>
+
+                            </select>
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" class="primary-btn">▶ Iniciar cronômetro</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- INSERÇÃO MANUAL-->
+
+            <div id="manualModeBox" class="study-mode-box hidden">
+
+                <div class="card">
+
+                    <form id="manualStudyForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <select id="manualSubject" required>
+
+                                <option value="">Selecione uma matéria</option>
+
+                            </select>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo de estudo
+
+                            <input type="text" id="manualTime" inputmode="numeric" autocomplete="off"
+                                placeholder="00:00:00" value="00:00:00"
+                                aria-label="Tempo de estudo no formato horas:minutos:segundos">
+
+
+
+                        </label>
+
+
+
+                        <label>
+
+                            Quantidade de questões
+
+                            <input type="number" id="manualQuestions" min="0" value="0">
+
+                        </label>
+
+
+
+                        <label>
+
+                            Acertos
+
+                            <input type="number" id="manualCorrect" min="0" value="0">
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" class="primary-btn"> 💾Registrar estudo</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TIMER DO POMODORO -->
+
+            <div id="studyTimerCard" class="card timer-card hidden">
+
+                <span class="eyebrow" id="timerModeLabel">FOCO</span>
+
+                <h2 id="timerSubject">-</h2>
+
+                <div id="timerDisplay">50:00</div>
+
+                <p id="timerStatus">Sessão em andamento</p>
+
+                <div class="timer-actions">
+
+                    <button id="pauseTimer" class="secondary-btn">⏸ Pausar</button>
+
+                    <button id="finishTimer" class="danger-btn">⏹ Finalizar</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TIMER DO CRONÔMETRO-->
+
+            <div id="stopwatchCard" class="card timer-card hidden">
+
+                <span class="eyebrow">CRONÔMETRO</span>
+
+                <h2 id="stopwatchSubjectLabel">-</h2>
+
+                <div id="stopwatchDisplay">00:00:00</div>
+
+                <p id="stopwatchStatus">Cronômetro em andamento</p>
+
+                <div class="timer-actions">
+
+                    <button id="pauseStopwatch" class="secondary-btn">⏸ Pausar</button>
+
+                    <button id="finishStopwatch" class="danger-btn">⏹ Finalizar</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- JANELA DE FINALIZAÇÃO: APARECE APENAS AO FINALIZAR POMODORO/CRONÔMETRO -->
+
+            <div id="studyCompletionOverlay" class="study-completion-overlay hidden">
+
+                <div id="studyCompletionCard" class="card study-completion-modal">
+
+                    <div class="card-title">
+
+                        <div>
+
+                            <span class="eyebrow">ATIVIDADE FINALIZADA</span>
+
+                            <h2>Como foi seu estudo?</h2>
+
+                            <p>Informe as questões, os acertos e o tipo de estudo para salvar nas estatísticas.</p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <form id="studyCompletionForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <input type="text" id="completionSubject" readonly>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo estudado
+
+                            <input type="text" id="completionTime" inputmode="numeric" autocomplete="off"
+                                placeholder="00:00:00" aria-label="Tempo estudado no formato horas:minutos:segundos">
+
+                            <small class="completion-time-hint">Edite se precisar corrigir o tempo (HH:MM:SS).</small>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Quantidade de questões
+
+                            <input type="number" id="completionQuestions" min="0" value="0" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Acertos
+
+                            <input type="number" id="completionCorrect" min="0" value="0" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tipo de estudo
+
+                            <select id="completionCategory">
+
+                                <option value="Teoria">Teoria</option>
+
+                                <option value="Questões">Questões</option>
+
+
+
+                            </select>
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" class="primary-btn">✅ Salvar estudo</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <datalist id="subjectsDatalist"></datalist>
+
+
+
+        </section>
 
 
 
@@ -1482,7 +1294,7 @@
 
 
 
-<!-- =====================================================
+        <!-- =====================================================
 
      CICLO
 
@@ -1490,159 +1302,37 @@
 
 
 
-<section
+        <section id="ciclo" class="section">
 
-    id="ciclo"
 
-    class="section"
 
->
 
 
-
-
-
-    <div class="page-heading">
-
-
-
-        <span class="eyebrow">
-
-            PLANO DE ESTUDOS
-
-        </span>
-
-
-
-        <h1>
-
-            Seu ciclo
-
-        </h1>
-
-
-
-        <p>
-
-            Veja quanto você já estudou de cada matéria.
-
-        </p>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- RESUMO DO CICLO -->
-
-
-
-    <div class="cycle-page-summary">
-
-
-
-
-
-        <div class="cycle-summary-box">
-
-
-
-            <span>
-
-                PROGRESSO TOTAL
-
-            </span>
-
-
-
-            <strong id="cyclePagePercent">
-
-                0%
-
-            </strong>
-
-
-
-        </div>
-
-
-
-
-
-        <div class="cycle-summary-box">
-
-
-
-            <span>
-
-                PRÓXIMA ATIVIDADE
-
-            </span>
-
-
-
-            <strong id="cyclePageNextSubject">
-
-                Nenhuma matéria cadastrada
-
-            </strong>
-
-
-
-            <p id="cyclePageNextRemaining">
-
-                0h restantes
-
-            </p>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- MATÉRIAS-->
-
-
-
-    <div class="card">
-
-
-
-        <div class="card-title">
-
-
-
-            <div>
+            <div class="page-heading">
 
 
 
                 <span class="eyebrow">
 
-                    MATÉRIAS
+                    PLANO DE ESTUDOS
 
                 </span>
 
 
 
-                <h2>
+                <h1>
 
-                    Progresso por matéria
+                    Seu ciclo
 
-                </h2>
+                </h1>
+
+
+
+                <p>
+
+                    Veja quanto você já estudou de cada matéria.
+
+                </p>
 
 
 
@@ -1652,57 +1342,161 @@
 
 
 
-            <button
 
-                class="text-btn"
 
-                data-section="configuracoes"
-
-            >
-
-                ⚙️ Configurar
-
-            </button>
+            <!-- RESUMO DO CICLO -->
 
 
 
-        </div>
+            <div class="cycle-page-summary">
 
 
 
 
 
-        <div
-
-            id="cycleSubjectsList"
-
-            class="cycle-subjects-list"
-
-        >
+                <div class="cycle-summary-box">
 
 
 
-            <!-- preenchido pelo JavaScript -->
+                    <span>
+
+                        PROGRESSO TOTAL
+
+                    </span>
 
 
 
-        </div>
+                    <strong id="cyclePagePercent">
+
+                        0%
+
+                    </strong>
 
 
 
-    </div>
-
-
-
-</section>
+                </div>
 
 
 
 
 
+                <div class="cycle-summary-box">
 
 
-<!-- =====================================================
+
+                    <span>
+
+                        PRÓXIMA ATIVIDADE
+
+                    </span>
+
+
+
+                    <strong id="cyclePageNextSubject">
+
+                        Nenhuma matéria cadastrada
+
+                    </strong>
+
+
+
+                    <p id="cyclePageNextRemaining">
+
+                        0h restantes
+
+                    </p>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- MATÉRIAS-->
+
+
+
+            <div class="card">
+
+
+
+                <div class="card-title">
+
+
+
+                    <div>
+
+
+
+                        <span class="eyebrow">
+
+                            MATÉRIAS
+
+                        </span>
+
+
+
+                        <h2>
+
+                            Progresso por matéria
+
+                        </h2>
+
+
+
+                    </div>
+
+
+
+
+
+                    <button class="text-btn" data-section="configuracoes">
+
+                        ⚙️ Configurar
+
+                    </button>
+
+
+
+                </div>
+
+
+
+
+
+                <div id="cycleSubjectsList" class="cycle-subjects-list">
+
+
+
+                    <!-- preenchido pelo JavaScript -->
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <!-- =====================================================
 
      HISTÓRICO
 
@@ -1710,127 +1504,81 @@
 
 
 
-<section
+        <section id="historico" class="section">
 
-    id="historico"
 
-    class="section"
 
->
 
 
+            <div class="page-heading">
 
 
 
-    <div class="page-heading">
+                <span class="eyebrow">
 
+                    REGISTROS
 
+                </span>
 
-        <span class="eyebrow">
 
-            REGISTROS
 
-        </span>
+                <h1>
 
+                    Histórico
 
+                </h1>
 
-        <h1>
 
-            Histórico
 
-        </h1>
+                <p>
 
+                    Veja tudo o que você já estudou.
 
+                </p>
 
-        <p>
 
-            Veja tudo o que você já estudou.
 
-        </p>
+            </div>
 
 
 
-    </div>
 
 
 
 
+            <!-- FILTROS DO HISTÓRICO -->
+            <div class="stats-filters">
 
+                <button class="stats-filter active" data-history-filter="today">
+                    Hoje
+                </button>
 
+                <button class="stats-filter" data-history-filter="week">
+                    Semana
+                </button>
 
-    <!-- FILTROS -->
+                <button class="stats-filter premium-filter" data-history-filter="month">
+                    🔒 Mês
+                </button>
 
+                <button class="stats-filter premium-filter" data-history-filter="year">
+                    🔒 Ano
+                </button>
 
+                <button class="stats-filter premium-filter" data-history-filter="all">
+                    🔒 Tudo
+                </button>
 
-    <div class="stats-filters">
+                <button class="stats-filter premium-filter" data-history-filter="custom">
+                    🔒 Personalizado
+                </button>
 
+            </div>
 
 
-        <button
 
-            class="stats-filter active"
 
-            data-history-filter="today"
-
-        >
-
-            Hoje
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter"
-
-            data-history-filter="week"
-
-        >
-
-            Semana
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter"
-
-            data-history-filter="month"
-
-        >
-
-            Mês
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter"
-
-            data-history-filter="all"
-
-        >
-
-            Tudo
-
-        </button>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!--
+            <!--
 
         O JAVASCRIPT VAI ORGANIZAR ASSIM:
 
@@ -1880,25 +1628,19 @@
 
 
 
-    <div
-
-        id="historyList"
-
-        class="history-list"
-
-    >
+            <div id="historyList" class="history-list">
 
 
 
-        <!-- preenchido pelo JavaScript -->
+                <!-- preenchido pelo JavaScript -->
 
 
 
-    </div>
+            </div>
 
 
 
-</section>
+        </section>
 
 
 
@@ -1906,7 +1648,7 @@
 
 
 
-<!-- =====================================================
+        <!-- =====================================================
 
      ESTATÍSTICAS
 
@@ -1914,287 +1656,37 @@
 
 
 
-<section
+        <section id="estatisticas" class="section">
 
-    id="estatisticas"
 
-    class="section"
 
->
 
 
+            <div class="page-heading">
 
 
 
-    <div class="page-heading">
+                <span class="eyebrow">
 
-
-
-        <span class="eyebrow">
-
-            DESEMPENHO
-
-        </span>
-
-
-
-        <h1>
-
-            Estatísticas
-
-        </h1>
-
-
-
-        <p>
-
-            Analise sua evolução nos estudos.
-
-        </p>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- FILTROS -->
-
-
-
-    <div class="stats-filters">
-
-
-
-        <button
-
-            class="stats-filter active"
-
-            data-filter="day"
-
-        >
-
-            Dia
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter"
-
-            data-filter="week"
-
-        >
-
-            Semana
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter premium"
-
-            data-filter="month"
-
-        >
-
-            Mês 🔒
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter premium"
-
-            data-filter="year"
-
-        >
-
-            Ano 🔒
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter premium"
-
-            data-filter="all"
-
-        >
-
-            Tudo 🔒
-
-        </button>
-
-
-
-        <button
-
-            class="stats-filter premium"
-
-            data-filter="custom"
-
-        >
-
-            Personalizado 🔒
-
-        </button>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- SUBTABS -->
-
-
-
-    <div class="stats-tabs">
-
-
-
-        <button
-
-            class="stats-tab active"
-
-            data-stats="tempo"
-
-        >
-
-            ⏱ Tempo
-
-        </button>
-
-
-
-        <button
-
-            class="stats-tab"
-
-            data-stats="categoria"
-
-        >
-
-            📚 Categoria
-
-        </button>
-
-
-
-        <button
-
-            class="stats-tab"
-
-            data-stats="desempenho"
-
-        >
-
-            🎯 Desempenho
-
-        </button>
-
-
-
-        <button
-
-            class="stats-tab"
-
-            data-stats="simulado"
-
-        >
-
-            ✏️ Simulados
-
-        </button>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- TEMPO -->
-
-
-
-    <div
-
-        id="statsTempo"
-
-        class="stats-content active"
-
-    >
-
-
-
-        <div class="stats-grid">
-
-
-
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Tempo estudado
+                    DESEMPENHO
 
                 </span>
 
 
 
-                <strong id="statsStudyTime">
+                <h1>
 
-                    0h
+                    Estatísticas
 
-                </strong>
-
-
-
-            </div>
+                </h1>
 
 
 
+                <p>
 
+                    Analise sua evolução nos estudos.
 
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Sessões
-
-                </span>
-
-
-
-                <strong id="statsSessions">
-
-                    0
-
-                </strong>
+                </p>
 
 
 
@@ -2204,161 +1696,61 @@
 
 
 
-            <div class="stat-card">
 
 
+            <!-- FILTROS -->
 
-                <span>
 
-                    Média por sessão
 
-                </span>
+            <div class="stats-filters">
 
 
 
-                <strong id="statsAverageSession">
+                <button class="stats-filter active" data-filter="day">
 
-                    0min
+                    Dia
 
-                </strong>
+                </button>
 
 
 
-            </div>
+                <button class="stats-filter" data-filter="week">
 
+                    Semana
 
+                </button>
 
-        </div>
 
 
+                <button class="stats-filter premium" data-filter="month">
 
+                    Mês 🔒
 
+                </button>
 
-        <div class="chart-box">
 
 
+                <button class="stats-filter premium" data-filter="year">
 
-            <h2>
+                    Ano 🔒
 
-                Tempo estudado
+                </button>
 
-            </h2>
 
 
+                <button class="stats-filter premium" data-filter="all">
 
-            <div
+                    Tudo 🔒
 
-                id="timeChart"
+                </button>
 
-                class="fake-chart"
 
-            >
 
-                Gráfico será exibido aqui.
+                <button class="stats-filter premium" data-filter="custom">
 
-            </div>
+                    Personalizado 🔒
 
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- CATEGORIA -->
-
-
-
-    <div
-
-        id="statsCategoria"
-
-        class="stats-content"
-
-    >
-
-
-
-        <div class="chart-box">
-
-
-
-            <h2>
-
-                Tempo por categoria
-
-            </h2>
-
-
-
-            <div
-
-                id="categoryBars"
-
-                class="category-bars"
-
-            >
-
-                <!-- preenchido pelo JS -->
-
-            </div>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- DESEMPENHO -->
-
-
-
-    <div
-
-        id="statsDesempenho"
-
-        class="stats-content"
-
-    >
-
-
-
-        <div class="stats-grid">
-
-
-
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Questões
-
-                </span>
-
-
-
-                <strong id="statsQuestions">
-
-                    0
-
-                </strong>
+                </button>
 
 
 
@@ -2368,49 +1760,45 @@
 
 
 
-            <div class="stat-card">
+
+
+            <!-- SUBTABS -->
 
 
 
-                <span>
-
-                    Acertos
-
-                </span>
+            <div class="stats-tabs">
 
 
 
-                <strong id="statsCorrect">
+                <button class="stats-tab active" data-stats="tempo">
 
-                    0
+                    ⏱ Tempo
 
-                </strong>
-
-
-
-            </div>
+                </button>
 
 
 
+                <button class="stats-tab" data-stats="categoria">
 
+                    📚 Categoria
 
-            <div class="stat-card">
-
-
-
-                <span>
-
-                    Aproveitamento
-
-                </span>
+                </button>
 
 
 
-                <strong id="statsAccuracy">
+                <button class="stats-tab" data-stats="desempenho">
 
-                    0%
+                    🎯 Desempenho
 
-                </strong>
+                </button>
+
+
+
+                <button class="stats-tab" data-stats="simulado">
+
+                    ✏️ Simulados
+
+                </button>
 
 
 
@@ -2418,237 +1806,123 @@
 
 
 
-        </div>
+
+
+
+
+            <!-- TEMPO -->
+
+
+
+            <div id="statsTempo" class="stats-content active">
+
+
+
+                <div class="stats-grid">
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Tempo estudado
+
+                        </span>
+
+
+
+                        <strong id="statsStudyTime">
+
+                            0h
+
+                        </strong>
+
+
+
+                    </div>
 
 
 
 
 
-        <div class="chart-box">
+                    <div class="stat-card">
 
 
 
-            <h2>
+                        <span>
 
-                Desempenho
+                            Sessões
 
-            </h2>
-
-
-
-            <div
-
-                id="performanceChart"
-
-                class="fake-chart"
-
-            >
-
-                Gráfico será exibido aqui.
-
-            </div>
+                        </span>
 
 
 
-        </div>
+                        <strong id="statsSessions">
+
+                            0
+
+                        </strong>
 
 
 
-    </div>
+                    </div>
 
 
 
 
 
-
-
-    <!-- SIMULADOS -->
-
-
-
-    <div
-
-        id="statsSimulado"
-
-        class="stats-content"
-
-    >
+                    <div class="stat-card">
 
 
 
+                        <span>
 
+                            Média por sessão
 
-        <div class="chart-box">
-
-
-
-            <div class="simulation-header">
-
-
-
-                <div>
+                        </span>
 
 
 
-                    <span class="eyebrow">
+                        <strong id="statsAverageSession">
 
-                        EVOLUÇÃO
+                            0min
 
-                    </span>
+                        </strong>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <div class="chart-box">
 
 
 
                     <h2>
 
-                        Desempenho nos simulados
+                        Tempo estudado
 
                     </h2>
 
 
 
-                </div>
+                    <div id="timeChart" class="fake-chart">
 
+                        Gráfico será exibido aqui.
 
+                    </div>
 
 
-
-                <select id="simulationSelect">
-
-
-
-                    <option value="">
-
-                        Selecione um simulado
-
-                    </option>
-
-
-
-                </select>
-
-
-
-            </div>
-
-
-
-
-
-            <div class="line-chart">
-
-
-
-                <svg
-
-                    viewBox="0 0 800 260"
-
-                    preserveAspectRatio="none"
-
-                >
-
-
-
-                    <defs>
-
-
-
-                        <linearGradient
-
-                            id="lineGradient"
-
-                            x1="0"
-
-                            y1="0"
-
-                            x2="0"
-
-                            y2="1"
-
-                        >
-
-
-
-                            <stop
-
-                                offset="0%"
-
-                                stop-opacity=".35"
-
-                            />
-
-
-
-                            <stop
-
-                                offset="100%"
-
-                                stop-opacity="0"
-
-                            />
-
-
-
-                        </linearGradient>
-
-
-
-                    </defs>
-
-
-
-
-
-                    <path
-
-                        id="simulationChartArea"
-
-                        class="chart-area"
-
-                        d=""
-
-                    ></path>
-
-
-
-
-
-                    <path
-
-                        id="simulationChartLine"
-
-                        class="chart-line"
-
-                        d=""
-
-                    ></path>
-
-
-
-
-
-                    <g id="simulationChartPoints">
-
-                        <!-- pontos gerados pelo JS -->
-
-                    </g>
-
-
-
-                </svg>
-
-
-
-
-
-                <div
-
-                    id="simulationChartLabels"
-
-                    class="line-labels"
-
-                >
-
-                    <!-- labels -->
 
                 </div>
 
@@ -2658,59 +1932,361 @@
 
 
 
-        </div>
 
 
 
 
+            <!-- CATEGORIA -->
 
 
 
-        <div class="chart-box">
+            <div id="statsCategoria" class="stats-content">
 
 
 
-            <h2>
-
-                Aproveitamento por matéria
-
-            </h2>
+                <div class="chart-box">
 
 
 
+                    <h2>
+
+                        Tempo por categoria
+
+                    </h2>
 
 
-            <div
 
-                id="simulationSubjectBars"
+                    <div id="categoryBars" class="category-bars">
 
-                class="simulation-bars"
+                        <!-- preenchido pelo JS -->
 
-            >
+                    </div>
 
-                <!-- preenchido pelo JS -->
+
+
+                </div>
+
+
 
             </div>
 
 
 
-        </div>
-
-
-
-    </div>
-
-
-
-</section>
 
 
 
 
+            <!-- DESEMPENHO -->
 
 
 
-<!-- =====================================================
+            <div id="statsDesempenho" class="stats-content">
+
+
+
+                <div class="stats-grid">
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Questões
+
+                        </span>
+
+
+
+                        <strong id="statsQuestions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Acertos
+
+                        </span>
+
+
+
+                        <strong id="statsCorrect">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Aproveitamento
+
+                        </span>
+
+
+
+                        <strong id="statsAccuracy">
+
+                            0%
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <div class="chart-box">
+
+
+
+                    <h2>
+
+                        Desempenho
+
+                    </h2>
+
+
+
+                    <div id="performanceChart" class="fake-chart">
+
+                        Gráfico será exibido aqui.
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- SIMULADOS -->
+
+
+
+            <div id="statsSimulado" class="stats-content">
+
+
+
+
+
+                <div class="chart-box">
+
+
+
+                    <div class="simulation-header">
+
+
+
+                        <div>
+
+
+
+                            <span class="eyebrow">
+
+                                EVOLUÇÃO
+
+                            </span>
+
+
+
+                            <h2>
+
+                                Desempenho nos simulados
+
+                            </h2>
+
+
+
+                        </div>
+
+
+
+
+
+                        <select id="simulationSelect">
+
+
+
+                            <option value="">
+
+                                Selecione um simulado
+
+                            </option>
+
+
+
+                        </select>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="line-chart">
+
+
+
+                        <svg viewBox="0 0 800 260" preserveAspectRatio="none">
+
+
+
+                            <defs>
+
+
+
+                                <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
+
+
+
+                                    <stop offset="0%" stop-opacity=".35" />
+
+
+
+                                    <stop offset="100%" stop-opacity="0" />
+
+
+
+                                </linearGradient>
+
+
+
+                            </defs>
+
+
+
+
+
+                            <path id="simulationChartArea" class="chart-area" d=""></path>
+
+
+
+
+
+                            <path id="simulationChartLine" class="chart-line" d=""></path>
+
+
+
+
+
+                            <g id="simulationChartPoints">
+
+                                <!-- pontos gerados pelo JS -->
+
+                            </g>
+
+
+
+                        </svg>
+
+
+
+
+
+                        <div id="simulationChartLabels" class="line-labels">
+
+                            <!-- labels -->
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+                <div class="chart-box">
+
+
+
+                    <h2>
+
+                        Aproveitamento por matéria
+
+                    </h2>
+
+
+
+
+
+                    <div id="simulationSubjectBars" class="simulation-bars">
+
+                        <!-- preenchido pelo JS -->
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <!-- =====================================================
 
      SIMULADO
 
@@ -2718,47 +2294,41 @@
 
 
 
-<section
-
-    id="simulado"
-
-    class="section"
-
->
+        <section id="simulado" class="section">
 
 
 
 
 
-    <div class="page-heading">
+            <div class="page-heading">
 
 
 
-        <span class="eyebrow">
+                <span class="eyebrow">
 
-            SIMULADOS
+                    SIMULADOS
 
-        </span>
-
-
-
-        <h1>
-
-            Simulado
-
-        </h1>
+                </span>
 
 
 
-        <p>
+                <h1>
 
-            Faça um simulado salvo ou monte um novo.
+                    Simulado
 
-        </p>
+                </h1>
 
 
 
-    </div>
+                <p>
+
+                    Faça um simulado salvo ou monte um novo.
+
+                </p>
+
+
+
+            </div>
 
 
 
@@ -2766,43 +2336,31 @@
 
 
 
-    <!-- MODOS -->
+            <!-- MODOS -->
 
 
 
-    <div class="mode-tabs">
+            <div class="mode-tabs">
 
 
 
-        <button
+                <button class="mode-tab active" data-simulation-mode="existing">
 
-            class="mode-tab active"
+                    📂 Usar simulado criado
 
-            data-simulation-mode="existing"
-
-        >
-
-            📂 Usar simulado criado
-
-        </button>
+                </button>
 
 
 
-        <button
+                <button class="mode-tab" data-simulation-mode="new">
 
-            class="mode-tab"
+                    ➕ Criar novo
 
-            data-simulation-mode="new"
-
-        >
-
-            ➕ Criar novo
-
-        </button>
+                </button>
 
 
 
-    </div>
+            </div>
 
 
 
@@ -2810,7 +2368,7 @@
 
 
 
-    <!-- =================================================
+            <!-- =================================================
 
          USAR SIMULADO CRIADO
 
@@ -2818,41 +2376,109 @@
 
 
 
-    <div
-
-        id="existingSimulationBox"
-
-        class="simulation-mode-box"
-
-    >
+            <div id="existingSimulationBox" class="simulation-mode-box">
 
 
 
-        <div class="card">
+                <div class="card">
 
 
 
-            <div class="card-title">
+                    <div class="card-title">
 
 
 
-                <div>
+                        <div>
 
 
 
-                    <span class="eyebrow">
+                            <span class="eyebrow">
 
-                        SIMULADOS SALVOS
+                                SIMULADOS SALVOS
 
-                    </span>
+                            </span>
 
 
 
-                    <h2>
+                            <h2>
 
-                        Escolha um simulado
+                                Escolha um simulado
 
-                    </h2>
+                            </h2>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+                    <form id="existingSimulationForm" class="form-grid">
+
+
+
+                        <label>
+
+
+
+                            Simulado
+
+
+
+                            <select id="existingSimulationSelect" required>
+
+
+
+                                <option value="">
+
+                                    Selecione um simulado
+
+                                </option>
+
+
+
+                            </select>
+
+
+
+                        </label>
+
+
+
+
+
+                        <div id="selectedSimulationInfo" class="simulation-info">
+
+                            Selecione um simulado para ver os detalhes.
+
+                        </div>
+
+
+
+
+
+                        <div class="form-actions">
+
+
+
+                            <button type="submit" class="primary-btn">
+
+                                ▶ Iniciar simulado
+
+                            </button>
+
+
+
+                        </div>
+
+
+
+                    </form>
 
 
 
@@ -2866,107 +2492,9 @@
 
 
 
-            <form
 
-                id="existingSimulationForm"
 
-                class="form-grid"
-
-            >
-
-
-
-                <label>
-
-
-
-                    Simulado
-
-
-
-                    <select
-
-                        id="existingSimulationSelect"
-
-                        required
-
-                    >
-
-
-
-                        <option value="">
-
-                            Selecione um simulado
-
-                        </option>
-
-
-
-                    </select>
-
-
-
-                </label>
-
-
-
-
-
-                <div
-
-                    id="selectedSimulationInfo"
-
-                    class="simulation-info"
-
-                >
-
-                    Selecione um simulado para ver os detalhes.
-
-                </div>
-
-
-
-
-
-                <div class="form-actions">
-
-
-
-                    <button
-
-                        type="submit"
-
-                        class="primary-btn"
-
-                    >
-
-                        ▶ Iniciar simulado
-
-                    </button>
-
-
-
-                </div>
-
-
-
-            </form>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- =================================================
+            <!-- =================================================
 
          CRIAR NOVO SIMULADO
 
@@ -2974,41 +2502,97 @@
 
 
 
-    <div
-
-        id="newSimulationBox"
-
-        class="simulation-mode-box hidden"
-
-    >
+            <div id="newSimulationBox" class="simulation-mode-box hidden">
 
 
 
-        <div class="card">
+                <div class="card">
 
 
 
-            <div class="card-title">
+                    <div class="card-title">
 
 
 
-                <div>
+                        <div>
 
 
 
-                    <span class="eyebrow">
+                            <span class="eyebrow">
 
-                        NOVO SIMULADO
+                                NOVO SIMULADO
 
-                    </span>
+                            </span>
 
 
 
-                    <h2>
+                            <h2>
 
-                        Montar simulado
+                                Montar simulado
 
-                    </h2>
+                            </h2>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+                    <form id="simulationForm" class="form-grid">
+
+
+
+
+
+                        <label>
+
+
+
+                            Nome
+
+
+
+                            <input type="text" id="simulationName" placeholder="Ex: Simulado PMMA" required>
+
+
+
+                        </label>
+
+
+
+
+
+                        <label>
+                            Tempo da prova
+
+                            <input type="text" id="simulationDuration" inputmode="numeric" placeholder="00:00:00"
+                                value="02:00:00" pattern="[0-9]+:[0-5][0-9]:[0-5][0-9]" title="Use o formato HH:MM:SS"
+                                required>
+                        </label>
+
+                        <div class="form-actions">
+
+
+
+                            <button type="submit" class="primary-btn">
+
+                                💾 Criar e salvar
+
+                            </button>
+
+
+
+                        </div>
+
+
+
+                    </form>
 
 
 
@@ -3022,74 +2606,55 @@
 
 
 
-            <form
 
-                id="simulationForm"
 
-                class="form-grid"
-
-            >
+            <!-- TIMER DO SIMULADO -->
 
 
 
-
-
-                <label>
-
-
-
-                    Nome
+            <div id="simulationTimer" class="card simulation-timer hidden">
 
 
 
-                    <input
+                <span class="eyebrow">
 
-                        type="text"
+                    SIMULADO EM ANDAMENTO
 
-                        id="simulationName"
-
-                        placeholder="Ex: Simulado PMMA"
-
-                        required
-
-                    >
-
-
-
-                </label>
+                </span>
 
 
 
 
 
-<label>
-    Tempo da prova
+                <h2 id="simulationTimerName">
 
-    <input
-        type="text"
-        id="simulationDuration"
-        inputmode="numeric"
-        placeholder="00:00:00"
-        value="02:00:00"
-        pattern="[0-9]+:[0-5][0-9]:[0-5][0-9]"
-        title="Use o formato HH:MM:SS"
-        required
-    >
-</label>
+                    Simulado
 
-                <div class="form-actions">
+                </h2>
+
+                <p id="simulationTimerStatus">
+
+                    Tempo restante
+
+                </p>
 
 
 
-                    <button
 
-                        type="submit"
 
-                        class="primary-btn"
+                <div id="simulationTimeBoard" class="simulation-time-board" aria-label="Quadro de horários da prova">
+                </div>
+                <div class="timer-actions">
+                    <button type="button" id="startSimulation" class="primary-btn">▶ Iniciar</button>
+                    <button type="button" id="pauseSimulation" class="secondary-btn hidden">⏸ Pausar</button>
+                    <button type="button" id="continueSimulation" class="primary-btn hidden">▶ Continuar</button>
 
-                    >
 
-                        💾 Criar e salvar
+
+
+                    <button id="finishSimulation" class="danger-btn">
+
+                        ⏹ Finalizar simulado
 
                     </button>
 
@@ -3099,104 +2664,27 @@
 
 
 
-            </form>
+            </div>
 
 
 
-        </div>
+            <div id="simulationEndOverlay" class="simulation-end-overlay hidden" role="dialog" aria-modal="true"
+                aria-labelledby="simulationEndTitle">
+                <div class="card simulation-end-modal"><span class="eyebrow">SIMULADO FINALIZADO</span>
+                    <h2 id="simulationEndTitle">⏰ Tempo esgotado!</h2>
+                    <p>O tempo da prova terminou. Encerre seu simulado.</p><button type="button"
+                        id="dismissSimulationEnd" class="primary-btn">Entendido</button>
+                </div>
+            </div>
+        </section>
 
 
 
-    </div>
 
 
 
 
-
-
-
-    <!-- TIMER DO SIMULADO -->
-
-
-
-    <div
-
-        id="simulationTimer"
-
-        class="card simulation-timer hidden"
-
-    >
-
-
-
-        <span class="eyebrow">
-
-            SIMULADO EM ANDAMENTO
-
-        </span>
-
-
-
-
-
-        <h2 id="simulationTimerName">
-
-            Simulado
-
-        </h2>
-
-        <p id="simulationTimerStatus">
-
-            Tempo restante
-
-        </p>
-
-
-
-
-
-        <div id="simulationTimeBoard" class="simulation-time-board" aria-label="Quadro de horários da prova"></div>
-<div class="timer-actions">
-<button type="button" id="startSimulation" class="primary-btn">▶ Iniciar</button>
-<button type="button" id="pauseSimulation" class="secondary-btn hidden">⏸ Pausar</button>
-<button type="button" id="continueSimulation" class="primary-btn hidden">▶ Continuar</button>
-
-
-
-
-            <button
-
-                id="finishSimulation"
-
-                class="danger-btn"
-
-            >
-
-                ⏹ Finalizar simulado
-
-            </button>
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-<div id="simulationEndOverlay" class="simulation-end-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="simulationEndTitle">
-<div class="card simulation-end-modal"><span class="eyebrow">SIMULADO FINALIZADO</span><h2 id="simulationEndTitle">⏰ Tempo esgotado!</h2><p>O tempo da prova terminou. Encerre seu simulado.</p><button type="button" id="dismissSimulationEnd" class="primary-btn">Entendido</button></div></div>
-</section>
-
-
-
-
-
-
-
-<!-- =====================================================
+        <!-- =====================================================
 
      CONFIGURAÇÕES
 
@@ -3204,47 +2692,41 @@
 
 
 
-<section
-
-    id="configuracoes"
-
-    class="section"
-
->
+        <section id="configuracoes" class="section">
 
 
 
 
 
-    <div class="page-heading">
+            <div class="page-heading">
 
 
 
-        <span class="eyebrow">
+                <span class="eyebrow">
 
-            PERSONALIZAÇÃO
+                    PERSONALIZAÇÃO
 
-        </span>
-
-
-
-        <h1>
-
-            Configurações
-
-        </h1>
+                </span>
 
 
 
-        <p>
+                <h1>
 
-            Gerencie matérias, ciclo de estudos e simulados.
+                    Configurações
 
-        </p>
+                </h1>
 
 
 
-    </div>
+                <p>
+
+                    Gerencie matérias, ciclo de estudos e simulados.
+
+                </p>
+
+
+
+            </div>
 
 
 
@@ -3252,14 +2734,17 @@
 
 
 
-    <!-- ABAS DAS CONFIGURAÇÕES -->
-    <div class="settings-tabs" role="tablist" aria-label="Áreas das configurações">
-        <button type="button" class="settings-tab active" data-settings-tab="materias" role="tab" aria-selected="true">📚 Matérias</button>
-        <button type="button" class="settings-tab" data-settings-tab="ciclo" role="tab" aria-selected="false">🔄 Ciclo de Estudos</button>
-        <button type="button" class="settings-tab" data-settings-tab="simulados" role="tab" aria-selected="false">📝 Banco de Simulados</button>
-    </div>
+            <!-- ABAS DAS CONFIGURAÇÕES -->
+            <div class="settings-tabs" role="tablist" aria-label="Áreas das configurações">
+                <button type="button" class="settings-tab active" data-settings-tab="materias" role="tab"
+                    aria-selected="true">📚 Matérias</button>
+                <button type="button" class="settings-tab" data-settings-tab="ciclo" role="tab" aria-selected="false">🔄
+                    Ciclo de Estudos</button>
+                <button type="button" class="settings-tab" data-settings-tab="simulados" role="tab"
+                    aria-selected="false">📝 Banco de Simulados</button>
+            </div>
 
-    <!-- =================================================
+            <!-- =================================================
 
          MATÉRIAS
 
@@ -3267,39 +2752,150 @@
 
 
 
-    <div class="card settings-section settings-tab-panel" data-settings-panel="materias">
+            <div class="card settings-section settings-tab-panel" data-settings-panel="materias">
 
 
 
-        <div class="settings-section-header">
+                <div class="settings-section-header">
 
 
 
-            <div>
+                    <div>
 
 
 
-                <span class="eyebrow">
+                        <span class="eyebrow">
 
-                    GERENCIAMENTO DE MATÉRIAS
+                            GERENCIAMENTO DE MATÉRIAS
 
-                </span>
-
-
-
-                <h2>
-
-                    Matérias
-
-                </h2>
+                        </span>
 
 
 
-                <p>
+                        <h2>
 
-                    Adicione as matérias que fazem parte da sua preparação.
+                            Matérias
 
-                </p>
+                        </h2>
+
+
+
+                        <p>
+
+                            Adicione as matérias que fazem parte da sua preparação.
+
+                        </p>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <form id="subjectForm" class="form-grid">
+
+
+
+
+
+                    <label>
+
+
+
+                        Matéria
+
+
+
+                        <input type="text" id="subjectName" placeholder="Ex: Direito Constitucional" required>
+
+
+
+                    </label>
+
+
+
+
+
+                    <label>
+
+
+
+                        Horas planejadas
+
+
+
+                        <input id="modalSubjectHours" type="text" placeholder="00:00:00" required>
+
+
+
+                    </label>
+
+
+
+
+
+                    <label>
+
+
+
+                        Questões planejadas
+
+
+
+                        <input type="number" id="subjectQuestions" min="0" placeholder="Ex: 300">
+
+
+
+                    </label>
+
+
+
+
+
+                    <label>Cor da matéria<div class="subject-color-control"><input id="subjectColor" type="hidden"
+                                value="#22c55e"><button type="button" class="conc-color-trigger"
+                                data-color-for="subjectColor"><span class="conc-color-dot"
+                                    style="background:#22c55e"></span> Escolher cor</button><span>Escolha uma cor para
+                                identificar a matéria nos gráficos</span></div></label>
+                    <div class="form-actions">
+
+
+
+                        <button type="submit" class="primary-btn">
+
+                            ➕ Adicionar matéria
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+                </form>
+
+
+
+
+
+
+
+                <div id="settingsSubjectsList" class="settings-list">
+
+
+
+                    <!-- preenchido pelo JS -->
+
+
+
+                </div>
 
 
 
@@ -3307,170 +2903,11 @@
 
 
 
-        </div>
 
 
 
 
-
-        <form
-
-            id="subjectForm"
-
-            class="form-grid"
-
-        >
-
-
-
-
-
-            <label>
-
-
-
-                Matéria
-
-
-
-                <input
-
-                    type="text"
-
-                    id="subjectName"
-
-                    placeholder="Ex: Direito Constitucional"
-
-                    required
-
-                >
-
-
-
-            </label>
-
-
-
-
-
-            <label>
-
-
-
-                Horas planejadas
-
-
-
-                <input
-
-                    type="number"
-
-                    id="subjectHours"
-
-                    min="0"
-
-                    step="0.1"
-
-                    placeholder="Ex: 20"
-
-                    required
-
-                >
-
-
-
-            </label>
-
-
-
-
-
-            <label>
-
-
-
-                Questões planejadas
-
-
-
-                <input
-
-                    type="number"
-
-                    id="subjectQuestions"
-
-                    min="0"
-
-                    placeholder="Ex: 300"
-
-                >
-
-
-
-            </label>
-
-
-
-
-
-            <label>Cor da matéria<div class="subject-color-control"><input id="subjectColor" type="color" value="#22c55e" aria-label="Escolher cor da matéria"><span>Escolha uma cor para identificar a matéria nos gráficos</span></div></label>
-<div class="form-actions">
-
-
-
-                <button
-
-                    type="submit"
-
-                    class="primary-btn"
-
-                >
-
-                    ➕ Adicionar matéria
-
-                </button>
-
-
-
-            </div>
-
-
-
-        </form>
-
-
-
-
-
-
-
-        <div
-
-            id="settingsSubjectsList"
-
-            class="settings-list"
-
-        >
-
-
-
-            <!-- preenchido pelo JS -->
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-
-
-
-
-    <!-- =================================================
+            <!-- =================================================
 
          SIMULADOS CONFIGURADOS
 
@@ -3478,168 +2915,153 @@
 
 
 
-    <div class="card settings-section settings-tab-panel" data-settings-panel="ciclo" hidden>
-        <div class="settings-section-header">
-            <div>
-                <span class="eyebrow">PLANEJAMENTO</span>
-                <h2>🔄 Ciclo de Estudos</h2>
-                <p>Escolha as matérias que participam do ciclo e configure suas metas.</p>
-            </div>
-        </div>
-        <div id="cycleSettingsList" class="settings-list"></div>
-        <div class="form-actions" style="margin-top:20px">
-            <button type="button" id="saveCycleSettings" class="primary-btn">💾 Salvar ciclo</button>
-            <button type="button" class="secondary-btn" data-section="ciclo">📚 Ver progresso</button>
-        </div>
-    </div>
-
-    <div class="card settings-section settings-tab-panel" data-settings-panel="simulados" hidden>
-
-
-
-        <div class="settings-section-header">
-
-
-
-            <div>
-
-
-
-                <span class="eyebrow">
-
-                    BANCO DE SIMULADOS
-
-                </span>
-
-
-
-                <h2>
-
-                    Meus simulados
-
-                </h2>
-
-
-
-                <p>
-
-                    Crie simulados que poderão ser reutilizados na área Simulado.
-
-                </p>
-
-
-
+            <div class="card settings-section settings-tab-panel" data-settings-panel="ciclo" hidden>
+                <div class="settings-section-header">
+                    <div>
+                        <span class="eyebrow">PLANEJAMENTO</span>
+                        <h2>🔄 Ciclo de Estudos</h2>
+                        <p>Escolha as matérias que participam do ciclo e configure suas metas.</p>
+                        <p>*Importante: Defina como você quer que o ciclo seja calculado: por tempo, por questões ou ambos. O cálculo será feito com base na soma das metas de cada matéria.</p>
+                    </div>
+                </div>
+                <div id="cycleSettingsList" class="settings-list"></div>
+                <div class="form-actions" style="margin-top:20px">
+                    <button type="button" id="saveCycleSettings" class="primary-btn">💾 Salvar ciclo</button>
+                    <button type="button" class="secondary-btn" data-section="ciclo">📚 Ver progresso</button>
+                </div>
             </div>
 
+            <div class="card settings-section settings-tab-panel" data-settings-panel="simulados" hidden>
 
 
-        </div>
 
+                <div class="settings-section-header">
 
 
 
+                    <div>
 
-        <form
 
-            id="settingsSimulationForm"
 
-            class="form-grid"
+                        <span class="eyebrow">
 
-        >
+                            BANCO DE SIMULADOS
 
+                        </span>
 
 
 
+                        <h2>
 
-            <label>
+                            Meus simulados
 
+                        </h2>
 
 
-                Nome do simulado
 
+                        <p>
 
+                            Crie simulados que poderão ser reutilizados na área Simulado.
 
-                <input
+                        </p>
 
-                    type="text"
 
-                    id="settingsSimulationName"
 
-                    placeholder="Ex: PMMA — Geral"
+                    </div>
 
-                    required
 
-                >
 
+                </div>
 
 
-            </label>
 
 
 
+                <form id="settingsSimulationForm" class="form-grid">
 
 
-<label>
-    Tempo do simulado
-    <input
-        type="text"
-        id="settingsSimulationTime"
-        placeholder="00:00:00"
-        value="00:00:00"
-        inputmode="numeric"
-        required
-    >
-</label>
 
 
 
+                    <label>
 
 
-            <label>
 
+                        Nome do simulado
 
 
-                Quantidade de questões
 
+                        <input type="text" id="settingsSimulationName" placeholder="Ex: PMMA — Geral" required>
 
 
-                <input
 
-                    type="number"
+                    </label>
 
-                    id="settingsSimulationQuestions"
 
-                    min="1"
 
-                    placeholder="Ex: 60"
 
-                    required
 
-                >
+                    <label>
+                        Tempo do simulado
+                        <input type="text" id="settingsSimulationTime" placeholder="00:00:00" value="00:00:00"
+                            inputmode="numeric" required>
+                    </label>
 
 
 
-            </label>
 
 
+                    <label>
 
 
 
-            <div class="form-actions">
+                        Quantidade de questões
 
 
 
-                <button
+                        <input type="number" id="settingsSimulationQuestions" min="1" placeholder="Ex: 60" required>
 
-                    type="submit"
 
-                    class="primary-btn"
 
-                >
+                    </label>
 
-                    ➕ Criar simulado
 
-                </button>
+
+
+
+                    <div class="form-actions">
+
+
+
+                        <button type="submit" class="primary-btn">
+
+                            ➕ Criar simulado
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+                </form>
+
+
+
+
+
+
+
+                <div id="settingsSimulationsList" class="settings-list">
+
+
+
+                    <!-- preenchido pelo JS -->
+
+
+
+                </div>
 
 
 
@@ -3647,169 +3069,142 @@
 
 
 
-        </form>
+        </section>
 
 
 
 
 
-
-
-        <div
-
-            id="settingsSimulationsList"
-
-            class="settings-list"
-
-        >
-
-
-
-            <!-- preenchido pelo JS -->
-
-
-
-        </div>
-
-
-
-    </div>
-
-
-
-</section>
-
-
-
-
-
-<!-- =====================================================
+        <!-- =====================================================
 
      CRÉDITOS
 
 \===================================================== -->
 
-<section id="creditos" class="section credits-page">
+        <section id="creditos" class="section credits-page">
 
-    <div class="page-heading">
+            <div class="page-heading">
 
-        <span class="eyebrow">CONCURSADO</span>
+                <span class="eyebrow">CONCURSADO</span>
 
-        <h1>Créditos</h1>
+                <h1>Créditos</h1>
 
-        <p>Conheça quem inspira e quem está por trás deste projeto.</p>
-
-    </div>
-
-
-
-    <div class="credits-grid">
-
-        <article class="card credits-instagram">
-
-            <span class="credits-kicker">CONTEÚDO DE ESTUDOS</span>
-
-            <div class="credits-profile">
-
-                <img src="bizu-de-mat.jpg" alt="Avatar provisório do perfil Bizu de Mat" class="credits-avatar">
-
-                <div>
-
-                    <h2>Bizu de Mat</h2>
-
-                    <p>@bizu_de_mat</p>
-
-                </div>
+                <p>Conheça quem inspira e quem está por trás deste projeto.</p>
 
             </div>
 
-            <p class="credits-description">Acompanhe o perfil para ver conteúdos e dicas de estudo.</p>
-
-            <a class="credits-link" href="https\://www\.instagram.com/bizu_de_mat/" target="\_blank" rel="noopener noreferrer">
-
-                <span aria-hidden="true">📸</span> Visitar Instagram <span aria-hidden="true">↗</span>
-
-            </a>
-
-            <small class="credits-photo-note">Perfil oficial no Instagram</small>
-
-        </article>
 
 
+            <div class="credits-grid">
 
-        <article class="card credits-created">
+                <article class="card credits-instagram">
 
-            <span class="credits-kicker">DESENVOLVIMENTO</span>
+                    <span class="credits-kicker">CONTEÚDO DE ESTUDOS</span>
 
-            <p class="credits-creator">
+                    <div class="credits-profile">
 
-                <h2>
+                        <img src="bizu-de-mat.jpg" alt="Avatar provisório do perfil Bizu de Mat" class="credits-avatar">
 
-                    <span>💡 Asp R2 Romeu — Idealizador</span>
+                        <div>
 
-                </h2>
+                            <h2>Bizu de Mat</h2>
 
+                            <p>@bizu_de_mat</p>
 
+                        </div>
 
-                <h2>
+                    </div>
 
-                    <span>💻 Asp R2 Erik — Desenvolvedor</span>
+                    <p class="credits-description">Acompanhe o perfil para ver conteúdos e dicas de estudo.</p>
 
-                </h2>
+                    <a class="credits-link" href="https\://www\.instagram.com/bizu_de_mat/" target="\_blank"
+                        rel="noopener noreferrer">
 
-            </p>
+                        <span aria-hidden="true">📸</span> Visitar Instagram <span aria-hidden="true">↗</span>
 
-            <p class="credits-description">Projeto criado para ajudar na organização, constância e evolução dos estudos.</p>
+                    </a>
 
-        </article>
+                    <small class="credits-photo-note">Perfil oficial no Instagram</small>
+
+                </article>
 
 
 
-        <article class="card credits-verse">
+                <article class="card credits-created">
 
-            <span class="credits-kicker">PALAVRA DE MOTIVAÇÃO</span>
+                    <span class="credits-kicker">DESENVOLVIMENTO</span>
 
-            <div class="credits-quote-mark" aria-hidden="true">✦</div>
+                    <p class="credits-creator">
 
-            <blockquote>Para que todos vejam, e saibam, e considerem, e juntamente entendam que a mão do Senhor fez isto, e o Santo de Israel o criou.</blockquote>
+                    <h2>
 
-            <p class="credits-reference">Isaí­as 41:20</p>
+                        <span>💡 Asp R2 Romeu — Idealizador</span>
 
-        </article>
+                    </h2>
+
+
+
+                    <h2>
+
+                        <span>💻 Asp R2 Erik — Desenvolvedor</span>
+
+                    </h2>
+
+                    </p>
+
+                    <p class="credits-description">Projeto criado para ajudar na organização, constância e evolução dos
+                        estudos.</p>
+
+                </article>
+
+
+
+                <article class="card credits-verse">
+
+                    <span class="credits-kicker">PALAVRA DE MOTIVAÇÃO</span>
+
+                    <div class="credits-quote-mark" aria-hidden="true">✦</div>
+
+                    <blockquote>Para que todos vejam, e saibam, e considerem, e juntamente entendam que a mão do Senhor
+                        fez isto, e o Santo de Israel o criou.</blockquote>
+
+                    <p class="credits-reference">Isaí­as 41:20</p>
+
+                </article>
+
+            </div>
+
+
+
+            <footer class="credits-footer">
+
+                <span class="credits-footer-brand">⭐CONCURSADO</span>
+
+                <p>© 2026 CONCURSADO • Todos os direitos reservados.</p>
+
+            </footer>
+
+        </section>
+
+
+
+
+
+    </main>
+
+
+
+
+
+    <div id="toast" class="toast">
+
+        Salvo com sucesso!
 
     </div>
 
 
 
-    <footer class="credits-footer">
-
-        <span class="credits-footer-brand">⭐CONCURSADO</span>
-
-        <p>© 2026 CONCURSADO • Todos os direitos reservados.</p>
-
-    </footer>
-
-</section>
-
-
-
-
-
-</main>
-
-
-
-
-
-<div id="toast" class="toast">
-
-    Salvo com sucesso!
-
-</div>
-
-
-
-<!-- =====================================================
+    <!-- =====================================================
 
      TOAST
 
@@ -3817,39 +3212,45 @@
 
 
 
-<div
+    <div id="toast" class="toast">
 
-    id="toast"
+        Salvo com sucesso!
 
-    class="toast"
-
->
-
-    Salvo com sucesso!
-
-</div>
+    </div>
 
 
 
 
 
 
-<!-- EDIÇÃO DE MATÉRIA EM JANELA -->
-<div id="subjectEditOverlay" class="subject-edit-overlay hidden" role="presentation">
-  <div class="card subject-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="subjectEditTitle">
-    <div class="subject-edit-heading"><h2 id="subjectEditTitle">✏️ Editar matéria</h2><button type="button" id="closeSubjectEdit" class="icon-btn" aria-label="Fechar edição">✕</button></div>
-    <form id="subjectEditModalForm" class="subject-edit-form">
-      <input type="hidden" id="modalSubjectId">
-      <label>Nome da matéria<input id="modalSubjectName" type="text" required maxlength="120"></label>
-      <label>Horas planejadas<input id="modalSubjectHours" type="number" min="0" step="0.1" required></label>
-      <label>Questões planejadas<input id="modalSubjectQuestions" type="number" min="0" step="1" required></label>
-      <label>Cor da matéria<div class="subject-color-control"><input id="modalSubjectColor" type="color" value="#22c55e" aria-label="Escolher cor da matéria"><span>Cor usada nos gráficos e no ciclo</span></div></label>
-      <div class="subject-edit-actions"><button type="button" id="cancelSubjectModal" class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar alterações</button></div>
-    </form>
-  </div>
-</div>
+    <!-- EDIÇÃO DE MATÉRIA EM JANELA -->
+    <div id="subjectEditOverlay" class="subject-edit-overlay hidden" role="presentation">
+        <div class="card subject-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="subjectEditTitle">
+            <div class="subject-edit-heading">
+                <h2 id="subjectEditTitle">✏️ Editar matéria</h2><button type="button" id="closeSubjectEdit"
+                    class="icon-btn" aria-label="Fechar edição">✕</button>
+            </div>
+            <form id="subjectEditModalForm" class="subject-edit-form">
+                <input type="hidden" id="modalSubjectId">
+                <label>Nome da matéria<input id="modalSubjectName" type="text" required maxlength="120"></label>
+                <label>Horas planejadas<input id="modalSubjectHours" type="text" placeholder="00:00:00"
+                        inputmode="numeric" required></label>
+                <label>Questões planejadas<input id="modalSubjectQuestions" type="number" min="0" step="1"
+                        required></label>
+                <label>Cor da matéria<div class="subject-color-control"><input id="modalSubjectColor" type="hidden"
+                            value="#22c55e"><button type="button" class="conc-color-trigger"
+                            data-color-for="modalSubjectColor"><span class="conc-color-dot"
+                                style="background:#22c55e"></span> Escolher cor</button><span>Cor usada nos gráficos e
+                            no
+                            ciclo</span></div></label>
+                <div class="subject-edit-actions"><button type="button" id="cancelSubjectModal"
+                        class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar
+                        alterações</button></div>
+            </form>
+        </div>
+    </div>
 
-<!-- =====================================================
+    <!-- =====================================================
 
      SCRIPT
 
@@ -3857,7 +3258,72 @@
 
 
 
-<script src="script.js"></script>
+
+    <!-- JANELAS PADRONIZADAS DO CONCURSADO -->
+    <div id="historyDateOverlay" class="conc-modal-overlay hidden" role="presentation">
+        <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="historyDateTitle">
+            <div class="conc-modal-heading">
+                <h2 id="historyDateTitle">📅 Período personalizado</h2><button type="button" class="icon-btn"
+                    id="closeHistoryDates" aria-label="Fechar">✕</button>
+            </div>
+            <p>Escolha as datas para consultar seu histórico de estudos.</p>
+            <form id="historyDateForm" class="conc-modal-form">
+                <label>Data inicial<input id="historyDateStart" type="date" required></label>
+                <label>Data final<input id="historyDateEnd" type="date" required></label>
+                <p id="historyDateError" class="conc-modal-error hidden" role="alert">A data final não pode ser anterior
+                    à inicial.</p>
+                <div class="conc-modal-actions"><button type="button" class="secondary-btn"
+                        id="cancelHistoryDates">Cancelar</button><button type="submit" class="primary-btn">Aplicar
+                        filtro</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="subjectPaletteOverlay" class="conc-modal-overlay hidden" role="presentation">
+        <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="subjectPaletteTitle">
+            <div class="conc-modal-heading">
+                <h2 id="subjectPaletteTitle">🎨 Cor da matéria</h2><button type="button" class="icon-btn"
+                    id="closeSubjectPalette" aria-label="Fechar">✕</button>
+            </div>
+            <p>Escolha uma cor para identificar sua matéria no ciclo e nos gráficos.</p>
+            <div id="subjectPaletteOptions" class="conc-color-grid" role="group" aria-label="Cores disponíveis"></div>
+            <div class="conc-custom-picker">
+    <h3>✨ Criar minha própria cor</h3>
+    <div class="conc-color-preview-container">
+    <div id="subjectColorPreview" class="conc-color-preview"></div>
+
+    <div>
+        <strong>Prévia da cor</strong>
+        <span id="subjectColorPreviewHex">#22c55e</span>
+    </div>
+</div>
+    <label>
+        Tonalidade
+        <input id="subjectHue" type="range" min="0" max="360" value="140">
+    </label>
+
+    <label>
+        Saturação
+        <input id="subjectSaturation" type="range" min="0" max="100" value="70">
+    </label>
+
+    <label>
+        Luminosidade
+        <input id="subjectLightness" type="range" min="0" max="100" value="45">
+    </label>
+</div>
+    <input
+        type="hidden"
+        id="subjectPaletteHex"
+        value="#22c55e"
+        >
+            <div class="conc-modal-actions"><button type="button" class="secondary-btn"
+                    id="cancelSubjectPalette">Cancelar</button><button type="button" class="primary-btn"
+                    id="applySubjectPalette">Aplicar cor</button></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
 
 
 

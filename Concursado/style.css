@@ -4878,3 +4878,157 @@ input[placeholder="00:00:00"] {
     font-size: 12px;
     padding: 12px 14px;
 }
+/* FILTROS PREMIUM DO HISTÓRICO */
+
+.premium-filter {
+    opacity: 0.65;
+    cursor: pointer;
+}
+
+.premium-filter:hover {
+    opacity: 1;
+}
+
+/* JANELAS DO CONCURSADO — histórico e cores */
+.conc-modal-overlay { position: fixed; inset: 0; z-index: 12000; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(0,0,0,.76); backdrop-filter: blur(6px); }
+.conc-modal-overlay.hidden { display: none !important; }
+.conc-modal { width: min(490px, 100%); max-height: calc(100dvh - 36px); overflow-y: auto; margin: 0; background: #0e1c16; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
+.conc-modal-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.conc-modal-heading h2 { font-size: 21px; }
+.conc-modal > p { font-size: 13px; margin: 0 0 22px; }
+.conc-modal-form { display: grid; gap: 16px; }
+.conc-modal input[type="date"] { color-scheme: dark; min-height: 46px; }
+.conc-modal-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.conc-modal-error { color: #ff8585; font-size: 13px; margin: 0; }
+.conc-modal-error.hidden { display: none; }
+.conc-modal-open { overflow: hidden; }
+.conc-color-trigger { display: inline-flex; align-items: center; gap: 10px; background: #09130f; color: var(--text); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; cursor: pointer; font-size: 13px; }
+.conc-color-trigger:hover { border-color: var(--green); }
+.conc-color-dot { width: 21px; height: 21px; border-radius: 6px; border: 1px solid rgba(255,255,255,.28); flex: 0 0 auto; }
+.conc-color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin: 10px 0 24px; }
+.conc-color-option { width: 100%; aspect-ratio: 1.3; border-radius: 12px; border: 2px solid transparent; color: white; font-weight: 800; font-size: 22px; cursor: pointer; }
+.conc-color-option.selected { border-color: white; box-shadow: 0 0 0 3px rgba(255,255,255,.15); }
+.conc-modal #subjectPaletteHex { margin-top: 2px; }
+@media (max-width: 420px) { .conc-modal { padding: 20px; } .conc-color-grid { gap: 8px; } }
+
+/* COR PERSONALIZADA */
+
+.conc-custom-color {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.conc-custom-color input[type="color"] {
+    width: 55px;
+    height: 45px;
+    padding: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.conc-custom-color input[type="text"] {
+    flex: 1;
+    min-width: 0;
+}
+/* SELETOR DE CORES PERSONALIZADO */
+
+.conc-custom-picker {
+    margin: 20px 0;
+    padding: 20px;
+    background: #0b1813;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+}
+
+.conc-custom-picker h3 {
+    color: var(--text);
+    font-size: 15px;
+    margin: 0 0 20px;
+}
+
+.conc-custom-picker label {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 18px;
+    color: var(--muted);
+}
+
+.conc-custom-picker label:last-child {
+    margin-bottom: 0;
+}
+
+.conc-custom-picker input[type="range"] {
+    width: 100%;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    accent-color: var(--green-light);
+}
+
+#subjectHue {
+    background: linear-gradient(
+        to right,
+        red,
+        yellow,
+        lime,
+        cyan,
+        blue,
+        magenta,
+        red
+    );
+    appearance: none;
+}
+
+#subjectSaturation,
+#subjectLightness {
+    appearance: auto;
+}
+
+.conc-custom-picker input[type="range"]::-webkit-slider-thumb {
+    appearance: none;
+    width: 19px;
+    height: 19px;
+    border: 3px solid white;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 2px 8px rgba(0,0,0,.4);
+}
+/* PRÉVIA DA COR PERSONALIZADA */
+
+.conc-color-preview-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 15px;
+    margin-bottom: 20px;
+    background: #09130f;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+}
+
+.conc-color-preview {
+    width: 65px;
+    height: 65px;
+    flex-shrink: 0;
+    background: #22c55e;
+    border: 2px solid rgba(255,255,255,.25);
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,.25);
+}
+
+.conc-color-preview-container strong {
+    display: block;
+    color: white;
+    font-size: 14px;
+    margin-bottom: 6px;
+}
+
+.conc-color-preview-container span {
+    color: var(--muted);
+    font-size: 13px;
+    font-family: monospace;
+}
