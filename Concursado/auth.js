@@ -1,5 +1,5 @@
 /* CONCURSADO — autenticação Supabase (chave pública apenas) */
-const SUPABASE_URL = 'https://uuhugqmakngtlfruilyk.supabase.co';
+const SUPABASE_URL = 'https://uuhugqmakngtlrfuilyk.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_R5VfMPZeDtQQiCRAf5OQ4g_1yl6rjRO';
 const statusEl = document.getElementById('authStatus');
 const form = document.getElementById('authForm');
