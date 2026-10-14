@@ -5059,3 +5059,277 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 .auth-profile-meta strong{font-size:14px;color:#f4fff7;overflow:hidden;text-overflow:ellipsis}
 .auth-profile-meta span{font-size:12px;color:#a6c1b0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
 .auth-account-dropdown button{width:100%;padding:11px;background:#204a31;border:1px solid #326c46}
+
+/* =========================================
+   EXCLUIR MATÉRIA -
+   ========================================= */
+
+.concursado-edit-overlay,
+.concursado-confirm-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: rgba(0, 0, 0, .76);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.concursado-confirm-box {
+    width: min(480px, 100%);
+    padding: 26px;
+
+    background: rgba(9, 14, 12, .94);
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 18px;
+
+    color: #f1f5f2;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, .45);
+}
+
+.concursado-confirm-box h3 {
+    margin: 0 0 16px;
+    font-size: 22px;
+    font-weight: 700;
+}
+
+.concursado-confirm-box p {
+    margin: 0;
+    color: #a5b1aa;
+    font-size: 14px;
+    line-height: 1.7;
+}
+
+.concursado-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 28px;
+}
+
+.concursado-confirm-actions button {
+    padding: 12px 18px;
+    border-radius: 11px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: .2s ease;
+}
+
+.concursado-cancel-btn {
+    background: #14271e;
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .08);
+}
+
+.concursado-cancel-btn:hover {
+    background: #1c3528;
+}
+
+.concursado-delete-btn {
+    background: #dc3545;
+    color: #fff;
+    border: none;
+}
+
+.concursado-delete-btn:hover {
+    background: #b02a37;
+}
+
+
+/* =========================================
+   FINALIZAÇÃO DO POMODORO E CRONÔMETRO
+   ========================================= */
+
+.study-completion-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: rgba(0, 0, 0, 0.76);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+.study-completion-overlay.hidden {
+    display: none !important;
+}
+
+.study-completion-modal {
+    width: min(480px, 100%);
+    max-height: calc(100dvh - 40px);
+    overflow-y: auto;
+
+    margin: 0;
+    padding: 26px;
+
+    background: #0e1c16;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+
+    color: #f4f7f5;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.50);
+}
+
+.study-completion-modal .card-title {
+    margin-bottom: 24px;
+}
+
+.study-completion-modal h2 {
+    font-size: 22px;
+    margin-bottom: 10px;
+}
+
+.study-completion-modal .card-title p {
+    font-size: 13px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+.study-completion-modal .form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-auto-rows: auto;
+    gap: 16px;
+    align-items: stretch;
+}
+
+.study-completion-modal .form-grid > label {
+    width: 100%;
+    align-self: stretch;
+}
+
+.study-completion-modal input,
+.study-completion-modal select {
+    width: 100%;
+    min-height: 46px;
+    margin-top: 0;
+
+    background: #09130f;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 10px;
+    color: white;
+    padding: 12px;
+}
+
+.study-completion-modal input:focus,
+.study-completion-modal select:focus {
+    border-color: #16c75b;
+    outline: none;
+}
+
+.study-completion-modal .completion-time-hint {
+    color: #9ca9a2;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.study-completion-modal .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+}
+
+.study-completion-modal .form-actions button {
+    min-height: 46px;
+}
+
+@media (max-width: 550px) {
+    .study-completion-modal {
+        padding: 20px;
+    }
+
+    .study-completion-modal .form-actions button {
+        width: 100%;
+    }
+}
+
+/* ==========================================
+   JANELA DE CONFIRMAÇÃO - FINALIZAR ESTUDO
+   ========================================== */
+
+.finalizar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+
+    background: rgba(0, 0, 0, 0.76);
+    backdrop-filter: blur(6px);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.finalizar-modal {
+    width: min(440px, 100%);
+    padding: 28px;
+
+    background: #0e1c16;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+
+    color: #f1f5f2;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.finalizar-modal h2 {
+    font-size: 22px;
+    margin: 0 0 12px;
+}
+
+.finalizar-modal p {
+    color: #aabbb1;
+    margin: 0 0 25px;
+    line-height: 1.6;
+}
+
+.finalizar-acoes {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.finalizar-acoes button {
+    padding: 12px 20px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.finalizar-cancelar {
+    background: #1c3027;
+    color: white;
+}
+
+.finalizar-confirmar {
+    background: #b63838;
+    color: white;
+}
+
+.finalizar-cancelar:hover {
+    background: #294638;
+}
+
+.finalizar-confirmar:hover {
+    background: #d04444;
+}
+/* Restauração: matérias e resultados de simulados */
+.simulation-result-form {display:grid;gap:16px;}
+.simulation-result-subjects {display:grid;gap:12px;}
+.simulation-result-subjects h3 {font-size:15px;}
+.simulation-result-subjects p {font-size:12px;margin:0;}

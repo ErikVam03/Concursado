@@ -2245,7 +2245,7 @@
 
                     <h2>
 
-                        Aproveitamento por matéria
+                        Aproveitamento por simulado
 
                     </h2>
 
@@ -2567,6 +2567,11 @@
                                 required>
                         </label>
 
+                        <label>Quantidade total de questões
+                            <input type="number" id="simulationQuestionsInput" min="1" step="1" placeholder="Ex: 120" required>
+                        </label>
+
+
                         <div class="form-actions">
 
 
@@ -2659,12 +2664,24 @@
 
 
 
-            <div id="simulationEndOverlay" class="simulation-end-overlay hidden" role="dialog" aria-modal="true"
-                aria-labelledby="simulationEndTitle">
-                <div class="card simulation-end-modal"><span class="eyebrow">SIMULADO FINALIZADO</span>
-                    <h2 id="simulationEndTitle">⏰ Tempo esgotado!</h2>
-                    <p>O tempo da prova terminou. Encerre seu simulado.</p><button type="button"
-                        id="dismissSimulationEnd" class="primary-btn">Entendido</button>
+            <div id="simulationResultOverlay" class="simulation-end-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="simulationResultTitle">
+                <div class="card simulation-end-modal" style="width:min(480px,100%)">
+                    <span class="eyebrow">RESULTADO DO SIMULADO</span>
+                    <h2 id="simulationResultTitle">Finalizar simulado</h2>
+                    <p id="simulationResultDescription">Informe o número de acertos para registrar seu desempenho.</p>
+                    <form id="simulationResultForm" class="simulation-result-form">
+                        <label>Total de questões
+                            <input id="simulationResultQuestions" type="number" readonly>
+                        </label>
+                        <label>Quantas questões você acertou?
+                            <input id="simulationResultCorrect" type="number" min="0" step="1" required>
+                        </label>
+                        <div id="simulationResultSubjects" class="simulation-result-subjects"></div>
+                        <div class="form-actions">
+                            <button type="button" id="cancelSimulationResult" class="secondary-btn">Cancelar</button>
+                            <button type="submit" class="primary-btn">💾 Salvar resultado</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </section>

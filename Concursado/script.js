@@ -2201,53 +2201,32 @@ if (subjectEditModalForm) {
 }
 
 
-function deleteSubject(id) {
+async function deleteSubject(id) {
 
-    const subject =
-        subjects.find(
-            item =>
-                String(item.id) ===
-                String(id)
-        );
+    const subject = subjects.find(
+        item => String(item.id) === String(id)
+    );
 
+    if (!subject) return;
 
-    if (!subject) {
-        return;
-    }
+    const confirmed = await showConcursadoConfirm({
+        title: "Excluir matéria?",
+        message: `Deseja realmente excluir a matéria "${subject.name}"?`,
+        confirmLabel: "Excluir matéria"
+    });
 
+    if (!confirmed) return;
 
-    const confirmed =
-        confirm(
-            `Excluir a matéria "${subject.name}"?`
-        );
-
-
-    if (!confirmed) {
-        return;
-    }
-
-
-    subjects =
-        subjects.filter(
-            item =>
-                String(item.id) !==
-                String(id)
-        );
-
+    subjects = subjects.filter(
+        item => String(item.id) !== String(id)
+    );
 
     saveSubjects();
-
-
     renderSettingsSubjects();
-
     updateSubjectDatalist();
-
     renderCycle();
 
-
-    showToast(
-        "Matéria excluída."
-    );
+    showToast("Matéria excluída.");
 }
 
 
@@ -2718,68 +2697,75 @@ function updateStatistics(
 }
 
 
+
 /* =========================================================
    GRÁFICO DE TEMPO
+   Semana de domingo a sábado
 ========================================================= */
 
-function renderTimeChart(
-    filtered
-) {
+function renderTimeChart(filtered) {
 
-    const container =
-        document.getElementById(
-            "timeChart"
-        );
+    const container = document.getElementById("timeChart");
 
+    if (!container) return;
 
-    if (!container) {
-        return;
-    }
-
-
-    if (!filtered.length) {
-
-        container.innerHTML =
-            "Nenhum estudo registrado no período.";
-
-        return;
-    }
-
-
+    // Mantém os registros reais de estudo por data.
     const byDate = {};
 
-
     filtered.forEach(study => {
+        const dateObj = parseStudyDate({ date: study.date });
 
-        byDate[study.date] =
-            (
-                byDate[study.date] || 0
-            ) +
-            getStudyMinutes(study);
+        if (!dateObj || isNaN(dateObj.getTime())) return;
 
+        const key = [
+            dateObj.getFullYear(),
+            String(dateObj.getMonth() + 1).padStart(2, "0"),
+            String(dateObj.getDate()).padStart(2, "0")
+        ].join("-");
+
+        byDate[key] = (byDate[key] || 0) + getStudyMinutes(study);
     });
 
+    // Encontra o domingo da semana atual.
+    const today = new Date();
 
-    const entries =
-        Object.entries(byDate)
-            .sort(
-                ([a], [b]) =>
-                    a.localeCompare(b)
-            );
+    const sunday = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate() - today.getDay()
+    );
 
+    // Cria os sete dias, inclusive os que não têm estudos.
+    const entries = [];
 
-    const max =
-        Math.max(
-            ...entries.map(
-                ([, value]) =>
-                    value
-            ),
-            1
-        );
+    for (let i = 0; i < 7; i++) {
 
+        const day = new Date(sunday);
+        day.setDate(sunday.getDate() + i);
+
+        const key = [
+            day.getFullYear(),
+            String(day.getMonth() + 1).padStart(2, "0"),
+            String(day.getDate()).padStart(2, "0")
+        ].join("-");
+
+        entries.push({
+            date: day,
+            minutes: byDate[key] || 0
+        });
+    }
+
+    const max = Math.max(
+        ...entries.map(item => item.minutes),
+        1
+    );
+
+    const weekDays = [
+        "Dom", "Seg", "Ter", "Qua",
+        "Qui", "Sex", "Sáb"
+    ];
 
     container.innerHTML = `
-
         <div
             style="
                 width:100%;
@@ -2790,95 +2776,133 @@ function renderTimeChart(
                 padding:20px 0;
             "
         >
+            ${entries.map(({ date, minutes }, index) => {
 
-            ${entries.map(
-        ([date, minutes]) => {
+                const height = minutes > 0
+                    ? Math.max(5, (minutes / max) * 150)
+                    : 0;
 
-            const height =
-                Math.max(
-                    5,
-                    (
-                        minutes /
-                        max
-                    ) * 170
-                );
-
-
-            const dateObj =
-                parseStudyDate({
-                    date
-                });
-
-
-            return `
+                return `
+                    <div
+                        style="
+                            flex:1;
+                            min-width:0;
+                            height:100%;
+                            display:flex;
+                            flex-direction:column;
+                            justify-content:flex-end;
+                            align-items:center;
+                            gap:7px;
+                        "
+                    >
+                        <small
+                            style="
+                                font-size:10px;
+                                color:var(--muted);
+                            "
+                        >
+                            ${Math.round(minutes)}m
+                        </small>
 
                         <div
                             style="
-                                flex:1;
-                                height:100%;
-                                display:flex;
-                                flex-direction:column;
-                                justify-content:flex-end;
-                                align-items:center;
-                                gap:7px;
+                                width:100%;
+                                max-width:45px;
+                                height:${height}px;
+                                border-radius:8px 8px 3px 3px;
+                                background:linear-gradient(
+                                    180deg,
+                                    var(--green-light),
+                                    var(--green)
+                                );
+                            "
+                        ></div>
+
+                        <small
+                            style="
+                                font-size:10px;
+                                color:var(--muted);
+                                text-align:center;
                             "
                         >
+                            ${weekDays[index]}
+                            ${String(date.getDate()).padStart(2, "0")}
+                        </small>
+                    </div>
+                `;
+            }).join("")}
+        </div>
+    `;
 
-                            <small
-                                style="
-                                    font-size:9px;
-                                    color:var(--muted);
-                                "
-                            >
-                                ${Math.round(minutes)}m
-                            </small>
+    // ==========================================
+    // TEMPO POR MATÉRIA - MANTIDO
+    // ==========================================
 
+    const bySubject = {};
+
+    filtered.forEach(study => {
+        const name = study.subject || "Sem matéria";
+
+        bySubject[name] =
+            (bySubject[name] || 0) + getStudyMinutes(study);
+    });
+
+    const total = Object.values(bySubject)
+        .reduce((sum, n) => sum + n, 0);
+
+    if (total > 0) {
+
+        container.insertAdjacentHTML(
+            "beforeend",
+            `
+            <div class="subject-chart-breakdown">
+                <h3 style="margin:20px 0 12px">
+                    Tempo por matéria
+                </h3>
+
+                ${Object.entries(bySubject)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([name, minutes]) => `
+                        <div style="margin:12px 0">
                             <div
                                 style="
-                                    width:100%;
-                                    max-width:45px;
-                                    height:${height}px;
-                                    border-radius:8px 8px 3px 3px;
-                                    background:linear-gradient(
-                                        180deg,
-                                        var(--green-light),
-                                        var(--green)
-                                    );
-                                "
-                            ></div>
-
-                            <small
-                                style="
-                                    font-size:9px;
-                                    color:var(--muted);
+                                    display:flex;
+                                    justify-content:space-between;
+                                    gap:10px;
+                                    font-size:12px;
+                                    margin-bottom:6px;
                                 "
                             >
-                                ${String(
-                dateObj.getDate()
-            ).padStart(2, "0")}
-                            </small>
+                                <span>
+                                    <span
+                                        class="subject-color-dot"
+                                        style="background:${getSubjectColor(name)}"
+                                    ></span>
+                                    ${escapeHTML(name)}
+                                </span>
 
+                                <strong>
+                                    ${formatStudyDuration(minutes)}
+                                </strong>
+                            </div>
+
+                            <div class="progress-track">
+                                <div
+                                    class="progress-fill"
+                                    style="
+                                        width:${minutes / total * 100}%;
+                                        background:${getSubjectColor(name)};
+                                    "
+                                ></div>
+                            </div>
                         </div>
-
-                    `;
-
-        }
-    ).join("")}
-
-        </div>
-
-    `;
-    const bySubject = {};
-    filtered.forEach(study => {
-        const name = study.subject || 'Sem matéria';
-        bySubject[name] = (bySubject[name] || 0) + getStudyMinutes(study);
-    });
-    const total = Object.values(bySubject).reduce((sum, n) => sum + n, 0);
-    if (total > 0) {
-        container.insertAdjacentHTML('beforeend', `<div class="subject-chart-breakdown"><h3 style="margin:20px 0 12px">Tempo por matéria</h3>${Object.entries(bySubject).sort((a, b) => b[1] - a[1]).map(([name, minutes]) => `<div style="margin:12px 0"><div style="display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-bottom:6px"><span><span class="subject-color-dot" style="background:${getSubjectColor(name)}"></span>${escapeHTML(name)}</span><strong>${formatStudyDuration(minutes)}</strong></div><div class="progress-track"><div class="progress-fill" style="width:${minutes / total * 100}%;background:${getSubjectColor(name)}"></div></div></div>`).join('')}</div>`);
+                    `).join("")}
+            </div>
+            `
+        );
     }
-
 }
+
 
 
 /* =========================================================
@@ -3664,7 +3688,8 @@ if (existingSimulationForm) {
 
             startSimulationTimer(
                 totalSeconds,
-                simulation.name
+                simulation.name,
+                simulation.id
             );
 
         }
@@ -3710,6 +3735,12 @@ if (simulationForm) {
             return;
         }
 
+        const questionCount = Number(document.getElementById("simulationQuestionsInput")?.value);
+        if (!Number.isInteger(questionCount) || questionCount < 1) {
+            showToast("Informe a quantidade de questões.");
+            return;
+        }
+
         const simulation = {
             id: Date.now(),
             name,
@@ -3717,8 +3748,9 @@ if (simulationForm) {
             hours,
             minutes,
             seconds,
-            questions: 0,
+            questions: questionCount,
             correct: 0,
+            completed: false,
             subjects: []
         };
 
@@ -3734,7 +3766,7 @@ if (simulationForm) {
 
         showToast("Simulado criado!");
 
-        startSimulationTimer(totalSeconds, simulation.name);
+        startSimulationTimer(totalSeconds, simulation.name, simulation.id);
     });
 }
 
@@ -4053,7 +4085,7 @@ if (settingsSimulationForm) {
                         ),
 
                     correct: 0,
-
+                    completed: false,
                     subjects: []
 
                 });
@@ -4307,7 +4339,7 @@ function resetSimulationSettingsForm() {
 }
 
 
-function deleteSimulation(id) {
+async function deleteSimulation(id) {
 
     const simulation =
         simulations.find(
@@ -4322,10 +4354,11 @@ function deleteSimulation(id) {
     }
 
 
-    const confirmed =
-        confirm(
-            `Excluir o simulado "${simulation.name}"?`
-        );
+    const confirmed = await showConcursadoConfirm({
+        title: "Excluir simulado?",
+        message: `Deseja realmente excluir o simulado "${simulation.name}"?`,
+        confirmLabel: "Excluir simulado"
+    });
 
 
     if (!confirmed) {
@@ -4492,7 +4525,8 @@ function renderSimulationEvolution() {
     }
 
 
-    if (!simulations.length) {
+    const completedSimulations = simulations.filter(s => s.completed !== false && Number(s.questions) > 0);
+    if (!completedSimulations.length) {
 
         line.setAttribute(
             "d",
@@ -4527,7 +4561,7 @@ function renderSimulationEvolution() {
 
 
     const data =
-        simulations.map(
+        completedSimulations.map(
             simulation => {
 
                 const questions =
@@ -4681,156 +4715,25 @@ function renderSimulationEvolution() {
 
 
 function renderSimulationSubjects() {
-
-    const container =
-        document.getElementById(
-            "simulationSubjectBars"
-        );
-
-
-    if (!container) {
+    // Este gráfico apresenta simulados, não matérias.
+    const container = document.getElementById("simulationSubjectBars");
+    if (!container) return;
+    const completed = simulations.filter(s => s.completed !== false && Number(s.questions) > 0);
+    if (!completed.length) {
+        container.innerHTML = '<div class="settings-empty">Nenhum simulado finalizado ainda.</div>';
         return;
     }
-
-
-    const grouped = {};
-
-
-    simulations.forEach(
-        simulation => {
-
-            if (
-                !Array.isArray(
-                    simulation.subjects
-                )
-            ) {
-                return;
-            }
-
-
-            simulation.subjects.forEach(
-                subject => {
-
-                    const name =
-                        subject.name ||
-                        "Sem matéria";
-
-
-                    if (!grouped[name]) {
-
-                        grouped[name] = {
-                            questions: 0,
-                            correct: 0
-                        };
-
-                    }
-
-
-                    grouped[name].questions +=
-                        Number(
-                            subject.questions || 0
-                        );
-
-
-                    grouped[name].correct +=
-                        Number(
-                            subject.correct || 0
-                        );
-
-                }
-            );
-
-        }
-    );
-
-
-    const entries =
-        Object.entries(
-            grouped
-        );
-
-
-    if (!entries.length) {
-
-        container.innerHTML = `
-            <div class="settings-empty">
-                Ainda não há desempenho por matéria nos simulados.
-            </div>
-        `;
-
-        return;
-    }
-
-
-    container.innerHTML =
-        entries
-            .map(
-                ([name, data]) => {
-
-                    const percent =
-                        data.questions > 0
-                            ? Math.round(
-                                (
-                                    data.correct /
-                                    data.questions
-                                ) * 100
-                            )
-                            : 0;
-
-
-                    return `
-
-                        <div class="simulation-bar-row">
-
-                            <span
-                                class="bar-label"
-                                title="${escapeHTML(name)}"
-                            >
-                                ${escapeHTML(name)}
-                            </span>
-
-                            <div class="simulation-bar-track">
-
-                                <div
-                                    class="simulation-bar-fill"
-                                    style="
-                                        width:${percent}%;
-                                    "
-                                ></div>
-
-                            </div>
-
-                            <strong
-                                class="bar-value"
-                            >
-                                ${percent}%
-                            </strong>
-
-                        </div>
-
-                    `;
-
-                }
-            )
-            .join("");
+    container.innerHTML = completed.map(s => {
+        const questions = Number(s.questions) || 0;
+        const correct = Number(s.correct) || 0;
+        const percent = Math.max(0, Math.min(100, Math.round(correct / questions * 100)));
+        return `<div class="simulation-bar-row">
+            <span class="bar-label" title="${escapeHTML(s.name)}">${escapeHTML(s.name)}</span>
+            <div class="simulation-bar-track"><div class="simulation-bar-fill" style="width:${percent}%"></div></div>
+            <span class="bar-value">${percent}%</span>
+        </div>`;
+    }).join("");
 }
-
-
-/* =========================================================
-   TIMER DO SIMULADO
-========================================================= */
-
-const SIMULATION_MARKS = [
-    [18000, "5h"], [16200, "4h30"], [14400, "4h"],
-    [12600, "3h30"], [10800, "3h"], [9000, "2h30"],
-    [7200, "2h"], [5400, "1h30"], [3600, "1h"],
-    [2700, "45min"], [1800, "30min"], [900, "15min"], [0, "0h"]
-];
-let simulationInterval = null;
-let simulationRemaining = 0;
-let simulationRunning = false;
-let simulationStarted = false;
-let simulationDeadline = 0;
 
 function simulationButtons() {
     const toggle = (id, show) => {
@@ -4842,7 +4745,22 @@ function simulationButtons() {
     toggle("continueSimulation", simulationStarted && !simulationRunning && simulationRemaining > 0);
 }
 
-function startSimulationTimer(seconds, name) {
+let simulationInterval = null;
+let simulationRemaining = 0;
+let simulationDeadline = 0;
+let simulationRunning = false;
+let simulationStarted = false;
+
+const SIMULATION_MARKS = [
+    [18000, "5h"], [16200, "4h30"], [14400, "4h"],
+    [12600, "3h30"], [10800, "3h"], [9000, "2h30"],
+    [7200, "2h"], [5400, "1h30"], [3600, "1h"],
+    [2700, "45min"], [1800, "30min"], [900, "15min"]
+];
+
+let activeSimulationId = null;
+function startSimulationTimer(seconds, name, simulationId = null) {
+    activeSimulationId = simulationId;
     clearInterval(simulationInterval);
     simulationInterval = null;
     simulationRemaining = Math.max(0, Math.floor(Number(seconds) || 0));
@@ -4930,6 +4848,7 @@ function pauseSimulationTimer() {
 }
 
 function finishSimulationTimer(automatic = false) {
+    if (simulationRunning) simulationRemaining = Math.max(0, Math.ceil((simulationDeadline - Date.now()) / 1000));
     clearInterval(simulationInterval);
     simulationInterval = null;
     simulationRunning = false;
@@ -4937,22 +4856,85 @@ function finishSimulationTimer(automatic = false) {
     simulationRemaining = 0;
     updateSimulationTimerUI();
     simulationButtons();
-    if (automatic) {
-        document.getElementById("simulationEndOverlay")?.classList.remove("hidden");
-    } else {
-        document.getElementById("simulationTimer")?.classList.add("hidden");
-        document.getElementById("simulationEndOverlay")?.classList.add("hidden");
-        showToast("Simulado finalizado.");
+    const simulation = simulations.find(s => String(s.id) === String(activeSimulationId));
+    if (!simulation) {
+        showToast("Não foi possível localizar o simulado para salvar o resultado.");
+        return;
     }
+    openSimulationResult(simulation, automatic);
 }
+
+function openSimulationResult(simulation, automatic) {
+    const overlay = document.getElementById("simulationResultOverlay");
+    if (!overlay) return;
+    setText("simulationResultTitle", automatic ? "Tempo encerrado!" : "Finalizar simulado");
+    setText("simulationResultDescription", "Informe seus acertos para registrar o desempenho e atualizar as estatísticas.");
+    document.getElementById("simulationResultQuestions").value = Number(simulation.questions) || 0;
+    document.getElementById("simulationResultCorrect").value = "";
+    const area = document.getElementById("simulationResultSubjects");
+    const entries = Array.isArray(simulation.subjects) ? simulation.subjects.filter(s => Number(s.questions) > 0) : [];
+    area.innerHTML = entries.length ? `<h3>Acertos por matéria</h3>${entries.map((s,i) => `
+        <label>${escapeHTML(s.name)} (${Number(s.questions)} questões)
+        <input type="number" data-result-subject="${i}" min="0" max="${Number(s.questions)}" step="1" required placeholder="Acertos nesta matéria"></label>`).join("")}
+        <p>O total de acertos será calculado automaticamente.</p>` : "";
+    const total = document.getElementById("simulationResultCorrect");
+    total.max = String(Number(simulation.questions) || 0);
+    total.readOnly = entries.length > 0;
+    total.required = entries.length === 0;
+    if (entries.length) total.value = 0;
+    overlay.classList.remove("hidden");
+    area.querySelectorAll("[data-result-subject]").forEach(input => input.addEventListener("input", () => {
+        total.value = [...area.querySelectorAll("[data-result-subject]")].reduce((sum, el) => sum + (Number(el.value) || 0), 0);
+    }));
+    (entries.length ? area.querySelector("input") : total)?.focus();
+}
+
+document.getElementById("simulationResultForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+    const simulation = simulations.find(s => String(s.id) === String(activeSimulationId));
+    if (!simulation) return;
+    const total = Number(simulation.questions) || 0;
+    const inputs = [...document.querySelectorAll("#simulationResultSubjects [data-result-subject]")];
+    let correct = Number(document.getElementById("simulationResultCorrect").value);
+    if (inputs.length) {
+        const subjects = simulation.subjects.filter(s => Number(s.questions) > 0);
+        for (const [index, input] of inputs.entries()) {
+            const n = Number(input.value);
+            if (input.value === "" || !Number.isInteger(n) || n < 0 || n > Number(subjects[index].questions)) {
+                showToast(`Confira os acertos de ${subjects[index].name}.`); input.focus(); return;
+            }
+            subjects[index].correct = n;
+        }
+        correct = subjects.reduce((sum,s) => sum + Number(s.correct || 0), 0);
+    }
+    if (!Number.isInteger(correct) || correct < 0 || correct > total) {
+        showToast("O número de acertos deve estar entre 0 e o total de questões."); return;
+    }
+    simulation.correct = correct;
+    simulation.completed = true;
+    simulation.date = formatDateShort(new Date());
+    saveSimulations();
+    document.getElementById("simulationResultOverlay").classList.add("hidden");
+    document.getElementById("simulationTimer")?.classList.add("hidden");
+    activeSimulationId = null;
+    renderSimulationSelect();
+    renderSavedSimulations();
+    renderSettingsSimulations();
+    renderSimulationStatistics();
+    showToast("Resultado salvo! Estatísticas atualizadas.");
+});
+
+document.getElementById("cancelSimulationResult")?.addEventListener("click", () => {
+    document.getElementById("simulationResultOverlay")?.classList.add("hidden");
+    document.getElementById("simulationTimer")?.classList.add("hidden");
+    activeSimulationId = null;
+    showToast("Resultado não registrado.");
+});
 
 document.getElementById("startSimulation")?.addEventListener("click", runSimulation);
 document.getElementById("pauseSimulation")?.addEventListener("click", pauseSimulationTimer);
 document.getElementById("continueSimulation")?.addEventListener("click", runSimulation);
 document.getElementById("finishSimulation")?.addEventListener("click", () => finishSimulationTimer(false));
-document.getElementById("dismissSimulationEnd")?.addEventListener("click", () => {
-    document.getElementById("simulationEndOverlay")?.classList.add("hidden");
-});
 
 /* =========================================================
    POMODORO / SESSÃO DE ESTUDO
@@ -5777,12 +5759,48 @@ document.getElementById("pauseStopwatch")?.addEventListener("click", () => {
     }
 });
 
+function confirmarFinalizacao(mensagem, aoConfirmar) {
+    const overlay = document.createElement("div");
+    overlay.className = "finalizar-overlay";
+
+    overlay.innerHTML = `
+        <div class="finalizar-modal" role="dialog" aria-modal="true">
+            <h2>Finalizar estudo?</h2>
+            <p>${mensagem}</p>
+
+            <div class="finalizar-acoes">
+                <button type="button" class="finalizar-cancelar">
+                    Cancelar
+                </button>
+
+                <button type="button" class="finalizar-confirmar">
+                    Finalizar
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector(".finalizar-cancelar").onclick = () => {
+        overlay.remove();
+    };
+
+    overlay.querySelector(".finalizar-confirmar").onclick = () => {
+        overlay.remove();
+        aoConfirmar();
+    };
+}
 
 document.getElementById("finishStopwatch")?.addEventListener("click", () => {
     if (!stopwatchSubject) return;
-    if (!confirm("Deseja finalizar o cronômetro?")) return;
-    finishStopwatch();
+
+    confirmarFinalizacao(
+        "Deseja realmente finalizar o cronômetro?",
+        finishStopwatch
+    );
 });
+
 
 
 /* =========================================================
@@ -5792,6 +5810,15 @@ document.getElementById("finishStopwatch")?.addEventListener("click", () => {
 const manualStudyForm = document.getElementById("manualStudyForm");
 
 if (manualStudyForm) {
+
+    // Impede que Enter registre o estudo
+    manualStudyForm.addEventListener("keydown", event => {
+        if (event.key === "Enter") {
+            event.preventDefault();
+        }
+    });
+
+    // Registra somente ao enviar pelo botão
     manualStudyForm.addEventListener("submit", event => {
         event.preventDefault();
 
@@ -5808,12 +5835,6 @@ if (manualStudyForm) {
 
         if (totalSeconds < 0) {
             showToast("Informe o tempo no formato HH:MM:SS. Ex.: 01:25:30");
-            manualTimeInput?.focus();
-            return;
-        }
-
-        if (totalSeconds <= 0) {
-            showToast("Informe um tempo de estudo maior que zero.");
             manualTimeInput?.focus();
             return;
         }
@@ -5840,6 +5861,7 @@ if (manualStudyForm) {
         showToast("Estudo manual registrado!");
     });
 }
+
 
 
 /* =========================================================
@@ -6061,8 +6083,8 @@ function updateTimerUI() {
 
         pauseButton.textContent =
             timerRunning
-                ? "â¸ Pausar"
-                : "â–¶ Continuar";
+                ? "⏸ Pausar"
+                : "▶ Continuar";
 
     }
 
@@ -6235,9 +6257,10 @@ if (finishTimer) {
     finishTimer.addEventListener("click", () => {
         if (!sessionData) return;
 
-        if (!confirm("Deseja finalizar esta sessÃ£o?")) return;
-
-        finishTimerManually();
+        confirmarFinalizacao(
+            "Deseja realmente finalizar o Pomodoro?",
+            finishTimerManually
+        );
     });
 }
 
@@ -7025,3 +7048,111 @@ document.addEventListener("click", event => {
     }
 });
 syncSubjectColorTriggers();
+
+function showConcursadoConfirm({ title, message, confirmLabel = "Confirmar" }) {
+    return new Promise(resolve => {
+        if (!document.getElementById("concursado-confirm-styles")) {
+            const style = document.createElement("style");
+            style.id = "concursado-confirm-styles";
+            style.textContent = `
+                .cc-confirm-overlay {
+                    position: fixed; inset: 0; z-index: 99999;
+                    display: flex; align-items: center; justify-content: center;
+                    padding: 20px; background: rgba(0, 0, 0, .76);
+                    backdrop-filter: blur(4px);
+                }
+                .cc-confirm-dialog {
+                    box-sizing: border-box; width: min(100%, 440px);
+                    padding: 28px; border: 1px solid rgba(94, 183, 130, .25);
+                    border-radius: 18px; background: #101b17;
+                    color: #f1f7f3; box-shadow: 0 24px 70px rgba(0,0,0,.48);
+                    text-align: left;
+                }
+                .cc-confirm-dialog h3 {
+                    margin: 0 0 12px; color: #f5f8f6;
+                    font-size: 21px; font-weight: 700; line-height: 1.35;
+                }
+                .cc-confirm-dialog p {
+                    margin: 0; color: #b9c8bf; font-size: 15px;
+                    line-height: 1.6; overflow-wrap: anywhere;
+                }
+                .cc-confirm-actions {
+                    display: flex; justify-content: flex-end;
+                    gap: 12px; margin-top: 28px; flex-wrap: wrap;
+                }
+                .cc-confirm-actions button {
+                    box-sizing: border-box; min-height: 44px; padding: 10px 18px;
+                    border-radius: 10px; font: inherit; font-weight: 600;
+                    cursor: pointer; white-space: normal;
+                }
+                .cc-confirm-cancel {
+                    background: #24332b; border: 1px solid #3a5042; color: #e8f0ea;
+                }
+                .cc-confirm-delete {
+                    background: #bb3434; border: 1px solid #d54b4b; color: #fff;
+                }
+                .cc-confirm-cancel:hover { background: #304437; }
+                .cc-confirm-delete:hover { background: #a52929; }
+                .cc-confirm-actions button:focus-visible {
+                    outline: 2px solid #6fdb96; outline-offset: 3px;
+                }
+                @media (max-width: 420px) {
+                    .cc-confirm-dialog { padding: 22px 18px; }
+                    .cc-confirm-actions { flex-direction: column-reverse; }
+                    .cc-confirm-actions button { width: 100%; }
+                }
+            `;
+            document.head.appendChild(style);
+        }
+
+        const overlay = document.createElement("div");
+        overlay.className = "cc-confirm-overlay";
+        overlay.innerHTML = `
+            <div class="cc-confirm-dialog" role="alertdialog" aria-modal="true"
+                 aria-labelledby="cc-confirm-title" aria-describedby="cc-confirm-message">
+                <h3 id="cc-confirm-title"></h3>
+                <p id="cc-confirm-message"></p>
+                <div class="cc-confirm-actions">
+                    <button type="button" class="cc-confirm-cancel">Cancelar</button>
+                    <button type="button" class="cc-confirm-delete"></button>
+                </div>
+            </div>
+        `;
+        overlay.querySelector("h3").textContent = title;
+        overlay.querySelector("p").textContent = message;
+        overlay.querySelector(".cc-confirm-delete").textContent = confirmLabel;
+
+        const previousFocus = document.activeElement;
+        document.body.appendChild(overlay);
+        const cancelButton = overlay.querySelector(".cc-confirm-cancel");
+        const deleteButton = overlay.querySelector(".cc-confirm-delete");
+        cancelButton.focus();
+        let closed = false;
+
+        function close(result) {
+            if (closed) return;
+            closed = true;
+            overlay.removeEventListener("keydown", handleKeydown);
+            overlay.remove();
+            if (previousFocus && previousFocus.isConnected) previousFocus.focus();
+            resolve(result);
+        }
+        function handleKeydown(event) {
+            if (event.key === "Escape") { event.preventDefault(); close(false); }
+            if (event.key === "Tab") {
+                const first = cancelButton, last = deleteButton;
+                if (event.shiftKey && document.activeElement === first) {
+                    event.preventDefault(); last.focus();
+                } else if (!event.shiftKey && document.activeElement === last) {
+                    event.preventDefault(); first.focus();
+                }
+            }
+        }
+        cancelButton.addEventListener("click", () => close(false));
+        deleteButton.addEventListener("click", () => close(true));
+        overlay.addEventListener("click", event => {
+            if (event.target === overlay) close(false);
+        });
+        overlay.addEventListener("keydown", handleKeydown);
+    });
+}
