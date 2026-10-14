@@ -5037,4 +5037,25 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 .auth-screen{position:fixed;inset:0;z-index:99999;display:grid;place-items:center;background:#07110d;padding:20px;color:#f2f7f3;font-family:Inter,Arial,sans-serif}
 .auth-screen[hidden],.auth-account[hidden]{display:none!important}
 .auth-panel{width:min(100%,420px);padding:34px;border:1px solid #294536;border-radius:22px;background:#111e17;box-shadow:0 20px 70px #0008}
-.auth-logo{color:#4ade80;font-weight:800;letter-spacing:1px;margin-bottom:28px}.auth-panel h1{font-size:26px;margin:0 0 8px}.auth-subtitle{color:#a1b5a8;margin:0 0 22px}.auth-panel label{display:block;margin:14px 0;font-size:13px}.auth-panel input{display:block;width:100%;margin-top:7px;box-sizing:border-box;padding:13px;border-radius:10px;border:1px solid #3b5946;background:#09140d;color:white}.auth-primary,.auth-google{display:block;width:100%;padding:13px;border-radius:10px;cursor:pointer;font-weight:700;margin-top:16px}.auth-primary{background:#22c55e;color:#06200f;border:0}.auth-google{background:#f6faf7;color:#18231c;border:0}.auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:20px}.auth-links button{border:0;background:none;color:#86efac;cursor:pointer}.auth-status{font-size:13px;color:#facc15;min-height:18px}.auth-account{position:fixed;right:12px;bottom:12px;z-index:9000;background:#14251b;color:white;padding:8px 12px;border:1px solid #355d43;border-radius:12px;font-size:12px;display:flex;gap:12px;align-items:center;max-width:calc(100vw - 24px)}.auth-account span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.auth-account button{background:#265d3a;color:white;border:0;border-radius:7px;padding:8px;cursor:pointer}
+.auth-logo{color:#4ade80;font-weight:800;letter-spacing:1px;margin-bottom:28px}.auth-panel h1{font-size:26px;margin:0 0 8px}.auth-subtitle{color:#a1b5a8;margin:0 0 22px}.auth-panel label{display:block;margin:14px 0;font-size:13px}.auth-panel input{display:block;width:100%;margin-top:7px;box-sizing:border-box;padding:13px;border-radius:10px;border:1px solid #3b5946;background:#09140d;color:white}.auth-primary,.auth-google{display:block;width:100%;padding:13px;border-radius:10px;cursor:pointer;font-weight:700;margin-top:16px}.auth-primary{background:#22c55e;color:#06200f;border:0}.auth-google{background:#f6faf7;color:#18231c;border:0}.auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:20px}.auth-links button{border:0;background:none;color:#86efac;cursor:pointer}.auth-status{font-size:13px;color:#facc15;min-height:18px}/* Conta no cabeçalho: Conta → Menu → Instalar */
+.top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.auth-account{position:relative;z-index:9000;display:block;flex-shrink:0}
+.auth-account[hidden]{display:none!important}
+.auth-account-details{position:relative}
+.auth-account-details summary{list-style:none;display:flex;align-items:center;justify-content:center;cursor:pointer;width:36px;height:36px;border:1px solid #355d43;border-radius:9px;background:#14251b;color:white;font-size:18px}
+.auth-account-details summary::-webkit-details-marker{display:none}
+.auth-account-dropdown{position:absolute;right:0;top:calc(100% + 10px);width:max-content;max-width:min(280px,85vw);padding:12px;background:#14251b;border:1px solid #355d43;border-radius:12px;box-shadow:0 12px 25px #0008;display:flex;align-items:center;gap:10px;color:white;font-size:12px}
+.auth-account-dropdown span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}
+.auth-account-dropdown button{background:#265d3a;color:white;border:0;border-radius:7px;padding:8px;cursor:pointer}
+@media(max-width:560px){.topbar{gap:6px}.top-actions{gap:5px}.auth-account-details summary{width:32px;height:34px}.install-btn{padding:7px 8px;font-size:11px}.brand{font-size:16px}.brand strong{white-space:nowrap}}
+
+
+/* Perfil profissional CONCURSADO */
+.auth-account-details summary {border-radius:50%;width:39px;height:39px;overflow:hidden;padding:0;border:2px solid #2bd375;background:#172c20}
+.auth-avatar,.auth-avatar-fallback {width:100%;height:100%;object-fit:cover;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.auth-avatar[hidden],.auth-avatar-fallback[hidden]{display:none!important}
+.auth-account-dropdown{width:260px;max-width:calc(100vw - 20px);flex-direction:column;align-items:stretch;gap:14px;padding:18px;border-radius:16px;background:#12241b;box-shadow:0 20px 45px #000a}
+.auth-profile-meta{display:flex;flex-direction:column;gap:5px;min-width:0}
+.auth-profile-meta strong{font-size:14px;color:#f4fff7;overflow:hidden;text-overflow:ellipsis}
+.auth-profile-meta span{font-size:12px;color:#a6c1b0;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.auth-account-dropdown button{width:100%;padding:11px;background:#204a31;border:1px solid #326c46}

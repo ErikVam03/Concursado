@@ -13,6 +13,17 @@ function unlock(user) {
   if (!user) return;
   window.CONCURSADO_USER_ID = user.id;
   document.getElementById('authUserEmail').textContent = user.email || 'Minha conta';
+  const meta = user.user_metadata || {};
+  document.getElementById('authUserName').textContent = meta.full_name || meta.name || user.email?.split('@')[0] || 'Minha conta';
+  const photo = meta.avatar_url || meta.picture;
+  const avatar = document.getElementById('authAvatar');
+  const fallback = document.getElementById('authAvatarFallback');
+  avatar.hidden = true; fallback.hidden = false;
+  if (photo && /^https:\/\//i.test(photo)) {
+    avatar.onload = () => { avatar.hidden = false; fallback.hidden = true; };
+    avatar.onerror = () => { avatar.hidden = true; fallback.hidden = false; };
+    avatar.src = photo;
+  }
   document.getElementById('authAccount').hidden = false;
   document.getElementById('authScreen').hidden = true;
   document.body.classList.remove('auth-locked');
@@ -29,7 +40,7 @@ function lock() {
   document.body.classList.add('auth-locked');
 }
 async function start() {
-  if (SUPABASE_PUBLISHABLE_KEY === 'COLE_AQUI_SUA_PUBLISHABLE_KEY') {
+  if (!SUPABASE_PUBLISHABLE_KEY || SUPABASE_PUBLISHABLE_KEY === 'COLE_AQUI_SUA_PUBLISHABLE_KEY') {
     status('Falta configurar a Publishable key no arquivo auth.js.');
     return;
   }

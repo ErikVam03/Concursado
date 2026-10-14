@@ -143,7 +143,7 @@
 
 
 <body class="auth-locked">
-<div id="authScreen" class="auth-screen"><div class="auth-panel"><div class="auth-logo">✦ CONCURSADO</div><h1 id="authHeading">Entre para continuar</h1><p class="auth-subtitle">Seu espaço para evoluir nos estudos.</p><p id="authStatus" class="auth-status" role="status">Conectando...</p><form id="authForm" hidden><label>E-mail<input id="authEmail" type="email" autocomplete="email" required></label><label>Senha<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></label><button class="auth-primary" id="authSubmit" type="submit">Entrar</button></form><button id="authGoogle" class="auth-google" hidden type="button">Continuar com Google</button><div class="auth-links"><button id="authSwitch" hidden type="button">Criar uma conta</button><button id="authForgot" hidden type="button">Esqueci minha senha</button></div></div></div><div id="authAccount" class="auth-account" hidden><span id="authUserEmail"></span><button id="authLogout" type="button">Sair</button></div>
+<div id="authScreen" class="auth-screen"><div class="auth-panel"><div class="auth-logo">✦ CONCURSADO</div><h1 id="authHeading">Entre para continuar</h1><p class="auth-subtitle">Seu espaço para evoluir nos estudos.</p><p id="authStatus" class="auth-status" role="status">Conectando...</p><form id="authForm" hidden><label>E-mail<input id="authEmail" type="email" autocomplete="email" required></label><label>Senha<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></label><button class="auth-primary" id="authSubmit" type="submit">Entrar</button></form><button id="authGoogle" class="auth-google" hidden type="button">Continuar com Google</button><div class="auth-links"><button id="authSwitch" hidden type="button">Criar uma conta</button><button id="authForgot" hidden type="button">Esqueci minha senha</button></div></div></div>
 
 
 
@@ -266,25 +266,17 @@
 
 
         <div class="top-actions">
-
-
-
-            <button id="installBtn" class="install-btn">
-
-                📱 Instalar
-
-            </button>
-
-
-
-            <button id="menuBtn" class="icon-btn" aria-label="Abrir menu">
-
-                ☰
-
-            </button>
-
-
-
+            <div id="authAccount" class="auth-account" hidden>
+                <details class="auth-account-details">
+                    <summary aria-label="Minha conta" title="Minha conta"><span id="authAvatarFallback" class="auth-avatar-fallback">👤</span><img id="authAvatar" class="auth-avatar" alt="Foto do perfil" referrerpolicy="no-referrer" hidden></summary>
+                    <div class="auth-account-dropdown">
+                        <div class="auth-profile-meta"><strong id="authUserName">Minha conta</strong><span id="authUserEmail"></span></div>
+                        <button id="authLogout" type="button">Sair</button>
+                    </div>
+                </details>
+            </div>
+            <button id="menuBtn" class="icon-btn" aria-label="Abrir menu">☰</button>
+            <button id="installBtn" class="install-btn">📱 Instalar</button>
         </div>
 
 
@@ -2829,7 +2821,7 @@
 
 
 
-                        <input id="modalSubjectHours" type="text" placeholder="00:00:00" required>
+                        <input id="subjectHours" type="text" placeholder="00:00:00" required>
 
 
 
@@ -3221,6 +3213,20 @@
 
 
 
+
+
+<div id="simulationEditOverlay" class="subject-edit-overlay hidden" role="presentation">
+  <div class="card subject-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="simulationEditTitle">
+    <div class="subject-edit-heading"><h2 id="simulationEditTitle">✏️ Editar simulado</h2><button type="button" id="closeSimulationEdit" class="icon-btn" aria-label="Fechar">✕</button></div>
+    <form id="simulationEditModalForm" class="subject-edit-form">
+      <input id="modalSimulationId" type="hidden">
+      <label>Nome do simulado<input id="modalSimulationName" type="text" required></label>
+      <label>Tempo do simulado (HH:MM:SS)<input id="modalSimulationTime" type="text" inputmode="numeric" placeholder="02:00:00" required></label>
+      <label>Quantidade de questões<input id="modalSimulationQuestions" type="number" min="1" required></label>
+      <div class="subject-edit-actions"><button id="cancelSimulationModal" type="button" class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar alterações</button></div>
+    </form>
+  </div>
+</div>
 
     <!-- EDIÇÃO DE MATÉRIA EM JANELA -->
     <div id="subjectEditOverlay" class="subject-edit-overlay hidden" role="presentation">

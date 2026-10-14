@@ -1856,6 +1856,30 @@ function renderCycleSubjects() {
    CONFIGURAÇÕES DE MATÉRIAS
 ========================================================= */
 
+
+/* Conversão de duração para o formulário de matérias. */
+function textoParaHoras(value) {
+    const text = String(value ?? '').trim();
+    if (!text) return NaN;
+    if (/^\d+(?::[0-5]\d){2}$/.test(text)) {
+        const [h,m,s] = text.split(':').map(Number);
+        return h + m / 60 + s / 3600;
+    }
+    if (/^\d+(?::[0-5]\d)$/.test(text)) {
+        const [h,m] = text.split(':').map(Number);
+        return h + m / 60;
+    }
+    const n = Number(text.replace(',', '.'));
+    return Number.isFinite(n) && n >= 0 ? n : NaN;
+}
+function horasParaTexto(value) {
+    const total = Math.max(0, Math.round(Number(value || 0) * 3600));
+    const h = Math.floor(total / 3600);
+    const m = Math.floor(total % 3600 / 60);
+    const s = total % 60;
+    return [h,m,s].map(x => String(x).padStart(2,'0')).join(':');
+}
+
 const subjectForm =
     document.getElementById(
         "subjectForm"
@@ -2126,8 +2150,9 @@ function editSubject(id) {
     document.getElementById("modalSubjectId").value = subject.id;
     document.getElementById("modalSubjectName").value = subject.name || "";
     document.getElementById("modalSubjectColor").value = getSubjectColor(subject.name);
-    document.getElementById("modalSubjectHours").value =
-        horasParaTexto(subject.hours); overlay.classList.remove("hidden");
+    document.getElementById("modalSubjectHours").value = horasParaTexto(subject.hours);
+    document.getElementById("modalSubjectQuestions").value = subject.questions || 0;
+    overlay.classList.remove("hidden");
     document.body.classList.add("subject-edit-open");
     document.getElementById("modalSubjectName").focus();
 }
@@ -4185,168 +4210,56 @@ function renderSettingsSimulations() {
 
 
 function editSimulation(id) {
-
-    const simulation =
-        simulations.find(
-            item =>
-                String(item.id) ===
-                String(id)
-        );
-
-
-    if (!simulation) {
-        return;
-    }
-
-
-    /*
-        O HTML original não possui necessariamente
-        editingSimulationId.
-
-        Criamos dinamicamente caso necessário.
-    */
-
-    let editing =
-        document.getElementById(
-            "editingSimulationId"
-        );
-
-
-    if (!editing) {
-
-        editing =
-            document.createElement(
-                "input"
-            );
-
-
-        editing.type =
-            "hidden";
-
-        editing.id =
-            "editingSimulationId";
-
-
-        settingsSimulationForm?.appendChild(
-            editing
-        );
-
-    }
-
-
-    editing.value =
-        simulation.id;
-
-
-    const name =
-        document.getElementById(
-            "settingsSimulationName"
-        );
-
-
-    const time =
-        document.getElementById("settingsSimulationTime");
-
-
-    const questions =
-        document.getElementById(
-            "settingsSimulationQuestions"
-        );
-
-
-    if (name) {
-        name.value =
-            simulation.name;
-    }
-
-
-    if (hours) {
-        hours.value =
-            simulation.hours || 0;
-    }
-
-
-    if (minutes) {
-        minutes.value =
-            simulation.minutes || 0;
-    }
-
-
-    if (questions) {
-        questions.value =
-            simulation.questions || 0;
-    }
-
-
-    const submit =
-        settingsSimulationForm?.querySelector(
-            'button[type="submit"]'
-        );
-
-
-    if (submit) {
-
-        submit.textContent =
-            "✏️ Salvar alterações";
-
-    }
-
-
-    let cancel =
-        document.getElementById(
-            "cancelSimulationEdit"
-        );
-
-
-    if (!cancel) {
-
-        cancel =
-            document.createElement(
-                "button"
-            );
-
-
-        cancel.type =
-            "button";
-
-        cancel.id =
-            "cancelSimulationEdit";
-
-        cancel.className =
-            "secondary-btn";
-
-        cancel.textContent =
-            "Cancelar";
-
-
-        settingsSimulationForm
-            ?.querySelector(
-                ".form-actions"
-            )
-            ?.appendChild(
-                cancel
-            );
-
-
-        cancel.addEventListener(
-            "click",
-            resetSimulationSettingsForm
-        );
-
-    }
-
-
-    cancel.classList.remove(
-        "hidden"
-    );
-
-
-    settingsSimulationForm?.scrollIntoView({
-        behavior: "smooth",
-        block: "center"
-    });
+    const simulation = simulations.find(item => String(item.id) === String(id));
+    const overlay = document.getElementById('simulationEditOverlay');
+    if (!simulation || !overlay) return;
+    document.getElementById('modalSimulationId').value = simulation.id;
+    document.getElementById('modalSimulationName').value = simulation.name || '';
+    const hours = Math.max(0, Number(simulation.hours) || 0);
+    const minutes = Math.max(0, Number(simulation.minutes) || 0);
+    document.getElementById('modalSimulationTime').value =
+        [hours, minutes, 0].map(n => String(n).padStart(2, '0')).join(':');
+    document.getElementById('modalSimulationQuestions').value = simulation.questions || 0;
+    overlay.classList.remove('hidden');
+    document.body.classList.add('subject-edit-open');
+    document.getElementById('modalSimulationName').focus();
 }
-
+function closeSimulationEditModal() {
+    document.getElementById('simulationEditOverlay')?.classList.add('hidden');
+    document.body.classList.remove('subject-edit-open');
+}
+document.getElementById('simulationEditModalForm')?.addEventListener('submit', event => {
+    event.preventDefault();
+    const id = document.getElementById('modalSimulationId').value;
+    const name = document.getElementById('modalSimulationName').value.trim();
+    const time = document.getElementById('modalSimulationTime').value.trim();
+    const questions = Number(document.getElementById('modalSimulationQuestions').value);
+    const match = time.match(/^(\d+):([0-5]\d):([0-5]\d)$/);
+    if (!name || !match || !(questions > 0)) {
+        alert('Preencha nome, tempo (HH:MM:SS) e questões corretamente.'); return;
+    }
+    const simulation = simulations.find(item => String(item.id) === String(id));
+    if (!simulation) return;
+    simulation.name = name;
+    simulation.hours = Number(match[1]);
+    simulation.minutes = Number(match[2]) + Number(match[3]) / 60;
+    simulation.questions = questions;
+    saveSimulations();
+    closeSimulationEditModal();
+    renderSimulationSelect();
+    renderSavedSimulations();
+    renderSettingsSimulations();
+    if (typeof updateAll === 'function') updateAll();
+    showToast('Simulado atualizado!');
+});
+['closeSimulationEdit','cancelSimulationModal'].forEach(id =>
+    document.getElementById(id)?.addEventListener('click', closeSimulationEditModal));
+document.getElementById('simulationEditOverlay')?.addEventListener('click', event => {
+    if (event.target.id === 'simulationEditOverlay') closeSimulationEditModal();
+});
+document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') closeSimulationEditModal();
+});
 
 function resetSimulationSettingsForm() {
 
