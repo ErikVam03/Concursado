@@ -22,9 +22,7 @@
 
 
 
-    <link
-
-        rel="manifest" href="manifest.json">
+    <link rel="manifest" href="manifest.json">
 
 
 
@@ -143,7 +141,21 @@
 
 
 <body class="auth-locked">
-<div id="authScreen" class="auth-screen"><div class="auth-panel"><div class="auth-logo">✦ CONCURSADO</div><h1 id="authHeading">Entre para continuar</h1><p class="auth-subtitle">Seu espaço para evoluir nos estudos.</p><p id="authStatus" class="auth-status" role="status">Conectando...</p><form id="authForm" hidden><label>E-mail<input id="authEmail" type="email" autocomplete="email" required></label><label>Senha<input id="authPassword" type="password" autocomplete="current-password" minlength="8" required></label><button class="auth-primary" id="authSubmit" type="submit">Entrar</button></form><button id="authGoogle" class="auth-google" hidden type="button">Continuar com Google</button><div class="auth-links"><button id="authSwitch" hidden type="button">Criar uma conta</button><button id="authForgot" hidden type="button">Esqueci minha senha</button></div></div></div>
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-panel">
+            <div class="auth-logo">✦ CONCURSADO</div>
+            <h1 id="authHeading">Entre para continuar</h1>
+            <p class="auth-subtitle">Seu espaço para evoluir nos estudos.</p>
+            <p id="authStatus" class="auth-status" role="status">Conectando...</p>
+            <form id="authForm" hidden><label>E-mail<input id="authEmail" type="email" autocomplete="email"
+                        required></label><label>Senha<input id="authPassword" type="password"
+                        autocomplete="current-password" minlength="8" required></label><button class="auth-primary"
+                    id="authSubmit" type="submit">Entrar</button></form><button id="authGoogle" class="auth-google"
+                hidden type="button">Continuar com Google</button>
+            <div class="auth-links"><button id="authSwitch" hidden type="button">Criar uma conta</button><button
+                    id="authForgot" hidden type="button">Esqueci minha senha</button></div>
+        </div>
+    </div>
 
 
 
@@ -268,9 +280,12 @@
         <div class="top-actions">
             <div id="authAccount" class="auth-account" hidden>
                 <details class="auth-account-details">
-                    <summary aria-label="Minha conta" title="Minha conta"><span id="authAvatarFallback" class="auth-avatar-fallback">👤</span><img id="authAvatar" class="auth-avatar" alt="Foto do perfil" referrerpolicy="no-referrer" hidden></summary>
+                    <summary aria-label="Minha conta" title="Minha conta"><span id="authAvatarFallback"
+                            class="auth-avatar-fallback">👤</span><img id="authAvatar" class="auth-avatar"
+                            alt="Foto do perfil" referrerpolicy="no-referrer" hidden></summary>
                     <div class="auth-account-dropdown">
-                        <div class="auth-profile-meta"><strong id="authUserName">Minha conta</strong><span id="authUserEmail"></span></div>
+                        <div class="auth-profile-meta"><strong id="authUserName">Minha conta</strong><span
+                                id="authUserEmail"></span></div>
                         <button id="authLogout" type="button">Sair</button>
                     </div>
                 </details>
@@ -2568,7 +2583,8 @@
                         </label>
 
                         <label>Quantidade total de questões
-                            <input type="number" id="simulationQuestionsInput" min="1" step="1" placeholder="Ex: 120" required>
+                            <input type="number" id="simulationQuestionsInput" min="1" step="1" placeholder="Ex: 120"
+                                required>
                         </label>
 
 
@@ -2664,7 +2680,8 @@
 
 
 
-            <div id="simulationResultOverlay" class="simulation-end-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="simulationResultTitle">
+            <div id="simulationResultOverlay" class="simulation-end-overlay hidden" role="dialog" aria-modal="true"
+                aria-labelledby="simulationResultTitle">
                 <div class="card simulation-end-modal" style="width:min(480px,100%)">
                     <span class="eyebrow">RESULTADO DO SIMULADO</span>
                     <h2 id="simulationResultTitle">Finalizar simulado</h2>
@@ -2928,7 +2945,8 @@
                         <span class="eyebrow">PLANEJAMENTO</span>
                         <h2>🔄 Ciclo de Estudos</h2>
                         <p>Escolha as matérias que participam do ciclo e configure suas metas.</p>
-                        <p>*Importante: Defina como você quer que o ciclo seja calculado: por tempo, por questões ou ambos. O cálculo será feito com base na soma das metas de cada matéria.</p>
+                        <p>*Importante: Defina como você quer que o ciclo seja calculado: por tempo, por questões ou
+                            ambos. O cálculo será feito com base na soma das metas de cada matéria.</p>
                     </div>
                 </div>
                 <div id="cycleSettingsList" class="settings-list"></div>
@@ -3231,18 +3249,25 @@
 
 
 
-<div id="simulationEditOverlay" class="subject-edit-overlay hidden" role="presentation">
-  <div class="card subject-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="simulationEditTitle">
-    <div class="subject-edit-heading"><h2 id="simulationEditTitle">✏️ Editar simulado</h2><button type="button" id="closeSimulationEdit" class="icon-btn" aria-label="Fechar">✕</button></div>
-    <form id="simulationEditModalForm" class="subject-edit-form">
-      <input id="modalSimulationId" type="hidden">
-      <label>Nome do simulado<input id="modalSimulationName" type="text" required></label>
-      <label>Tempo do simulado (HH:MM:SS)<input id="modalSimulationTime" type="text" inputmode="numeric" placeholder="02:00:00" required></label>
-      <label>Quantidade de questões<input id="modalSimulationQuestions" type="number" min="1" required></label>
-      <div class="subject-edit-actions"><button id="cancelSimulationModal" type="button" class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar alterações</button></div>
-    </form>
-  </div>
-</div>
+    <div id="simulationEditOverlay" class="subject-edit-overlay hidden" role="presentation">
+        <div class="card subject-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="simulationEditTitle">
+            <div class="subject-edit-heading">
+                <h2 id="simulationEditTitle">✏️ Editar simulado</h2><button type="button" id="closeSimulationEdit"
+                    class="icon-btn" aria-label="Fechar">✕</button>
+            </div>
+            <form id="simulationEditModalForm" class="subject-edit-form">
+                <input id="modalSimulationId" type="hidden">
+                <label>Nome do simulado<input id="modalSimulationName" type="text" required></label>
+                <label>Tempo do simulado (HH:MM:SS)<input id="modalSimulationTime" type="text" inputmode="numeric"
+                        placeholder="02:00:00" required></label>
+                <label>Quantidade de questões<input id="modalSimulationQuestions" type="number" min="1"
+                        required></label>
+                <div class="subject-edit-actions"><button id="cancelSimulationModal" type="button"
+                        class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar
+                        alterações</button></div>
+            </form>
+        </div>
+    </div>
 
     <!-- EDIÇÃO DE MATÉRIA EM JANELA -->
     <div id="subjectEditOverlay" class="subject-edit-overlay hidden" role="presentation">
@@ -3309,35 +3334,31 @@
             <p>Escolha uma cor para identificar sua matéria no ciclo e nos gráficos.</p>
             <div id="subjectPaletteOptions" class="conc-color-grid" role="group" aria-label="Cores disponíveis"></div>
             <div class="conc-custom-picker">
-    <h3>✨ Criar minha própria cor</h3>
-    <div class="conc-color-preview-container">
-    <div id="subjectColorPreview" class="conc-color-preview"></div>
+                <h3>✨ Criar minha própria cor</h3>
+                <div class="conc-color-preview-container">
+                    <div id="subjectColorPreview" class="conc-color-preview"></div>
 
-    <div>
-        <strong>Prévia da cor</strong>
-        <span id="subjectColorPreviewHex">#22c55e</span>
-    </div>
-</div>
-    <label>
-        Tonalidade
-        <input id="subjectHue" type="range" min="0" max="360" value="140">
-    </label>
+                    <div>
+                        <strong>Prévia da cor</strong>
+                        <span id="subjectColorPreviewHex">#22c55e</span>
+                    </div>
+                </div>
+                <label>
+                    Tonalidade
+                    <input id="subjectHue" type="range" min="0" max="360" value="140">
+                </label>
 
-    <label>
-        Saturação
-        <input id="subjectSaturation" type="range" min="0" max="100" value="70">
-    </label>
+                <label>
+                    Saturação
+                    <input id="subjectSaturation" type="range" min="0" max="100" value="70">
+                </label>
 
-    <label>
-        Luminosidade
-        <input id="subjectLightness" type="range" min="0" max="100" value="45">
-    </label>
-</div>
-    <input
-        type="hidden"
-        id="subjectPaletteHex"
-        value="#22c55e"
-        >
+                <label>
+                    Luminosidade
+                    <input id="subjectLightness" type="range" min="0" max="100" value="45">
+                </label>
+            </div>
+            <input type="hidden" id="subjectPaletteHex" value="#22c55e">
             <div class="conc-modal-actions"><button type="button" class="secondary-btn"
                     id="cancelSubjectPalette">Cancelar</button><button type="button" class="primary-btn"
                     id="applySubjectPalette">Aplicar cor</button></div>

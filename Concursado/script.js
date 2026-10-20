@@ -1,3 +1,4 @@
+
 // Os registros de cada conta permanecem separados no navegador.
 // Os registros legados sem prefixo não são apagados nem importados automaticamente.
 function userStorageKey(key) {
@@ -317,6 +318,28 @@ if (menuBtn && mobileMenu) {
     );
 
 }
+
+
+/* Fechar menu de navegação ao clicar fora */
+
+document.addEventListener("click", (event) => {
+    if (!menuBtn || !mobileMenu) return;
+
+    const clicouNoBotao = menuBtn.contains(event.target);
+    const clicouNoMenu = mobileMenu.contains(event.target);
+
+    if (!clicouNoBotao && !clicouNoMenu) {
+        mobileMenu.classList.remove("open");
+    }
+});
+
+/* Fechar menu ao pressionar ESC */
+
+document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && mobileMenu) {
+        mobileMenu.classList.remove("open");
+    }
+});
 
 
 /* =========================================================
@@ -1612,18 +1635,13 @@ function renderCycle() {
         );
 
 
-        setText(
-            "nextRemaining",
-            formatStudyDuration(
-                remaining
-            )
-        );
+        const questionOnly = nextSubject.cycleMode === "questions";
+        const remainingLabel = questionOnly
+            ? `${Math.max(0, Number(nextSubject.questions || 0) - cycleQuestionsDone(nextSubject.name))} questões`
+            : formatStudyDuration(remaining);
 
-
-        setText(
-            "cyclePageNextRemaining",
-            `${formatStudyDuration(remaining)} restantes`
-        );
+        setText("nextRemaining", remainingLabel);
+        setText("cyclePageNextRemaining", `${remainingLabel} restantes`);
 
     } else {
 
@@ -1827,12 +1845,18 @@ function renderCycleSubjects() {
             </div>
 
 
-            <div class="cycle-subject-meta">
+            
+<div class="cycle-subject-meta">
 
-                <span>
-                    Estudado:
-                    ${formatStudyDuration(studied)}
-                </span>
+    <span>
+        ${subject.cycleMode === 'questions'
+            ? `Resolvidas: ${cycleQuestionsDone(subject.name)} questões`
+            : subject.cycleMode === 'both'
+                ? `Estudado: ${formatStudyDuration(studied)} | Resolvidas: ${cycleQuestionsDone(subject.name)} questões`
+                : `Estudado: ${formatStudyDuration(studied)}`
+        }
+    </span>
+
 
                 <span>
                     Meta:
@@ -3688,8 +3712,7 @@ if (existingSimulationForm) {
 
             startSimulationTimer(
                 totalSeconds,
-                simulation.name,
-                simulation.id
+                simulation.name
             );
 
         }
@@ -3735,12 +3758,6 @@ if (simulationForm) {
             return;
         }
 
-        const questionCount = Number(document.getElementById("simulationQuestionsInput")?.value);
-        if (!Number.isInteger(questionCount) || questionCount < 1) {
-            showToast("Informe a quantidade de questões.");
-            return;
-        }
-
         const simulation = {
             id: Date.now(),
             name,
@@ -3748,9 +3765,8 @@ if (simulationForm) {
             hours,
             minutes,
             seconds,
-            questions: questionCount,
+            questions: 0,
             correct: 0,
-            completed: false,
             subjects: []
         };
 
@@ -3766,7 +3782,7 @@ if (simulationForm) {
 
         showToast("Simulado criado!");
 
-        startSimulationTimer(totalSeconds, simulation.name, simulation.id);
+        startSimulationTimer(totalSeconds, simulation.name);
     });
 }
 
@@ -4085,7 +4101,7 @@ if (settingsSimulationForm) {
                         ),
 
                     correct: 0,
-                    completed: false,
+
                     subjects: []
 
                 });
@@ -4525,8 +4541,7 @@ function renderSimulationEvolution() {
     }
 
 
-    const completedSimulations = simulations.filter(s => s.completed !== false && Number(s.questions) > 0);
-    if (!completedSimulations.length) {
+    if (!simulations.length) {
 
         line.setAttribute(
             "d",
@@ -4561,7 +4576,7 @@ function renderSimulationEvolution() {
 
 
     const data =
-        completedSimulations.map(
+        simulations.map(
             simulation => {
 
                 const questions =
@@ -4715,25 +4730,157 @@ function renderSimulationEvolution() {
 
 
 function renderSimulationSubjects() {
-    // Este gráfico apresenta simulados, não matérias.
-    const container = document.getElementById("simulationSubjectBars");
-    if (!container) return;
-    const completed = simulations.filter(s => s.completed !== false && Number(s.questions) > 0);
-    if (!completed.length) {
-        container.innerHTML = '<div class="settings-empty">Nenhum simulado finalizado ainda.</div>';
+
+    const container =
+        document.getElementById(
+            "simulationSubjectBars"
+        );
+
+
+    if (!container) {
         return;
     }
-    container.innerHTML = completed.map(s => {
-        const questions = Number(s.questions) || 0;
-        const correct = Number(s.correct) || 0;
-        const percent = Math.max(0, Math.min(100, Math.round(correct / questions * 100)));
-        return `<div class="simulation-bar-row">
-            <span class="bar-label" title="${escapeHTML(s.name)}">${escapeHTML(s.name)}</span>
-            <div class="simulation-bar-track"><div class="simulation-bar-fill" style="width:${percent}%"></div></div>
-            <span class="bar-value">${percent}%</span>
-        </div>`;
-    }).join("");
+
+
+    const grouped = {};
+
+
+    simulations.forEach(
+        simulation => {
+
+            if (
+                !Array.isArray(
+                    simulation.subjects
+                )
+            ) {
+                return;
+            }
+
+
+            simulation.subjects.forEach(
+                subject => {
+
+                    const name =
+                        subject.name ||
+                        "Sem matéria";
+
+
+                    if (!grouped[name]) {
+
+                        grouped[name] = {
+                            questions: 0,
+                            correct: 0
+                        };
+
+                    }
+
+
+                    grouped[name].questions +=
+                        Number(
+                            subject.questions || 0
+                        );
+
+
+                    grouped[name].correct +=
+                        Number(
+                            subject.correct || 0
+                        );
+
+                }
+            );
+
+        }
+    );
+
+
+    const entries =
+        Object.entries(
+            grouped
+        );
+
+
+    if (!entries.length) {
+
+        container.innerHTML = `
+            <div class="settings-empty">
+                Ainda não há desempenho por matéria nos simulados.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    container.innerHTML =
+        entries
+            .map(
+                ([name, data]) => {
+
+                    const percent =
+                        data.questions > 0
+                            ? Math.round(
+                                (
+                                    data.correct /
+                                    data.questions
+                                ) * 100
+                            )
+                            : 0;
+
+
+                    return `
+
+                        <div class="simulation-bar-row">
+
+                            <span
+                                class="bar-label"
+                                title="${escapeHTML(name)}"
+                            >
+                                ${escapeHTML(name)}
+                            </span>
+
+                            <div class="simulation-bar-track">
+
+                                <div
+                                    class="simulation-bar-fill"
+                                    style="
+                                        width:${percent}%;
+                                    "
+                                ></div>
+
+                            </div>
+
+                            <strong
+                                class="bar-value"
+                            >
+                                ${percent}%
+                            </strong>
+
+                        </div>
+
+                    `;
+
+                }
+            )
+            .join("");
 }
+
+
+/* =========================================================
+   TIMER DO SIMULADO
+========================================================= */
+
+const SIMULATION_MARKS = [
+    [18000, "5h"], [16200, "4h30"], [14400, "4h"],
+    [12600, "3h30"], [10800, "3h"], [9000, "2h30"],
+    [7200, "2h"], [5400, "1h30"], [3600, "1h"],
+    [2700, "45min"], [1800, "30min"], [900, "15min"], [0, "0h"]
+];
+let simulationInterval = null;
+let simulationRemaining = 0;
+let simulationInitial = 0;
+let simulationRunning = false;
+let simulationStarted = false;
+let simulationDeadline = 0;
 
 function simulationButtons() {
     const toggle = (id, show) => {
@@ -4745,25 +4892,11 @@ function simulationButtons() {
     toggle("continueSimulation", simulationStarted && !simulationRunning && simulationRemaining > 0);
 }
 
-let simulationInterval = null;
-let simulationRemaining = 0;
-let simulationDeadline = 0;
-let simulationRunning = false;
-let simulationStarted = false;
-
-const SIMULATION_MARKS = [
-    [18000, "5h"], [16200, "4h30"], [14400, "4h"],
-    [12600, "3h30"], [10800, "3h"], [9000, "2h30"],
-    [7200, "2h"], [5400, "1h30"], [3600, "1h"],
-    [2700, "45min"], [1800, "30min"], [900, "15min"]
-];
-
-let activeSimulationId = null;
-function startSimulationTimer(seconds, name, simulationId = null) {
-    activeSimulationId = simulationId;
+function startSimulationTimer(seconds, name) {
     clearInterval(simulationInterval);
     simulationInterval = null;
     simulationRemaining = Math.max(0, Math.floor(Number(seconds) || 0));
+    simulationInitial = simulationRemaining;
     simulationRunning = false;
     simulationStarted = false;
     document.getElementById("simulationTimer")?.classList.remove("hidden");
@@ -4806,13 +4939,13 @@ function updateSimulationTimerUI() {
         board.innerHTML = total === 0
             ? ""
             : SIMULATION_MARKS
-                .filter(([seconds]) => {
-                    // Exibe somente horários ainda não atingidos
-                    return seconds < total;
+                .filter(([seconds]) => seconds <= simulationInitial)
+                .map(([seconds, label]) => {
+                    // A marca inicial já fica riscada assim que a prova começa.
+                    // As demais são riscadas quando o tempo restante as alcança.
+                    const crossed = simulationStarted && total <= seconds;
+                    return `<span class="simulation-time-mark${crossed ? ' crossed' : ''}"${crossed ? ' style="text-decoration:line-through !important;text-decoration-thickness:2px !important;text-decoration-color:#ffdf00 !important;opacity:.65"' : ''}>${label}</span>`;
                 })
-                .map(([, label]) =>
-                    `<span class="simulation-time-mark">${label}</span>`
-                )
                 .join("");
     }
 }
@@ -4848,7 +4981,6 @@ function pauseSimulationTimer() {
 }
 
 function finishSimulationTimer(automatic = false) {
-    if (simulationRunning) simulationRemaining = Math.max(0, Math.ceil((simulationDeadline - Date.now()) / 1000));
     clearInterval(simulationInterval);
     simulationInterval = null;
     simulationRunning = false;
@@ -4856,85 +4988,22 @@ function finishSimulationTimer(automatic = false) {
     simulationRemaining = 0;
     updateSimulationTimerUI();
     simulationButtons();
-    const simulation = simulations.find(s => String(s.id) === String(activeSimulationId));
-    if (!simulation) {
-        showToast("Não foi possível localizar o simulado para salvar o resultado.");
-        return;
+    if (automatic) {
+        document.getElementById("simulationEndOverlay")?.classList.remove("hidden");
+    } else {
+        document.getElementById("simulationTimer")?.classList.add("hidden");
+        document.getElementById("simulationEndOverlay")?.classList.add("hidden");
+        showToast("Simulado finalizado.");
     }
-    openSimulationResult(simulation, automatic);
 }
-
-function openSimulationResult(simulation, automatic) {
-    const overlay = document.getElementById("simulationResultOverlay");
-    if (!overlay) return;
-    setText("simulationResultTitle", automatic ? "Tempo encerrado!" : "Finalizar simulado");
-    setText("simulationResultDescription", "Informe seus acertos para registrar o desempenho e atualizar as estatísticas.");
-    document.getElementById("simulationResultQuestions").value = Number(simulation.questions) || 0;
-    document.getElementById("simulationResultCorrect").value = "";
-    const area = document.getElementById("simulationResultSubjects");
-    const entries = Array.isArray(simulation.subjects) ? simulation.subjects.filter(s => Number(s.questions) > 0) : [];
-    area.innerHTML = entries.length ? `<h3>Acertos por matéria</h3>${entries.map((s,i) => `
-        <label>${escapeHTML(s.name)} (${Number(s.questions)} questões)
-        <input type="number" data-result-subject="${i}" min="0" max="${Number(s.questions)}" step="1" required placeholder="Acertos nesta matéria"></label>`).join("")}
-        <p>O total de acertos será calculado automaticamente.</p>` : "";
-    const total = document.getElementById("simulationResultCorrect");
-    total.max = String(Number(simulation.questions) || 0);
-    total.readOnly = entries.length > 0;
-    total.required = entries.length === 0;
-    if (entries.length) total.value = 0;
-    overlay.classList.remove("hidden");
-    area.querySelectorAll("[data-result-subject]").forEach(input => input.addEventListener("input", () => {
-        total.value = [...area.querySelectorAll("[data-result-subject]")].reduce((sum, el) => sum + (Number(el.value) || 0), 0);
-    }));
-    (entries.length ? area.querySelector("input") : total)?.focus();
-}
-
-document.getElementById("simulationResultForm")?.addEventListener("submit", event => {
-    event.preventDefault();
-    const simulation = simulations.find(s => String(s.id) === String(activeSimulationId));
-    if (!simulation) return;
-    const total = Number(simulation.questions) || 0;
-    const inputs = [...document.querySelectorAll("#simulationResultSubjects [data-result-subject]")];
-    let correct = Number(document.getElementById("simulationResultCorrect").value);
-    if (inputs.length) {
-        const subjects = simulation.subjects.filter(s => Number(s.questions) > 0);
-        for (const [index, input] of inputs.entries()) {
-            const n = Number(input.value);
-            if (input.value === "" || !Number.isInteger(n) || n < 0 || n > Number(subjects[index].questions)) {
-                showToast(`Confira os acertos de ${subjects[index].name}.`); input.focus(); return;
-            }
-            subjects[index].correct = n;
-        }
-        correct = subjects.reduce((sum,s) => sum + Number(s.correct || 0), 0);
-    }
-    if (!Number.isInteger(correct) || correct < 0 || correct > total) {
-        showToast("O número de acertos deve estar entre 0 e o total de questões."); return;
-    }
-    simulation.correct = correct;
-    simulation.completed = true;
-    simulation.date = formatDateShort(new Date());
-    saveSimulations();
-    document.getElementById("simulationResultOverlay").classList.add("hidden");
-    document.getElementById("simulationTimer")?.classList.add("hidden");
-    activeSimulationId = null;
-    renderSimulationSelect();
-    renderSavedSimulations();
-    renderSettingsSimulations();
-    renderSimulationStatistics();
-    showToast("Resultado salvo! Estatísticas atualizadas.");
-});
-
-document.getElementById("cancelSimulationResult")?.addEventListener("click", () => {
-    document.getElementById("simulationResultOverlay")?.classList.add("hidden");
-    document.getElementById("simulationTimer")?.classList.add("hidden");
-    activeSimulationId = null;
-    showToast("Resultado não registrado.");
-});
 
 document.getElementById("startSimulation")?.addEventListener("click", runSimulation);
 document.getElementById("pauseSimulation")?.addEventListener("click", pauseSimulationTimer);
 document.getElementById("continueSimulation")?.addEventListener("click", runSimulation);
 document.getElementById("finishSimulation")?.addEventListener("click", () => finishSimulationTimer(false));
+document.getElementById("dismissSimulationEnd")?.addEventListener("click", () => {
+    document.getElementById("simulationEndOverlay")?.classList.add("hidden");
+});
 
 /* =========================================================
    POMODORO / SESSÃO DE ESTUDO
@@ -5802,7 +5871,6 @@ document.getElementById("finishStopwatch")?.addEventListener("click", () => {
 });
 
 
-
 /* =========================================================
    INSERÇÃO MANUAL
 ========================================================= */
@@ -5810,15 +5878,6 @@ document.getElementById("finishStopwatch")?.addEventListener("click", () => {
 const manualStudyForm = document.getElementById("manualStudyForm");
 
 if (manualStudyForm) {
-
-    // Impede que Enter registre o estudo
-    manualStudyForm.addEventListener("keydown", event => {
-        if (event.key === "Enter") {
-            event.preventDefault();
-        }
-    });
-
-    // Registra somente ao enviar pelo botão
     manualStudyForm.addEventListener("submit", event => {
         event.preventDefault();
 
@@ -5836,6 +5895,12 @@ if (manualStudyForm) {
         if (totalSeconds < 0) {
             showToast("Informe o tempo no formato HH:MM:SS. Ex.: 01:25:30");
             manualTimeInput?.focus();
+            return;
+        }
+
+        // Aceita registros somente por questões, somente por tempo ou por ambos.
+        if (totalSeconds === 0 && questions <= 0) {
+            showToast("Informe um tempo de estudo ou uma quantidade de questões maior que zero.");
             return;
         }
 
@@ -5861,7 +5926,6 @@ if (manualStudyForm) {
         showToast("Estudo manual registrado!");
     });
 }
-
 
 
 /* =========================================================
@@ -7156,3 +7220,23 @@ function showConcursadoConfirm({ title, message, confirmLabel = "Confirmar" }) {
         overlay.addEventListener("keydown", handleKeydown);
     });
 }
+
+
+/* Fecha o menu da conta ao clicar fora ou pressionar Esc. */
+(function setupAccountDropdownDismiss() {
+    const accountDetails = document.querySelector("#authAccount .auth-account-details");
+    if (!accountDetails) return;
+
+    document.addEventListener("pointerdown", (event) => {
+        if (accountDetails.open && !accountDetails.contains(event.target)) {
+            accountDetails.open = false;
+        }
+    });
+
+    document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape" && accountDetails.open) {
+            accountDetails.open = false;
+            accountDetails.querySelector("summary")?.focus();
+        }
+    });
+})();
