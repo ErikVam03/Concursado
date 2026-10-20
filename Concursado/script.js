@@ -141,29 +141,134 @@ function loadJSON(key, fallback) {
 }
 
 
-function saveStudies() {
-    localStorage.setItem(
-        userStorageKey("aprovado_studies"),
-        JSON.stringify(studies)
-    );
+/* =========================================================
+   SUPABASE — sincronização por conta
+   Mantém uma fila local de alterações para suportar quedas de rede.
+   ========================================================= */
+const CONCURSADO_DB = window.CONCURSADO_SUPABASE;
+const CONCURSADO_UID = window.CONCURSADO_USER_ID;
+const CLOUD_TABLES = {
+    subjects: { get: () => subjects, set: value => { subjects = value; }, key: "aprovado_subjects" },
+    studies: { get: () => studies, set: value => { studies = value; }, key: "aprovado_studies" },
+    simulations: { get: () => simulations, set: value => { simulations = value; }, key: "aprovado_simulations" }
+};
+let cloudReady = false;
+const cloudLoadingOverlay = document.createElement("div");
+cloudLoadingOverlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:#07110d;color:#fff;display:flex;align-items:center;justify-content:center;font:600 17px Inter,sans-serif;text-align:center;padding:24px";
+cloudLoadingOverlay.textContent = "Carregando seus dados do CONCURSADO...";
+document.body.appendChild(cloudLoadingOverlay);
+let cloudFlushing = false;
+let cloudSnapshots = { subjects: [], studies: [], simulations: [] };
+const cloudQueueKey = userStorageKey("supabase_pending_v1");
+let cloudPending = loadJSON(cloudQueueKey, []);
+if (!Array.isArray(cloudPending)) cloudPending = [];
+
+function cloudPersistQueue() {
+    localStorage.setItem(cloudQueueKey, JSON.stringify(cloudPending));
+}
+function cloudRecordId(item) {
+    const id = Number(item?.id);
+    if (!Number.isSafeInteger(id) || id < 0) throw new Error("ID inválido para Supabase: " + item?.id);
+    return id;
+}
+function cloudQueueChange(table) {
+    const config = CLOUD_TABLES[table];
+    const current = structuredClone(config.get());
+    localStorage.setItem(userStorageKey(config.key), JSON.stringify(current));
+    const previous = cloudSnapshots[table];
+    const before = new Map(previous.map(item => [cloudRecordId(item), JSON.stringify(item)]));
+    const after = new Map(current.map(item => [cloudRecordId(item), JSON.stringify(item)]));
+    for (const item of current) {
+        const id = cloudRecordId(item);
+        if (before.get(id) !== after.get(id)) {
+            cloudPending.push({ table, action: "upsert", id, data: item });
+        }
+    }
+    for (const item of previous) {
+        const id = cloudRecordId(item);
+        if (!after.has(id)) cloudPending.push({ table, action: "delete", id });
+    }
+    cloudSnapshots[table] = current;
+    cloudPersistQueue();
+    if (cloudReady) void cloudFlush();
+}
+function saveStudies() { cloudQueueChange("studies"); }
+function saveSubjects() { cloudQueueChange("subjects"); }
+function saveSimulations() { cloudQueueChange("simulations"); }
+
+async function cloudFlush() {
+    if (!cloudReady || cloudFlushing || !CONCURSADO_DB || !CONCURSADO_UID) return;
+    cloudFlushing = true;
+    try {
+        while (cloudPending.length) {
+            const op = cloudPending[0];
+            let query;
+            if (op.action === "delete") {
+                query = CONCURSADO_DB.from(op.table).delete()
+                    .eq("user_id", CONCURSADO_UID).eq("id", op.id);
+            } else {
+                query = CONCURSADO_DB.from(op.table).upsert({
+                    user_id: CONCURSADO_UID, id: op.id, data: op.data,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: "user_id,id" });
+            }
+            const { error } = await query;
+            if (error) throw error;
+            cloudPending.shift();
+            cloudPersistQueue();
+        }
+        console.info("CONCURSADO: alterações sincronizadas com Supabase.");
+    } catch (error) {
+        console.error("CONCURSADO: sincronização pendente:", error);
+        if (typeof showToast === "function") showToast("Sem sincronização na nuvem. Dados guardados neste aparelho.");
+    } finally {
+        cloudFlushing = false;
+    }
 }
 
-
-function saveSubjects() {
-    localStorage.setItem(
-        userStorageKey("aprovado_subjects"),
-        JSON.stringify(subjects)
-    );
+async function cloudInitialize() {
+    if (!CONCURSADO_DB || !CONCURSADO_UID) {
+        console.error("CONCURSADO: cliente Supabase ou sessão indisponível.");
+        return;
+    }
+    try {
+        const remote = {};
+        for (const table of Object.keys(CLOUD_TABLES)) {
+            // Paginação: evita perder registros acima do limite padrão da API.
+            let rows = [];
+            for (let from = 0; ; from += 500) {
+                const { data, error } = await CONCURSADO_DB.from(table)
+                    .select("id,data").eq("user_id", CONCURSADO_UID)
+                    .order("id", { ascending: true }).range(from, from + 499);
+                if (error) throw error;
+                rows.push(...data);
+                if (data.length < 500) break;
+            }
+            remote[table] = rows.map(row => row.data);
+        }
+        // Reaplica alterações feitas offline, preservando exclusões pendentes.
+        for (const table of Object.keys(CLOUD_TABLES)) {
+            const byId = new Map(remote[table].map(item => [cloudRecordId(item), item]));
+            for (const op of cloudPending.filter(op => op.table === table)) {
+                if (op.action === "delete") byId.delete(op.id);
+                else byId.set(op.id, op.data);
+            }
+            const restored = [...byId.values()];
+            CLOUD_TABLES[table].set(restored);
+            cloudSnapshots[table] = structuredClone(restored);
+            localStorage.setItem(userStorageKey(CLOUD_TABLES[table].key), JSON.stringify(restored));
+        }
+        cloudReady = true;
+        initializeApp();
+        cloudLoadingOverlay.remove();
+        await cloudFlush();
+    } catch (error) {
+        console.error("CONCURSADO: falha ao carregar dados da nuvem:", error);
+        // Não sobrescreve a nuvem com dados locais em caso de erro de leitura.
+        cloudLoadingOverlay.textContent = "Não foi possível carregar seus dados. Verifique a conexão e atualize a página. Nenhum dado foi apagado.";
+    }
 }
-
-
-function saveSimulations() {
-    localStorage.setItem(
-        userStorageKey("aprovado_simulations"),
-        JSON.stringify(simulations)
-    );
-}
-
+window.addEventListener("online", () => { if (cloudReady) void cloudFlush(); });
 
 function getDateKey(date) {
 
@@ -347,33 +452,16 @@ document.addEventListener("keydown", (event) => {
 ========================================================= */
 
 function updateGreeting() {
+    const greeting = document.getElementById("greeting");
+    if (!greeting) return;
 
-    const greeting =
-        document.getElementById("greeting");
-
-    if (!greeting) {
-        return;
-    }
-
-    const hour =
-        new Date().getHours();
-
-    if (hour >= 5 && hour < 12) {
-
-        greeting.textContent =
-            "Bom dia!";
-
-    } else if (hour >= 12 && hour < 18) {
-
-        greeting.textContent =
-            "Boa tarde!";
-
-    } else {
-
-        greeting.textContent =
-            "Boa noite!";
-
-    }
+    const accountName = document.getElementById("authUserName")?.textContent?.trim();
+    const accountEmail = document.getElementById("authUserEmail")?.textContent?.trim();
+    const fullName = accountName && accountName !== "Minha conta"
+        ? accountName
+        : (accountEmail ? accountEmail.split("@")[0] : "");
+    const firstName = fullName.split(/\s+/)[0];
+    greeting.textContent = firstName ? `Olá, ${firstName}!` : "Olá!";
 }
 
 
@@ -1056,8 +1144,120 @@ const historyFilters = document.querySelectorAll(
     "[data-history-filter]"
 );
 
-// Temporário: futuramente será definido pelo login e assinatura.
-const historyPremiumActive = false;
+// Permissão lida do Supabase pelo auth.js (avaliada em cada uso).
+function hasPremiumReportsAccess() {
+    const plan = window.CONCURSADO_PLAN || "free";
+    if (plan === "admin") return true;
+    if (plan === "premium") {
+        const expires = Date.parse(window.CONCURSADO_PREMIUM_UNTIL || "");
+        return Number.isFinite(expires) && expires > Date.now();
+    }
+    if (plan === "free") {
+        const expires = Date.parse(window.CONCURSADO_TRIAL_UNTIL || "");
+        return Number.isFinite(expires) && expires > Date.now();
+    }
+    return false;
+}
+
+function getTrialDaysRemaining() {
+    if ((window.CONCURSADO_PLAN || "free") !== "free") return 0;
+    const expires = Date.parse(window.CONCURSADO_TRIAL_UNTIL || "");
+    if (!Number.isFinite(expires) || expires <= Date.now()) return 0;
+    return Math.ceil((expires - Date.now()) / 86400000);
+}
+
+// Modal Premium no mesmo padrão visual das janelas existentes.
+function showPremiumReportModal() {
+    let overlay = document.getElementById("premiumReportOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "premiumReportOverlay";
+        overlay.className = "conc-modal-overlay hidden";
+        overlay.innerHTML = `
+            <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="premiumReportTitle">
+                <div class="conc-modal-heading">
+                    <h2 id="premiumReportTitle">👑 Recurso Premium</h2>
+                    <button type="button" class="secondary-btn" id="closePremiumReport" aria-label="Fechar">✕</button>
+                </div>
+                <p>Os filtros Mês, Ano, Tudo e Personalizado são exclusivos de assinantes Premium, administradores e usuários durante o teste de 7 dias.</p>
+                <div class="conc-modal-actions">
+                    <button type="button" class="secondary-btn" id="dismissPremiumReport">Agora não</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const close = () => {
+            overlay.classList.add("hidden");
+            document.body.classList.remove("conc-modal-open");
+        };
+        overlay.querySelector("#closePremiumReport").addEventListener("click", close);
+        overlay.querySelector("#dismissPremiumReport").addEventListener("click", close);
+        overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
+    }
+    overlay.classList.remove("hidden");
+    document.body.classList.add("conc-modal-open");
+    overlay.querySelector("#dismissPremiumReport").focus();
+}
+
+// Atualiza apenas os cadeados dos filtros e o selo do plano no Painel.
+// Não altera a lógica de filtros, estudos ou sincronização.
+function refreshPremiumVisuals() {
+    const allowed = hasPremiumReportsAccess();
+    document.querySelectorAll('[data-history-filter], [data-filter]').forEach(button => {
+        const value = button.dataset.historyFilter || button.dataset.filter;
+        if (!["month", "year", "all", "custom"].includes(value)) return;
+        if (!button.dataset.originalFilterLabel) {
+            button.dataset.originalFilterLabel = button.textContent.replace(/🔒/g, "").trim();
+        }
+        const label = button.dataset.originalFilterLabel;
+        button.textContent = allowed ? label :
+            (button.hasAttribute('data-history-filter') ? `🔒 ${label}` : `${label} 🔒`);
+        button.classList.toggle("premium-filter", !allowed && button.hasAttribute('data-history-filter'));
+        button.classList.toggle("premium", !allowed && button.hasAttribute('data-filter'));
+    });
+
+    const greeting = document.getElementById("greeting");
+    if (!greeting) return;
+    let headingRow = document.getElementById("concursadoGreetingRow");
+    if (!headingRow) {
+        headingRow = document.createElement("div");
+        headingRow.id = "concursadoGreetingRow";
+        headingRow.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;width:100%;margin-bottom:12px";
+        greeting.parentNode.insertBefore(headingRow, greeting);
+        headingRow.appendChild(greeting);
+    }
+    greeting.style.marginBottom = "0";
+    let badge = document.getElementById("concursadoPlanBadge");
+    if (!badge) {
+        badge = document.createElement("span");
+        badge.id = "concursadoPlanBadge";
+        badge.style.cssText = "display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:13px;font-weight:800;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.15);white-space:nowrap";
+        headingRow.appendChild(badge);
+    }
+    const plan = window.CONCURSADO_PLAN || "free";
+    if (plan === "admin") {
+        badge.textContent = "👑 🛡️ ADMIN";
+        badge.style.color = "#ffdf00";
+    } else if (allowed) {
+        const remaining = getTrialDaysRemaining();
+        badge.textContent = remaining > 0
+            ? `👑 TESTE PREMIUM · ${remaining} ${remaining === 1 ? "dia restante" : "dias restantes"}`
+            : "👑 PREMIUM";
+        badge.style.color = "#ffdf00";
+    } else {
+        badge.textContent = "FREE";
+        badge.style.color = "#9ca9a2";
+    }
+}
+
+// Atualiza o visual quando o auth.js recebe o plano do Supabase.
+refreshPremiumVisuals();
+window.addEventListener("concursado:plan-updated", refreshPremiumVisuals);
+// Reavalia a validade enquanto a página estiver aberta (inclusive após 7 dias).
+setInterval(refreshPremiumVisuals, 60000);
+window.addEventListener("focus", refreshPremiumVisuals);
+document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) refreshPremiumVisuals();
+});
 
 let historyCustomStart = null;
 let historyCustomEnd = null;
@@ -1075,13 +1275,9 @@ historyFilters.forEach(button => {
 
         if (
             premiumHistoryFilters.includes(filter) &&
-            !historyPremiumActive
+            !hasPremiumReportsAccess()
         ) {
-            alert(
-                "🔒 Recurso Premium!\n\n" +
-                "Assine o CONCURSADO Premium para acessar " +
-                "os filtros Mês, Ano, Tudo e Personalizado."
-            );
+            showPremiumReportModal();
             return;
         }
 
@@ -1222,7 +1418,7 @@ function renderHistory(filter = "today") {
     // Proteção de interface para filtros Premium
     if (
         premiumHistoryFilters.includes(filter) &&
-        !historyPremiumActive
+        !hasPremiumReportsAccess()
     ) {
         filter = "today";
     }
@@ -1932,7 +2128,7 @@ if (subjectForm) {
 
 
             const hours = textoParaHoras(
-                document.getElementById("subjectHours").value
+                document.getElementById("subjectHours").value || "00:00:00"
             );
 
 
@@ -2440,48 +2636,80 @@ const statsFilters =
     );
 
 
-statsFilters.forEach(button => {
+let statsCustomStart = null;
+let statsCustomEnd = null;
 
-    button.addEventListener(
-        "click",
-        () => {
-
-            if (
-                button.classList.contains(
-                    "premium"
-                )
-            ) {
-
-                showToast(
-                    "Essa função estará disponível em breve."
-                );
-
+function openStatsDateModal() {
+    let overlay = document.getElementById("statsDateOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "statsDateOverlay";
+        overlay.className = "conc-modal-overlay hidden";
+        overlay.innerHTML = `
+            <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="statsDateTitle">
+                <div class="conc-modal-heading">
+                    <h2 id="statsDateTitle">Período personalizado</h2>
+                    <button type="button" class="secondary-btn" id="closeStatsDates" aria-label="Fechar">✕</button>
+                </div>
+                <p>Selecione as datas para consultar suas estatísticas.</p>
+                <form id="statsDateForm" class="conc-modal-form">
+                    <label>Data inicial<input id="statsDateStart" type="date" required></label>
+                    <label>Data final<input id="statsDateEnd" type="date" required></label>
+                    <p id="statsDateError" class="conc-modal-error hidden">Confira o período: a data inicial não pode ser posterior à final.</p>
+                    <div class="conc-modal-actions">
+                        <button type="button" class="secondary-btn" id="cancelStatsDates">Cancelar</button>
+                        <button type="submit" class="primary-btn">Aplicar filtro</button>
+                    </div>
+                </form>
+            </div>`;
+        document.body.appendChild(overlay);
+        const close = () => {
+            overlay.classList.add("hidden");
+            document.body.classList.remove("conc-modal-open");
+        };
+        overlay.querySelector("#closeStatsDates").addEventListener("click", close);
+        overlay.querySelector("#cancelStatsDates").addEventListener("click", close);
+        overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
+        overlay.querySelector("#statsDateForm").addEventListener("submit", event => {
+            event.preventDefault();
+            const from = overlay.querySelector("#statsDateStart").value;
+            const to = overlay.querySelector("#statsDateEnd").value;
+            if (!from || !to || from > to) {
+                overlay.querySelector("#statsDateError").classList.remove("hidden");
                 return;
             }
+            statsCustomStart = from;
+            statsCustomEnd = to;
+            statsFilters.forEach(item => item.classList.toggle("active", item.dataset.filter === "custom"));
+            close();
+            updateStatistics("custom");
+        });
+    }
+    const today = getDateKey(new Date());
+    overlay.querySelector("#statsDateStart").value = statsCustomStart || today;
+    overlay.querySelector("#statsDateEnd").value = statsCustomEnd || today;
+    overlay.querySelector("#statsDateError").classList.add("hidden");
+    overlay.classList.remove("hidden");
+    document.body.classList.add("conc-modal-open");
+    overlay.querySelector("#statsDateStart").focus();
+}
 
-
-            statsFilters.forEach(
-                item =>
-                    item.classList.remove(
-                        "active"
-                    )
-            );
-
-
-            button.classList.add(
-                "active"
-            );
-
-
-            updateStatistics(
-                button.dataset.filter
-            );
-
+statsFilters.forEach(button => {
+    button.addEventListener("click", () => {
+        const filter = button.dataset.filter;
+        if (["month", "year", "all", "custom"].includes(filter) && !hasPremiumReportsAccess()) {
+            showPremiumReportModal();
+            return;
         }
-    );
-
+        if (filter === "custom") {
+            openStatsDateModal();
+            return;
+        }
+        statsFilters.forEach(item => item.classList.remove("active"));
+        button.classList.add("active");
+        updateStatistics(filter);
+    });
 });
-
 
 function getStudiesByFilter(filter) {
 
@@ -2534,6 +2762,11 @@ function getStudiesByFilter(filter) {
 
         return [...studies];
 
+    } else if (filter === "custom") {
+        if (!statsCustomStart || !statsCustomEnd) return [];
+        return studies.filter(study =>
+            study.date >= statsCustomStart && study.date <= statsCustomEnd
+        );
     }
 
 
@@ -2551,6 +2784,9 @@ function getStudiesByFilter(filter) {
 function updateStatistics(
     filter = "day"
 ) {
+    if (["month", "year", "all", "custom"].includes(filter) && !hasPremiumReportsAccess()) {
+        filter = "day";
+    }
 
     const filtered =
         getStudiesByFilter(
@@ -6766,7 +7002,7 @@ function initializeApp() {
 }
 
 
-initializeApp();
+void cloudInitialize();
 
 
 /* =========================================================

@@ -12,6 +12,50 @@ function status(message) { statusEl.textContent = message || ''; }
 function unlock(user) {
   if (!user) return;
   window.CONCURSADO_USER_ID = user.id;
+  window.CONCURSADO_PLAN = "free";
+  window.CONCURSADO_PREMIUM = false;
+  window.CONCURSADO_TRIAL = false;
+  window.CONCURSADO_TRIAL_UNTIL = null;
+  window.CONCURSADO_PREMIUM_UNTIL = null;
+
+  (async () => {
+    const { data, error } = await client
+      .from("user_plans")
+      .select("plan, premium_until, trial_until")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao consultar plano:", error.message);
+      return;
+    }
+
+    // A validade é determinada pelas datas armazenadas no Supabase.
+    const plan = data?.plan || "free";
+    const now = Date.now();
+    const premiumUntil = data?.premium_until || null;
+    const trialUntil = data?.trial_until || null;
+    const premiumPagoAtivo = plan === "premium" &&
+      premiumUntil && Date.parse(premiumUntil) > now;
+    const trialAtivo = plan === "free" &&
+      trialUntil && Date.parse(trialUntil) > now;
+
+    window.CONCURSADO_PLAN = plan;
+    window.CONCURSADO_PREMIUM_UNTIL = premiumUntil;
+    window.CONCURSADO_TRIAL_UNTIL = trialUntil;
+    window.CONCURSADO_TRIAL = Boolean(trialAtivo);
+    window.CONCURSADO_PREMIUM = Boolean(
+      plan === "admin" || premiumPagoAtivo || trialAtivo
+    );
+
+    // Permite que o script.js atualize os cadeados e o selo após a consulta.
+    window.dispatchEvent(new Event("concursado:plan-updated"));
+
+    console.log("Plano CONCURSADO:", plan);
+    console.log("Teste Premium ativo:", window.CONCURSADO_TRIAL);
+    console.log("Acesso Premium:", window.CONCURSADO_PREMIUM);
+  })();
+
   document.getElementById('authUserEmail').textContent = user.email || 'Minha conta';
   const meta = user.user_metadata || {};
   document.getElementById('authUserName').textContent = meta.full_name || meta.name || user.email?.split('@')[0] || 'Minha conta';
@@ -19,6 +63,22 @@ function unlock(user) {
   const avatar = document.getElementById('authAvatar');
   const fallback = document.getElementById('authAvatarFallback');
   avatar.hidden = true; fallback.hidden = false;
+  // Mostra a inicial do nome ou e-mail quando não há foto
+const nomePerfil =
+  meta.full_name ||
+  meta.name ||
+  user.email?.split('@')[0] ||
+  'U';
+
+const inicial = nomePerfil.trim().charAt(0).toUpperCase();
+
+fallback.textContent = inicial;
+fallback.style.display = 'flex';
+fallback.style.alignItems = 'center';
+fallback.style.justifyContent = 'center';
+fallback.style.fontSize = '18px';
+fallback.style.fontWeight = '700';
+
   if (photo && /^https:\/\//i.test(photo)) {
     avatar.onload = () => { avatar.hidden = false; fallback.hidden = true; };
     avatar.onerror = () => { avatar.hidden = true; fallback.hidden = false; };
