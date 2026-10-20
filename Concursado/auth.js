@@ -46,6 +46,7 @@ async function start() {
   }
   if (!window.supabase?.createClient) { status('Não foi possível carregar a biblioteca Supabase.'); return; }
   client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+  window.CONCURSADO_SUPABASE = client;
   const { data, error } = await client.auth.getUser();
   if (data?.user && !error) { unlock(data.user); return; }
   status(''); form.hidden = false; google.hidden = false; change.hidden = false; forgot.hidden = false;
