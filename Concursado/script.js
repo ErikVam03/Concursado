@@ -6530,90 +6530,83 @@ function showToast(message) {
 }
 
 
+
 /* =========================================================
    PWA - INSTALAÇÃO
 ========================================================= */
 
-let deferredInstallPrompt =
-    null;
+let deferredInstallPrompt = null;
 
+const installBtn = document.getElementById("installBtn");
 
-window.addEventListener(
-    "beforeinstallprompt",
-    event => {
+function isAppInstalled() {
+    return window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+}
 
-        event.preventDefault();
+function updateInstallButton() {
+    if (!installBtn) return;
 
+    installBtn.style.display = isAppInstalled()
+        ? "none"
+        : "inline-block";
+}
 
-        deferredInstallPrompt =
-            event;
+window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    updateInstallButton();
+});
 
+window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    updateInstallButton();
+});
 
-        const installBtn =
-            document.getElementById(
-                "installBtn"
-            );
-
-
-        if (installBtn) {
-
-            installBtn.style.display =
-                "inline-block";
-
-        }
-
-    }
-);
-
-
-const installBtn =
-    document.getElementById(
-        "installBtn"
-    );
-
+updateInstallButton();
 
 if (installBtn) {
+    installBtn.addEventListener("click", async () => {
 
-    installBtn.addEventListener(
-        "click",
-        async () => {
-
-            if (!deferredInstallPrompt) {
-
-                showToast(
-                    "A instalação ainda não está disponível neste dispositivo."
-                );
-
-                return;
-            }
-
-
-            deferredInstallPrompt.prompt();
-
-
-            const result =
-                await deferredInstallPrompt.userChoice;
-
-
-            if (
-                result.outcome ===
-                "accepted"
-            ) {
-
-                showToast(
-                    "Aplicativo instalado!"
-                );
-
-            }
-
-
-            deferredInstallPrompt =
-                null;
-
+        if (isAppInstalled()) {
+            updateInstallButton();
+            return;
         }
-    );
 
+        if (deferredInstallPrompt) {
+            const promptEvent = deferredInstallPrompt;
+            deferredInstallPrompt = null;
+
+            await promptEvent.prompt();
+            await promptEvent.userChoice;
+
+            return;
+        }
+
+        const isIOS = /iPhone|iPad|iPod/i.test(
+            navigator.userAgent
+        );
+
+        if (isIOS) {
+            alert(
+                "Para instalar o CONCURSADO:\n\n" +
+                "1. Abra o site no Safari.\n" +
+                "2. Toque em Compartilhar.\n" +
+                "3. Escolha Adicionar à Tela de Início."
+            );
+        } else {
+            alert(
+                "Para instalar o CONCURSADO:\n\n" +
+                "1. Abra o site no Google Chrome.\n" +
+                "2. Toque nos três pontos (⋮).\n" +
+                "3. Escolha Instalar app ou " +
+                "Adicionar à tela inicial.\n" +
+                "4. Confirme a instalação."
+            );
+        }
+    });
 }
+
 
 
 /* =========================================================
@@ -6630,7 +6623,7 @@ if (
 
             navigator.serviceWorker
                 .register(
-                    "sw.js"
+                    "./service-worker.js"
                 )
                 .then(
                     registration => {
