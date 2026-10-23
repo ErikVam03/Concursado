@@ -1,4 +1,4 @@
-const CACHE_NAME = "orion-v3";
+const CACHE_NAME = "calibre-v3";
 
 const FILES_TO_CACHE = [
     "./",

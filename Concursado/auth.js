@@ -1,4 +1,4 @@
-/* ORION — autenticação Supabase (chave pública apenas) */
+/* CALIBRE — autenticação Supabase (chave pública apenas) */
 const SUPABASE_URL = 'https://uuhugqmakngtlrfuilyk.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_R5VfMPZeDtQQiCRAf5OQ4g_1yl6rjRO';
 const statusEl = document.getElementById('authStatus');
@@ -11,12 +11,12 @@ let client;
 function status(message) { statusEl.textContent = message || ''; }
 function unlock(user) {
   if (!user) return;
-  window.ORION_USER_ID = user.id;
-  window.ORION_PLAN = "free";
-  window.ORION_PREMIUM = false;
-  window.ORION_TRIAL = false;
-  window.ORION_TRIAL_UNTIL = null;
-  window.ORION_PREMIUM_UNTIL = null;
+  window.CALIBRE_USER_ID = user.id;
+  window.CALIBRE_PLAN = "free";
+  window.CALIBRE_PREMIUM = false;
+  window.CALIBRE_TRIAL = false;
+  window.CALIBRE_TRIAL_UNTIL = null;
+  window.CALIBRE_PREMIUM_UNTIL = null;
 
   (async () => {
     const { data, error } = await client
@@ -40,20 +40,20 @@ function unlock(user) {
     const trialAtivo = plan === "free" &&
       trialUntil && Date.parse(trialUntil) > now;
 
-    window.ORION_PLAN = plan;
-    window.ORION_PREMIUM_UNTIL = premiumUntil;
-    window.ORION_TRIAL_UNTIL = trialUntil;
-    window.ORION_TRIAL = Boolean(trialAtivo);
-    window.ORION_PREMIUM = Boolean(
+    window.CALIBRE_PLAN = plan;
+    window.CALIBRE_PREMIUM_UNTIL = premiumUntil;
+    window.CALIBRE_TRIAL_UNTIL = trialUntil;
+    window.CALIBRE_TRIAL = Boolean(trialAtivo);
+    window.CALIBRE_PREMIUM = Boolean(
       plan === "admin" || premiumPagoAtivo || trialAtivo
     );
 
     // Permite que o script.js atualize os cadeados e o selo após a consulta.
-    window.dispatchEvent(new Event("orion:plan-updated"));
+    window.dispatchEvent(new Event("calibre:plan-updated"));
 
-    console.log("Plano ORION:", plan);
-    console.log("Teste Premium ativo:", window.ORION_TRIAL);
-    console.log("Acesso Premium:", window.ORION_PREMIUM);
+    console.log("Plano CALIBRE:", plan);
+    console.log("Teste Premium ativo:", window.CALIBRE_TRIAL);
+    console.log("Acesso Premium:", window.CALIBRE_PREMIUM);
   })();
 
   document.getElementById('authUserEmail').textContent = user.email || 'Minha conta';
@@ -71,10 +71,10 @@ function unlock(user) {
   document.getElementById('authAccount').hidden = false;
   document.getElementById('authScreen').hidden = true;
   document.body.classList.remove('auth-locked');
-  if (!document.querySelector('script[data-orion-app]')) {
+  if (!document.querySelector('script[data-calibre-app]')) {
     const script = document.createElement('script');
     script.src = 'script.js';
-    script.dataset.orionApp = 'true';
+    script.dataset.calibreApp = 'true';
     document.body.appendChild(script);
   }
 }
@@ -90,7 +90,7 @@ async function start() {
   }
   if (!window.supabase?.createClient) { status('Não foi possível carregar a biblioteca Supabase.'); return; }
   client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-  window.ORION_SUPABASE = client;
+  window.CALIBRE_SUPABASE = client;
   const { data, error } = await client.auth.getUser();
   if (data?.user && !error) { unlock(data.user); return; }
   status(''); form.hidden = false; google.hidden = false; change.hidden = false; forgot.hidden = false;
@@ -100,8 +100,8 @@ async function start() {
       if (newPassword && newPassword.length >= 8) client.auth.updateUser({password:newPassword}).then(({error}) => alert(error ? error.message : "Senha atualizada!"));
       else if (newPassword) alert("A senha deve ter pelo menos 8 caracteres.");
     }
-    if (session?.user && !window.ORION_USER_ID) unlock(session.user);
-    if (!session && window.ORION_USER_ID) window.location.reload();
+    if (session?.user && !window.CALIBRE_USER_ID) unlock(session.user);
+    if (!session && window.CALIBRE_USER_ID) window.location.reload();
   });
 }
 form.addEventListener('submit', async event => {

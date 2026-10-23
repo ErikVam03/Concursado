@@ -1,6 +1,6 @@
 {
-  "name": "Orion - Painel de Estudos",
-  "short_name": "Orion",
+  "name": "Calibre - Painel de Estudos",
+  "short_name": "Calibre",
   "description": "Painel de estudos para organização, acompanhamento e desempenho.",
   "start_url": "./index.html",
   "scope": "./",

@@ -4889,7 +4889,7 @@ input[placeholder="00:00:00"] {
     opacity: 1;
 }
 
-/* JANELAS DO ORION — histórico e cores */
+/* JANELAS DO CALIBRE — histórico e cores */
 .conc-modal-overlay { position: fixed; inset: 0; z-index: 12000; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(0,0,0,.76); backdrop-filter: blur(6px); }
 .conc-modal-overlay.hidden { display: none !important; }
 .conc-modal { width: min(490px, 100%); max-height: calc(100dvh - 36px); overflow-y: auto; margin: 0; background: #0e1c16; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
@@ -5055,7 +5055,7 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 @media(max-width:560px){.topbar{gap:6px}.top-actions{gap:5px}.auth-account-details summary{width:32px;height:34px}.install-btn{padding:7px 8px;font-size:11px}.brand{font-size:16px}.brand strong{white-space:nowrap}}
 
 
-/* Perfil profissional ORION */
+/* Perfil profissional CALIBRE */
 .auth-account-details summary {border-radius:50%;width:39px;height:39px;overflow:hidden;padding:0;border:2px solid #2bd375;background:#172c20}
 .auth-avatar,.auth-avatar-fallback {width:100%;height:100%;object-fit:cover;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .auth-avatar[hidden],.auth-avatar-fallback[hidden]{display:none!important}
@@ -5409,7 +5409,7 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 #historyPeriodSelector[hidden] {
     display: none !important;
 }
-/* ORION — ALINHAMENTO DO CABEÇALHO MOBILE */
+/* CALIBRE — ALINHAMENTO DO CABEÇALHO MOBILE */
 @media (max-width: 768px) {
 
     .topbar {
@@ -5429,7 +5429,7 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
     }
 
 }
-/* LOGO ORION NO CABEÇALHO */
+/* LOGO CALIBRE NO CABEÇALHO */
 .brand-flag {
     width: 40px;
     height: 40px;
@@ -5437,7 +5437,7 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
     display: block;
     flex-shrink: 0;
 }
-/* LOGO ORION NO RODAPÉ */
+/* LOGO CALIBRE NO RODAPÉ */
 .credits-footer-brand {
     display: inline-flex;
     align-items: center;

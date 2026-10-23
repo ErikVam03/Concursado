@@ -2,13 +2,13 @@
 // Os registros de cada conta permanecem separados no navegador.
 // Os registros legados sem prefixo não são apagados nem importados automaticamente.
 function userStorageKey(key) {
-    const uid = window.ORION_USER_ID;
+    const uid = window.CALIBRE_USER_ID;
     if (!uid) throw new Error("Sessão necessária para acessar dados locais.");
     return `concursado_${uid}_${key}`;
 }
 
 /* =========================================================
-   ORION
+   CALIBRE
    Sistema principal
    ========================================================= */
 
@@ -145,8 +145,8 @@ function loadJSON(key, fallback) {
    SUPABASE — sincronização por conta
    Mantém uma fila local de alterações para suportar quedas de rede.
    ========================================================= */
-const ORION_DB = window.ORION_SUPABASE;
-const ORION_UID = window.ORION_USER_ID;
+const CALIBRE_DB = window.CALIBRE_SUPABASE;
+const CALIBRE_UID = window.CALIBRE_USER_ID;
 const CLOUD_TABLES = {
     subjects: { get: () => subjects, set: value => { subjects = value; }, key: "aprovado_subjects" },
     studies: { get: () => studies, set: value => { studies = value; }, key: "aprovado_studies" },
@@ -155,7 +155,7 @@ const CLOUD_TABLES = {
 let cloudReady = false;
 const cloudLoadingOverlay = document.createElement("div");
 cloudLoadingOverlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:#07110d;color:#fff;display:flex;align-items:center;justify-content:center;font:600 17px Inter,sans-serif;text-align:center;padding:24px";
-cloudLoadingOverlay.textContent = "Carregando seus dados do ORION...";
+cloudLoadingOverlay.textContent = "Carregando seus dados do CALIBRE...";
 document.body.appendChild(cloudLoadingOverlay);
 let cloudFlushing = false;
 let cloudSnapshots = { subjects: [], studies: [], simulations: [] };
@@ -197,18 +197,18 @@ function saveSubjects() { cloudQueueChange("subjects"); }
 function saveSimulations() { cloudQueueChange("simulations"); }
 
 async function cloudFlush() {
-    if (!cloudReady || cloudFlushing || !ORION_DB || !ORION_UID) return;
+    if (!cloudReady || cloudFlushing || !CALIBRE_DB || !CALIBRE_UID) return;
     cloudFlushing = true;
     try {
         while (cloudPending.length) {
             const op = cloudPending[0];
             let query;
             if (op.action === "delete") {
-                query = ORION_DB.from(op.table).delete()
-                    .eq("user_id", ORION_UID).eq("id", op.id);
+                query = CALIBRE_DB.from(op.table).delete()
+                    .eq("user_id", CALIBRE_UID).eq("id", op.id);
             } else {
-                query = ORION_DB.from(op.table).upsert({
-                    user_id: ORION_UID, id: op.id, data: op.data,
+                query = CALIBRE_DB.from(op.table).upsert({
+                    user_id: CALIBRE_UID, id: op.id, data: op.data,
                     updated_at: new Date().toISOString()
                 }, { onConflict: "user_id,id" });
             }
@@ -217,9 +217,9 @@ async function cloudFlush() {
             cloudPending.shift();
             cloudPersistQueue();
         }
-        console.info("ORION: alterações sincronizadas com Supabase.");
+        console.info("CALIBRE: alterações sincronizadas com Supabase.");
     } catch (error) {
-        console.error("ORION: sincronização pendente:", error);
+        console.error("CALIBRE: sincronização pendente:", error);
         if (typeof showToast === "function") showToast("Sem sincronização na nuvem. Dados guardados neste aparelho.");
     } finally {
         cloudFlushing = false;
@@ -227,8 +227,8 @@ async function cloudFlush() {
 }
 
 async function cloudInitialize() {
-    if (!ORION_DB || !ORION_UID) {
-        console.error("ORION: cliente Supabase ou sessão indisponível.");
+    if (!CALIBRE_DB || !CALIBRE_UID) {
+        console.error("CALIBRE: cliente Supabase ou sessão indisponível.");
         return;
     }
     try {
@@ -237,8 +237,8 @@ async function cloudInitialize() {
             // Paginação: evita perder registros acima do limite padrão da API.
             let rows = [];
             for (let from = 0; ; from += 500) {
-                const { data, error } = await ORION_DB.from(table)
-                    .select("id,data").eq("user_id", ORION_UID)
+                const { data, error } = await CALIBRE_DB.from(table)
+                    .select("id,data").eq("user_id", CALIBRE_UID)
                     .order("id", { ascending: true }).range(from, from + 499);
                 if (error) throw error;
                 rows.push(...data);
@@ -263,7 +263,7 @@ async function cloudInitialize() {
         cloudLoadingOverlay.remove();
         await cloudFlush();
     } catch (error) {
-        console.error("ORION: falha ao carregar dados da nuvem:", error);
+        console.error("CALIBRE: falha ao carregar dados da nuvem:", error);
         // Não sobrescreve a nuvem com dados locais em caso de erro de leitura.
         cloudLoadingOverlay.textContent = "Não foi possível carregar seus dados. Verifique a conexão e atualize a página. Nenhum dado foi apagado.";
     }
@@ -1146,23 +1146,23 @@ const historyFilters = document.querySelectorAll(
 
 // Permissão lida do Supabase pelo auth.js (avaliada em cada uso).
 function hasPremiumReportsAccess() {
-    const plan = window.ORION_PLAN || "free";
+    const plan = window.CALIBRE_PLAN || "free";
     
     if (plan === "admin") return true;
     if (plan === "premium") {
-        const expires = Date.parse(window.ORION_PREMIUM_UNTIL || "");
+        const expires = Date.parse(window.CALIBRE_PREMIUM_UNTIL || "");
         return Number.isFinite(expires) && expires > Date.now();
     }
     if (plan === "free") {
-        const expires = Date.parse(window.ORION_TRIAL_UNTIL || "");
+        const expires = Date.parse(window.CALIBRE_TRIAL_UNTIL || "");
         return Number.isFinite(expires) && expires > Date.now();
     }
     return false;
 }
 
 function getTrialDaysRemaining() {
-    if ((window.ORION_PLAN || "free") !== "free") return 0;
-    const expires = Date.parse(window.ORION_TRIAL_UNTIL || "");
+    if ((window.CALIBRE_PLAN || "free") !== "free") return 0;
+    const expires = Date.parse(window.CALIBRE_TRIAL_UNTIL || "");
     if (!Number.isFinite(expires) || expires <= Date.now()) return 0;
     return Math.ceil((expires - Date.now()) / 86400000);
 }
@@ -1207,7 +1207,7 @@ function showPremiumReportModal() {
     overlay.querySelector("#dismissPremiumReport").focus();
 }
 
-// Abre o checkout do ORION Premium pelo menu da conta.
+// Abre o checkout do CALIBRE Premium pelo menu da conta.
 document.getElementById("authPremiumBtn")?.addEventListener("click", () => {
     window.open(
         "https://pay.hotmart.com/X108120079Y?off=8lz79btf",
@@ -1256,7 +1256,7 @@ function refreshPremiumVisuals() {
         badge.style.cssText = "display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:13px;font-weight:800;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.15);white-space:nowrap";
         headingRow.appendChild(badge);
     }
-    const plan = window.ORION_PLAN || "free";
+    const plan = window.CALIBRE_PLAN || "free";
     if (plan === "admin") {
         badge.textContent = "👑 🛡️ ADMIN";
         badge.style.color = "#ffdf00";
@@ -1271,11 +1271,11 @@ function refreshPremiumVisuals() {
         badge.style.color = "#9ca9a2";
     }
 
-    let premiumButton = document.getElementById("orionDashboardPremiumBtn");
+    let premiumButton = document.getElementById("calibreDashboardPremiumBtn");
 
     if (!premiumButton) {
         premiumButton = document.createElement("button");
-        premiumButton.id = "orionDashboardPremiumBtn";
+        premiumButton.id = "calibreDashboardPremiumBtn";
         premiumButton.type = "button";
         premiumButton.textContent = "👑 Assinar Premium";
 
@@ -1303,7 +1303,7 @@ function refreshPremiumVisuals() {
 
 // Atualiza o visual quando o auth.js recebe o plano do Supabase.
 refreshPremiumVisuals();
-window.addEventListener("orion:plan-updated", refreshPremiumVisuals);
+window.addEventListener("calibre:plan-updated", refreshPremiumVisuals);
 // Reavalia a validade enquanto a página estiver aberta (inclusive após 7 dias).
 setInterval(refreshPremiumVisuals, 60000);
 window.addEventListener("focus", refreshPremiumVisuals);
@@ -3100,7 +3100,7 @@ async function deleteSubject(id) {
 
     if (!subject) return;
 
-    const confirmed = await showOrionConfirm({
+    const confirmed = await showCalibreConfirm({
         title: "Excluir matéria?",
         message: `Deseja realmente excluir a matéria "${subject.name}"?`,
         confirmLabel: "Excluir matéria"
@@ -3917,7 +3917,7 @@ function openStatsDateModal() {
 
     if (!overlay.querySelector("#statsDateStart") ||
     !overlay.querySelector("#statsDateEnd")) {
-    console.error("ORION: campos de data não encontrados no modal.");
+    console.error("CALIBRE: campos de data não encontrados no modal.");
     return;
 }
         const today = getDateKey(new Date());
@@ -5874,7 +5874,7 @@ async function deleteSimulation(id) {
     }
 
 
-    const confirmed = await showOrionConfirm({
+    const confirmed = await showCalibreConfirm({
         title: "Excluir simulado?",
         message: `Deseja realmente excluir o simulado "${simulation.name}"?`,
         confirmLabel: "Excluir simulado"
@@ -8060,14 +8060,14 @@ if (installBtn) {
 
         if (isIOS) {
             alert(
-                "Para instalar o ORION:\n\n" +
+                "Para instalar o CALIBRE:\n\n" +
                 "1. Abra o site no Safari.\n" +
                 "2. Toque em Compartilhar.\n" +
                 "3. Escolha Adicionar à Tela de Início."
             );
         } else {
             alert(
-                "Para instalar o ORION:\n\n" +
+                "Para instalar o CALIBRE:\n\n" +
                 "1. Abra o site no Google Chrome.\n" +
                 "2. Toque nos três pontos (⋮).\n" +
                 "3. Escolha Instalar app ou " +
@@ -8268,7 +8268,7 @@ void cloudInitialize();
 function cycleActiveSubjects() {
     return subjects.filter(subject => subject.cycleEnabled !== false);
 }
-/* ORION — PROGRESSO DO CICLO ATUAL */
+/* CALIBRE — PROGRESSO DO CICLO ATUAL */
 
 function getCycleStudiedMinutes(subject) {
     const total = getSubjectStudiedMinutes(subject.name);
@@ -8592,7 +8592,7 @@ document.addEventListener("click", event => {
 });
 syncSubjectColorTriggers();
 
-function showOrionConfirm({ title, message, confirmLabel = "Confirmar" }) {
+function showCalibreConfirm({ title, message, confirmLabel = "Confirmar" }) {
     return new Promise(resolve => {
         if (!document.getElementById("concursado-confirm-styles")) {
             const style = document.createElement("style");
@@ -8721,7 +8721,7 @@ function showOrionConfirm({ title, message, confirmLabel = "Confirmar" }) {
 })();
 
 /* =========================================================
-   ORION — JANELA REINICIAR MATÉRIA
+   CALIBRE — JANELA REINICIAR MATÉRIA
    Apenas abertura e fechamento
    ========================================================= */
 
@@ -8774,7 +8774,7 @@ cycleResetOverlay?.addEventListener("click", event => {
     }
 });
 /* =========================================================
-   ORION — CONFIRMAR REINICIALIZAÇÃO DA MATÉRIA
+   CALIBRE — CONFIRMAR REINICIALIZAÇÃO DA MATÉRIA
    ========================================================= */
 
 document.getElementById("confirmCycleReset")?.addEventListener("click", () => {
