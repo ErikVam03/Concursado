@@ -4889,7 +4889,7 @@ input[placeholder="00:00:00"] {
     opacity: 1;
 }
 
-/* JANELAS DO CONCURSADO — histórico e cores */
+/* JANELAS DO ORION — histórico e cores */
 .conc-modal-overlay { position: fixed; inset: 0; z-index: 12000; display: flex; align-items: center; justify-content: center; padding: 18px; background: rgba(0,0,0,.76); backdrop-filter: blur(6px); }
 .conc-modal-overlay.hidden { display: none !important; }
 .conc-modal { width: min(490px, 100%); max-height: calc(100dvh - 36px); overflow-y: auto; margin: 0; background: #0e1c16; box-shadow: 0 24px 80px rgba(0,0,0,.5); }
@@ -5038,8 +5038,13 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 .auth-screen[hidden],.auth-account[hidden]{display:none!important}
 .auth-panel{width:min(100%,420px);padding:34px;border:1px solid #294536;border-radius:22px;background:#111e17;box-shadow:0 20px 70px #0008}
 .auth-logo{color:#4ade80;font-weight:800;letter-spacing:1px;margin-bottom:28px}.auth-panel h1{font-size:26px;margin:0 0 8px}.auth-subtitle{color:#a1b5a8;margin:0 0 22px}.auth-panel label{display:block;margin:14px 0;font-size:13px}.auth-panel input{display:block;width:100%;margin-top:7px;box-sizing:border-box;padding:13px;border-radius:10px;border:1px solid #3b5946;background:#09140d;color:white}.auth-primary,.auth-google{display:block;width:100%;padding:13px;border-radius:10px;cursor:pointer;font-weight:700;margin-top:16px}.auth-primary{background:#22c55e;color:#06200f;border:0}.auth-google{background:#f6faf7;color:#18231c;border:0}.auth-links{display:flex;justify-content:space-between;gap:10px;margin-top:20px}.auth-links button{border:0;background:none;color:#86efac;cursor:pointer}.auth-status{font-size:13px;color:#facc15;min-height:18px}/* Conta no cabeçalho: Conta → Menu → Instalar */
-.top-actions{display:flex;align-items:center;gap:8px;flex-shrink:0}
-.auth-account{position:relative;z-index:9000;display:block;flex-shrink:0}
+.top-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+    margin-left: auto;
+}.auth-account{position:relative;z-index:9000;display:block;flex-shrink:0}
 .auth-account[hidden]{display:none!important}
 .auth-account-details{position:relative}
 .auth-account-details summary{list-style:none;display:flex;align-items:center;justify-content:center;cursor:pointer;width:36px;height:36px;border:1px solid #355d43;border-radius:9px;background:#14251b;color:white;font-size:18px}
@@ -5050,7 +5055,7 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 @media(max-width:560px){.topbar{gap:6px}.top-actions{gap:5px}.auth-account-details summary{width:32px;height:34px}.install-btn{padding:7px 8px;font-size:11px}.brand{font-size:16px}.brand strong{white-space:nowrap}}
 
 
-/* Perfil profissional CONCURSADO */
+/* Perfil profissional ORION */
 .auth-account-details summary {border-radius:50%;width:39px;height:39px;overflow:hidden;padding:0;border:2px solid #2bd375;background:#172c20}
 .auth-avatar,.auth-avatar-fallback {width:100%;height:100%;object-fit:cover;border-radius:50%;display:flex;align-items:center;justify-content:center}
 .auth-avatar[hidden],.auth-avatar-fallback[hidden]{display:none!important}
@@ -5333,3 +5338,139 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 .simulation-result-subjects {display:grid;gap:12px;}
 .simulation-result-subjects h3 {font-size:15px;}
 .simulation-result-subjects p {font-size:12px;margin:0;}
+
+/* RESUMO DO SIMULADO SELECIONADO */
+
+.simulation-selected-summary {
+    margin-top: 18px;
+    margin-bottom: 20px;
+}
+
+.simulation-selected-summary > strong {
+    display: block;
+    margin-bottom: 12px;
+    font-size: 15px;
+    color: var(--text);
+}
+
+.simulation-selected-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.simulation-selected-grid > div {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 14px 6px;
+    text-align: center;
+    min-width: 0;
+}
+
+.simulation-selected-grid strong {
+    display: block;
+    font-size: 22px;
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 5px;
+}
+
+.simulation-selected-grid span {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    overflow-wrap: anywhere;
+}
+
+.simulation-selected-grid > div:last-child strong {
+    color: #16c75b;
+}
+
+@media (max-width: 480px) {
+    .simulation-selected-grid {
+        gap: 6px;
+    }
+
+    .simulation-selected-grid > div {
+        padding: 12px 4px;
+    }
+
+    .simulation-selected-grid strong {
+        font-size: 19px;
+    }
+
+    .simulation-selected-grid span {
+        font-size: 10px;
+    }
+}
+/* HISTÓRICO — RESPEITAR CAMPOS OCULTOS */
+#historyDateSelector[hidden],
+#historyPeriodSelector[hidden] {
+    display: none !important;
+}
+/* ORION — ALINHAMENTO DO CABEÇALHO MOBILE */
+@media (max-width: 768px) {
+
+    .topbar {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 12px;
+    }
+
+    .brand {
+        margin-right: 0;
+        flex-shrink: 0;
+    }
+
+    .top-actions {
+        margin-left: auto;
+        flex-shrink: 0;
+    }
+
+}
+/* LOGO ORION NO CABEÇALHO */
+.brand-flag {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+}
+/* LOGO ORION NO RODAPÉ */
+.credits-footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.footer-logo {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+/* BOTÃO REINICIAR MATÉRIA */
+.cycle-reset-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 20px;
+}
+
+@media (max-width: 550px) {
+    .cycle-reset-actions button {
+        width: 100%;
+    }
+}
+/* REINICIAR MATÉRIA — BOTÃO DESATIVADO */
+#confirmCycleReset:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    filter: grayscale(70%);
+}
+
+/* REINICIAR MATÉRIA — BOTÃO ATIVADO */
+#confirmCycleReset:not(:disabled) {
+    opacity: 1;
+    cursor: pointer;
+    filter: none;
+}

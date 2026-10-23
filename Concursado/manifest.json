@@ -1,6 +1,6 @@
 {
-  "name": "Concursado - Painel de Estudos",
-  "short_name": "Concursado",
+  "name": "Orion - Painel de Estudos",
+  "short_name": "Orion",
   "description": "Painel de estudos para organização, acompanhamento e desempenho.",
   "start_url": "./index.html",
   "scope": "./",

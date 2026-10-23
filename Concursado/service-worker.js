@@ -1,5 +1,4 @@
-
-const CACHE_NAME = "concursado-v3";
+const CACHE_NAME = "orion-v3";
 
 const FILES_TO_CACHE = [
     "./",
@@ -8,10 +7,9 @@ const FILES_TO_CACHE = [
     "./script.js",
     "./manifest.json",
     "./icons/icon-192.png",
-    "./icons/icon-512.png"
+    "./icons/icon-512.png",
 ];
 
-// Instalação
 self.addEventListener("install", event => {
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -20,66 +18,59 @@ self.addEventListener("install", event => {
     );
 });
 
-// Ativação e limpeza de caches antigos
 self.addEventListener("activate", event => {
     event.waitUntil(
-        caches.keys().then(keys =>
-            Promise.all(
+        caches.keys().then(keys => {
+            return Promise.all(
                 keys
-                    .filter(key =>
-                        key.startsWith("concursado-") &&
-                        key !== CACHE_NAME
-                    )
+                    .filter(key => key !== CACHE_NAME)
                     .map(key => caches.delete(key))
-            )
-        ).then(() => self.clients.claim())
+            );
+        }).then(() => self.clients.claim())
     );
 });
 
-// Atualização dos arquivos
 self.addEventListener("fetch", event => {
-    const request = event.request;
-    const url = new URL(request.url);
 
-    if (
-        request.method !== "GET" ||
-        url.origin !== self.location.origin
-    ) {
+    // Não interceptar requisições POST, PUT, PATCH ou DELETE.
+    if (event.request.method !== "GET") {
         return;
     }
 
     event.respondWith(
-        (async () => {
-            const cache = await caches.open(CACHE_NAME);
-
-            try {
-                const response = await fetch(request, {
-                    cache: "no-cache"
-                });
-
-                if (response.ok) {
-                    await cache.put(
-                        request,
-                        response.clone()
-                    );
+        caches.match(event.request)
+            .then(cachedResponse => {
+                if (cachedResponse) {
+                    return cachedResponse;
                 }
 
-                return response;
+                return fetch(event.request)
+                    .then(response => {
 
-            } catch (error) {
-                const cached = await cache.match(request);
+                        if (
+                            !response ||
+                            response.status !== 200 ||
+                            response.type === "opaque"
+                        ) {
+                            return response;
+                        }
 
-                if (cached) return cached;
+                        const responseClone = response.clone();
 
-                if (request.mode === "navigate") {
-                    const fallback =
-                        await cache.match("./index.html");
+                        caches.open(CACHE_NAME)
+                            .then(cache => {
+                                cache.put(event.request, responseClone);
+                            });
 
-                    if (fallback) return fallback;
-                }
+                        return response;
+                    })
+                    .catch(() => {
 
-                return Response.error();
-            }
-        })()
+                        if (event.request.mode === "navigate") {
+                            return caches.match("./index.html");
+                        }
+
+                    });
+            })
     );
 });

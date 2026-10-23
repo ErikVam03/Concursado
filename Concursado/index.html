@@ -18,7 +18,7 @@
 
 
 
-    <meta name="description" content="Concursado — organize seus estudos, acompanhe seu desempenho e evolua.">
+    <meta name="description" content="Orion — organize seus estudos, acompanhe seu desempenho e evolua.">
 
 
 
@@ -30,7 +30,7 @@
 
 
 
-    <title>CONCURSADO</title>
+    <title>ORION</title>
 
 
 
@@ -159,7 +159,7 @@
 <body class="auth-locked">
     <div id="authScreen" class="auth-screen">
         <div class="auth-panel">
-            <div class="auth-logo">✦ CONCURSADO</div>
+            <div class="auth-logo">✦ ORION</div>
             <h1 id="authHeading">Entre para continuar</h1>
             <p class="auth-subtitle">Seu espaço para evoluir nos estudos.</p>
             <p id="authStatus" class="auth-status" role="status">Conectando...</p>
@@ -193,17 +193,13 @@
 
 
 
-            <span class="brand-flag">
-
-                ⭐
-
-            </span>
+            <img src="logo-orion.png" class="brand-flag" alt="Logo ORION">
 
 
 
             <strong>
 
-                CONCURSADO
+                ORION
 
             </strong>
 
@@ -300,10 +296,17 @@
                             class="auth-avatar-fallback">👤</span><img id="authAvatar" class="auth-avatar"
                             alt="Foto do perfil" referrerpolicy="no-referrer" hidden></summary>
                     <div class="auth-account-dropdown">
-                        <div class="auth-profile-meta"><strong id="authUserName">Minha conta</strong><span
-                                id="authUserEmail"></span></div>
-                        <button id="authLogout" type="button">Sair</button>
+                    <div class="auth-profile-meta">
+                        <strong id="authUserName">Minha conta</strong>
+                        <span id="authUserEmail"></span>
                     </div>
+
+                    <button id="authPremiumBtn" type="button" hidden>
+                        👑 Assinar Premium
+                    </button>
+
+                    <button id="authLogout" type="button">Sair</button>
+                </div>
                 </details>
             </div>
             <button id="menuBtn" class="icon-btn" aria-label="Abrir menu">☰</button>
@@ -471,9 +474,6 @@
 
 
             </div>
-
-
-
 
 
 
@@ -1368,7 +1368,11 @@
 
             <!-- RESUMO DO CICLO -->
 
-
+            <div class="cycle-reset-actions">
+                <button type="button" id="openCycleReset" class="secondary-btn">
+                    🔄 Reiniciar matéria
+                </button>
+            </div>
 
             <div class="cycle-page-summary">
 
@@ -1513,6 +1517,49 @@
         </section>
 
 
+<!-- JANELA REINICIAR MATÉRIA -->
+<div id="cycleResetOverlay" class="conc-modal-overlay hidden">
+    <div class="card conc-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="cycleResetTitle">
+
+        <div class="conc-modal-heading">
+            <h2 id="cycleResetTitle">🔄 Reiniciar matéria</h2>
+
+            <button type="button"
+                    class="secondary-btn"
+                    id="closeCycleReset"
+                    aria-label="Fechar">
+                ✕
+            </button>
+        </div>
+
+        <p>Selecione a matéria que deseja reiniciar.</p>
+
+        <label for="cycleResetSubject">Matéria</label>
+        <select id="cycleResetSubject">
+            <option value="">Selecione uma matéria</option>
+        </select>
+
+        <p>O progresso do ciclo atual voltará para 0%. Seu histórico e suas estatísticas serão preservados.</p>
+
+        <div class="conc-modal-actions">
+            <button type="button"
+                    class="secondary-btn"
+                    id="cancelCycleReset">
+                Cancelar
+            </button>
+
+            <button type="button"
+                    class="primary-btn"
+                    id="confirmCycleReset"
+                    disabled>
+                🔄 Confirmar reinicialização
+            </button>
+        </div>
+    </div>
+</div>
 
 
 
@@ -1572,7 +1619,7 @@
             <div class="stats-filters">
 
                 <button class="stats-filter active" data-history-filter="today">
-                    Hoje
+                    Dia
                 </button>
 
                 <button class="stats-filter" data-history-filter="week">
@@ -1597,7 +1644,61 @@
 
             </div>
 
+                <!-- SELEÇÃO DE DATA DO HISTÓRICO -->
+            <div id="historyDateSelector" class="history-date-selector">
 
+                <label for="historySelectedDate">
+                    Selecionar dia
+                </label>
+
+                <input
+                    type="text"
+                    id="historySelectedDate"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+
+            </div>
+            <!-- CALENDÁRIO PERSONALIZADO DO HISTÓRICO -->
+            <div id="historyCalendarOverlay" class="conc-modal-overlay hidden">
+                <div
+                    class="card conc-modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="historyCalendarTitle"
+                >
+                    <div class="conc-modal-heading">
+                        <h2 id="historyCalendarTitle">Selecionar dia</h2>
+
+                        <button
+                            type="button"
+                            class="secondary-btn"
+                            id="closeHistoryCalendar"
+                            aria-label="Fechar calendário"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div id="historyCalendarContent"></div>
+                </div>
+            </div>
+
+            <!-- SELEÇÃO DE PERÍODO DO HISTÓRICO -->
+            <div id="historyPeriodSelector" class="history-date-selector" hidden>
+
+                <label for="historySelectedPeriod">
+                    Selecionar período
+                </label>
+
+                <input
+                    type="text"
+                    id="historySelectedPeriod"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+
+            </div>
 
 
             <!--
@@ -1731,7 +1832,7 @@
 
                 <button class="stats-filter active" data-filter="today">
 
-                    Hoje
+                    Dia
 
                 </button>
 
@@ -1779,7 +1880,52 @@
 
             </div>
 
+            <!-- SELEÇÃO DE DIA DAS ESTATÍSTICAS -->
+            <div id="statsDateSelector" class="history-date-selector">
+                <label for="statsSelectedDate">Selecionar dia</label>
+                <input
+                    type="text"
+                    id="statsSelectedDate"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+            </div>
 
+            <!-- CALENDÁRIO PERSONALIZADO DAS ESTATÍSTICAS -->
+<div id="statsCalendarOverlay" class="conc-modal-overlay hidden">
+    <div
+        class="card conc-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="statsCalendarTitle"
+    >
+        <div class="conc-modal-heading">
+            <h2 id="statsCalendarTitle">Selecionar dia</h2>
+
+            <button
+                type="button"
+                class="secondary-btn"
+                id="closeStatsCalendar"
+                aria-label="Fechar calendário"
+            >
+                ✕
+            </button>
+        </div>
+
+        <div id="statsCalendarContent"></div>
+    </div>
+</div>
+
+            <!-- SELEÇÃO DE PERÍODO DAS ESTATÍSTICAS -->
+            <div id="statsPeriodSelector" class="history-date-selector" hidden>
+                <label for="statsSelectedPeriod">Selecionar período</label>
+                <input
+                    type="text"
+                    id="statsSelectedPeriod"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+            </div>
 
 
 
@@ -1973,7 +2119,7 @@
 
                     <h2>
 
-                        Tempo por categoria
+                        Tempo e Questões
 
                     </h2>
 
@@ -2183,6 +2329,7 @@
 
                         </select>
 
+                        <div id="simulationSelectedInfo" class="hidden"></div>
 
 
                     </div>
@@ -2195,57 +2342,11 @@
 
 
 
-                        <svg viewBox="0 0 800 260" preserveAspectRatio="none">
+                       <svg viewBox="0 0 800 260" preserveAspectRatio="none">
 
+    <g id="simulationChartBars"></g>
 
-
-                            <defs>
-
-
-
-                                <linearGradient id="lineGradient" x1="0" y1="0" x2="0" y2="1">
-
-
-
-                                    <stop offset="0%" stop-opacity=".35" />
-
-
-
-                                    <stop offset="100%" stop-opacity="0" />
-
-
-
-                                </linearGradient>
-
-
-
-                            </defs>
-
-
-
-
-
-                            <path id="simulationChartArea" class="chart-area" d=""></path>
-
-
-
-
-
-                            <path id="simulationChartLine" class="chart-line" d=""></path>
-
-
-
-
-
-                            <g id="simulationChartPoints">
-
-                                <!-- pontos gerados pelo JS -->
-
-                            </g>
-
-
-
-                        </svg>
+</svg>
 
 
 
@@ -2718,6 +2819,43 @@
                     </form>
                 </div>
             </div>
+<!-- CONFIRMAÇÃO PARA FINALIZAR SIMULADO -->
+<div id="simulationConfirmOverlay"
+     class="simulation-end-overlay hidden"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="simulationConfirmTitle">
+
+    <div class="card simulation-end-modal" style="width:min(480px,100%)">
+
+        <span class="eyebrow">FINALIZAR SIMULADO</span>
+
+        <h2 id="simulationConfirmTitle">
+            Deseja finalizar o simulado?
+        </h2>
+        <p>
+            Ao confirmar, o cronômetro será encerrado
+            e você poderá registrar seus acertos.
+        </p>
+
+        <div class="form-actions">
+            <button type="button"
+                    id="cancelSimulationConfirm"
+                    class="secondary-btn">
+                Cancelar
+            </button>
+
+            <button type="button"
+                    id="confirmSimulationFinish"
+                    class="primary-btn">
+                Finalizar simulado
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
         </section>
 
 
@@ -2859,45 +2997,6 @@
 
 
                     </label>
-
-
-
-
-
-                    <label>
-
-
-
-                        Horas planejadas
-
-
-
-                        <input id="subjectHours" type="text" placeholder="00:00:00">
-
-
-
-                    </label>
-
-
-
-
-
-                    <label>
-
-
-
-                        Questões planejadas
-
-
-
-                        <input type="number" id="subjectQuestions" min="0" placeholder="Ex: 300">
-
-
-
-                    </label>
-
-
-
 
 
                     <label>Cor da matéria<div class="subject-color-control"><input id="subjectColor" type="hidden"
@@ -3127,7 +3226,7 @@
 
             <div class="page-heading">
 
-                <span class="eyebrow">CONCURSADO</span>
+                <span class="eyebrow">ORION</span>
 
                 <h1>Créditos</h1>
 
@@ -3141,7 +3240,7 @@
 
                 <article class="card credits-instagram">
 
-                    <span class="credits-kicker">CONTEÚDO DE ESTUDOS</span>
+                    <span class="credits-kicker">PARCEIROS</span>
 
                     <div class="credits-profile">
 
@@ -3180,7 +3279,7 @@
 
                     <h2>
 
-                        <span>💡 Asp R2 Romeu — Idealizador</span>
+                        <span>💡 ASP R2 Romeu — Idealizador</span>
 
                     </h2>
 
@@ -3188,7 +3287,7 @@
 
                     <h2>
 
-                        <span>💻 Asp R2 Erik — Desenvolvedor</span>
+                        <span>💻 ASP R2 Erik — Desenvolvedor</span>
 
                     </h2>
 
@@ -3220,9 +3319,11 @@
 
             <footer class="credits-footer">
 
-                <span class="credits-footer-brand">⭐CONCURSADO</span>
-
-                <p>© 2026 CONCURSADO • Todos os direitos reservados.</p>
+            <span class="credits-footer-brand">
+                <img src="logo-orion.png" class="footer-logo" alt="Logo ORION">
+                ORION
+            </span>
+                <p>© 2026 ORION • Todos os direitos reservados.</p>
 
             </footer>
 
@@ -3322,7 +3423,7 @@
 
 
 
-    <!-- JANELAS PADRONIZADAS DO CONCURSADO -->
+    <!-- JANELAS PADRONIZADAS DO ORION -->
     <div id="historyDateOverlay" class="conc-modal-overlay hidden" role="presentation">
         <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="historyDateTitle">
             <div class="conc-modal-heading">
@@ -3331,8 +3432,27 @@
             </div>
             <p>Escolha as datas para consultar seu histórico de estudos.</p>
             <form id="historyDateForm" class="conc-modal-form">
-                <label>Data inicial<input id="historyDateStart" type="date" required></label>
-                <label>Data final<input id="historyDateEnd" type="date" required></label>
+                <label>
+                    Data inicial
+                    <input
+                        id="historyDateStart"
+                        type="text"
+                        placeholder="DD/MM/AAAA"
+                        readonly
+                        required
+                    >
+                </label>
+
+                <label>
+                    Data final
+                    <input
+                        id="historyDateEnd"
+                        type="text"
+                        placeholder="DD/MM/AAAA"
+                        readonly
+                        required
+                    >
+                </label>
                 <p id="historyDateError" class="conc-modal-error hidden" role="alert">A data final não pode ser anterior
                     à inicial.</p>
                 <div class="conc-modal-actions"><button type="button" class="secondary-btn"

@@ -1,4 +1,4 @@
-/* CONCURSADO — autenticação Supabase (chave pública apenas) */
+/* ORION — autenticação Supabase (chave pública apenas) */
 const SUPABASE_URL = 'https://uuhugqmakngtlrfuilyk.supabase.co';
 const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_R5VfMPZeDtQQiCRAf5OQ4g_1yl6rjRO';
 const statusEl = document.getElementById('authStatus');
@@ -11,12 +11,12 @@ let client;
 function status(message) { statusEl.textContent = message || ''; }
 function unlock(user) {
   if (!user) return;
-  window.CONCURSADO_USER_ID = user.id;
-  window.CONCURSADO_PLAN = "free";
-  window.CONCURSADO_PREMIUM = false;
-  window.CONCURSADO_TRIAL = false;
-  window.CONCURSADO_TRIAL_UNTIL = null;
-  window.CONCURSADO_PREMIUM_UNTIL = null;
+  window.ORION_USER_ID = user.id;
+  window.ORION_PLAN = "free";
+  window.ORION_PREMIUM = false;
+  window.ORION_TRIAL = false;
+  window.ORION_TRIAL_UNTIL = null;
+  window.ORION_PREMIUM_UNTIL = null;
 
   (async () => {
     const { data, error } = await client
@@ -40,20 +40,20 @@ function unlock(user) {
     const trialAtivo = plan === "free" &&
       trialUntil && Date.parse(trialUntil) > now;
 
-    window.CONCURSADO_PLAN = plan;
-    window.CONCURSADO_PREMIUM_UNTIL = premiumUntil;
-    window.CONCURSADO_TRIAL_UNTIL = trialUntil;
-    window.CONCURSADO_TRIAL = Boolean(trialAtivo);
-    window.CONCURSADO_PREMIUM = Boolean(
+    window.ORION_PLAN = plan;
+    window.ORION_PREMIUM_UNTIL = premiumUntil;
+    window.ORION_TRIAL_UNTIL = trialUntil;
+    window.ORION_TRIAL = Boolean(trialAtivo);
+    window.ORION_PREMIUM = Boolean(
       plan === "admin" || premiumPagoAtivo || trialAtivo
     );
 
     // Permite que o script.js atualize os cadeados e o selo após a consulta.
-    window.dispatchEvent(new Event("concursado:plan-updated"));
+    window.dispatchEvent(new Event("orion:plan-updated"));
 
-    console.log("Plano CONCURSADO:", plan);
-    console.log("Teste Premium ativo:", window.CONCURSADO_TRIAL);
-    console.log("Acesso Premium:", window.CONCURSADO_PREMIUM);
+    console.log("Plano ORION:", plan);
+    console.log("Teste Premium ativo:", window.ORION_TRIAL);
+    console.log("Acesso Premium:", window.ORION_PREMIUM);
   })();
 
   document.getElementById('authUserEmail').textContent = user.email || 'Minha conta';
@@ -63,22 +63,6 @@ function unlock(user) {
   const avatar = document.getElementById('authAvatar');
   const fallback = document.getElementById('authAvatarFallback');
   avatar.hidden = true; fallback.hidden = false;
-  // Mostra a inicial do nome ou e-mail quando não há foto
-const nomePerfil =
-  meta.full_name ||
-  meta.name ||
-  user.email?.split('@')[0] ||
-  'U';
-
-const inicial = nomePerfil.trim().charAt(0).toUpperCase();
-
-fallback.textContent = inicial;
-fallback.style.display = 'flex';
-fallback.style.alignItems = 'center';
-fallback.style.justifyContent = 'center';
-fallback.style.fontSize = '18px';
-fallback.style.fontWeight = '700';
-
   if (photo && /^https:\/\//i.test(photo)) {
     avatar.onload = () => { avatar.hidden = false; fallback.hidden = true; };
     avatar.onerror = () => { avatar.hidden = true; fallback.hidden = false; };
@@ -87,10 +71,10 @@ fallback.style.fontWeight = '700';
   document.getElementById('authAccount').hidden = false;
   document.getElementById('authScreen').hidden = true;
   document.body.classList.remove('auth-locked');
-  if (!document.querySelector('script[data-concursado-app]')) {
+  if (!document.querySelector('script[data-orion-app]')) {
     const script = document.createElement('script');
     script.src = 'script.js';
-    script.dataset.concursadoApp = 'true';
+    script.dataset.orionApp = 'true';
     document.body.appendChild(script);
   }
 }
@@ -106,7 +90,7 @@ async function start() {
   }
   if (!window.supabase?.createClient) { status('Não foi possível carregar a biblioteca Supabase.'); return; }
   client = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-  window.CONCURSADO_SUPABASE = client;
+  window.ORION_SUPABASE = client;
   const { data, error } = await client.auth.getUser();
   if (data?.user && !error) { unlock(data.user); return; }
   status(''); form.hidden = false; google.hidden = false; change.hidden = false; forgot.hidden = false;
@@ -116,8 +100,8 @@ async function start() {
       if (newPassword && newPassword.length >= 8) client.auth.updateUser({password:newPassword}).then(({error}) => alert(error ? error.message : "Senha atualizada!"));
       else if (newPassword) alert("A senha deve ter pelo menos 8 caracteres.");
     }
-    if (session?.user && !window.CONCURSADO_USER_ID) unlock(session.user);
-    if (!session && window.CONCURSADO_USER_ID) window.location.reload();
+    if (session?.user && !window.ORION_USER_ID) unlock(session.user);
+    if (!session && window.ORION_USER_ID) window.location.reload();
   });
 }
 form.addEventListener('submit', async event => {

@@ -2,13 +2,13 @@
 // Os registros de cada conta permanecem separados no navegador.
 // Os registros legados sem prefixo não são apagados nem importados automaticamente.
 function userStorageKey(key) {
-    const uid = window.CONCURSADO_USER_ID;
+    const uid = window.ORION_USER_ID;
     if (!uid) throw new Error("Sessão necessária para acessar dados locais.");
     return `concursado_${uid}_${key}`;
 }
 
 /* =========================================================
-   CONCURSADO
+   ORION
    Sistema principal
    ========================================================= */
 
@@ -145,8 +145,8 @@ function loadJSON(key, fallback) {
    SUPABASE — sincronização por conta
    Mantém uma fila local de alterações para suportar quedas de rede.
    ========================================================= */
-const CONCURSADO_DB = window.CONCURSADO_SUPABASE;
-const CONCURSADO_UID = window.CONCURSADO_USER_ID;
+const ORION_DB = window.ORION_SUPABASE;
+const ORION_UID = window.ORION_USER_ID;
 const CLOUD_TABLES = {
     subjects: { get: () => subjects, set: value => { subjects = value; }, key: "aprovado_subjects" },
     studies: { get: () => studies, set: value => { studies = value; }, key: "aprovado_studies" },
@@ -155,7 +155,7 @@ const CLOUD_TABLES = {
 let cloudReady = false;
 const cloudLoadingOverlay = document.createElement("div");
 cloudLoadingOverlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:#07110d;color:#fff;display:flex;align-items:center;justify-content:center;font:600 17px Inter,sans-serif;text-align:center;padding:24px";
-cloudLoadingOverlay.textContent = "Carregando seus dados do CONCURSADO...";
+cloudLoadingOverlay.textContent = "Carregando seus dados do ORION...";
 document.body.appendChild(cloudLoadingOverlay);
 let cloudFlushing = false;
 let cloudSnapshots = { subjects: [], studies: [], simulations: [] };
@@ -197,18 +197,18 @@ function saveSubjects() { cloudQueueChange("subjects"); }
 function saveSimulations() { cloudQueueChange("simulations"); }
 
 async function cloudFlush() {
-    if (!cloudReady || cloudFlushing || !CONCURSADO_DB || !CONCURSADO_UID) return;
+    if (!cloudReady || cloudFlushing || !ORION_DB || !ORION_UID) return;
     cloudFlushing = true;
     try {
         while (cloudPending.length) {
             const op = cloudPending[0];
             let query;
             if (op.action === "delete") {
-                query = CONCURSADO_DB.from(op.table).delete()
-                    .eq("user_id", CONCURSADO_UID).eq("id", op.id);
+                query = ORION_DB.from(op.table).delete()
+                    .eq("user_id", ORION_UID).eq("id", op.id);
             } else {
-                query = CONCURSADO_DB.from(op.table).upsert({
-                    user_id: CONCURSADO_UID, id: op.id, data: op.data,
+                query = ORION_DB.from(op.table).upsert({
+                    user_id: ORION_UID, id: op.id, data: op.data,
                     updated_at: new Date().toISOString()
                 }, { onConflict: "user_id,id" });
             }
@@ -217,9 +217,9 @@ async function cloudFlush() {
             cloudPending.shift();
             cloudPersistQueue();
         }
-        console.info("CONCURSADO: alterações sincronizadas com Supabase.");
+        console.info("ORION: alterações sincronizadas com Supabase.");
     } catch (error) {
-        console.error("CONCURSADO: sincronização pendente:", error);
+        console.error("ORION: sincronização pendente:", error);
         if (typeof showToast === "function") showToast("Sem sincronização na nuvem. Dados guardados neste aparelho.");
     } finally {
         cloudFlushing = false;
@@ -227,8 +227,8 @@ async function cloudFlush() {
 }
 
 async function cloudInitialize() {
-    if (!CONCURSADO_DB || !CONCURSADO_UID) {
-        console.error("CONCURSADO: cliente Supabase ou sessão indisponível.");
+    if (!ORION_DB || !ORION_UID) {
+        console.error("ORION: cliente Supabase ou sessão indisponível.");
         return;
     }
     try {
@@ -237,8 +237,8 @@ async function cloudInitialize() {
             // Paginação: evita perder registros acima do limite padrão da API.
             let rows = [];
             for (let from = 0; ; from += 500) {
-                const { data, error } = await CONCURSADO_DB.from(table)
-                    .select("id,data").eq("user_id", CONCURSADO_UID)
+                const { data, error } = await ORION_DB.from(table)
+                    .select("id,data").eq("user_id", ORION_UID)
                     .order("id", { ascending: true }).range(from, from + 499);
                 if (error) throw error;
                 rows.push(...data);
@@ -263,7 +263,7 @@ async function cloudInitialize() {
         cloudLoadingOverlay.remove();
         await cloudFlush();
     } catch (error) {
-        console.error("CONCURSADO: falha ao carregar dados da nuvem:", error);
+        console.error("ORION: falha ao carregar dados da nuvem:", error);
         // Não sobrescreve a nuvem com dados locais em caso de erro de leitura.
         cloudLoadingOverlay.textContent = "Não foi possível carregar seus dados. Verifique a conexão e atualize a página. Nenhum dado foi apagado.";
     }
@@ -1146,22 +1146,23 @@ const historyFilters = document.querySelectorAll(
 
 // Permissão lida do Supabase pelo auth.js (avaliada em cada uso).
 function hasPremiumReportsAccess() {
-    const plan = window.CONCURSADO_PLAN || "free";
+    const plan = window.ORION_PLAN || "free";
+    
     if (plan === "admin") return true;
     if (plan === "premium") {
-        const expires = Date.parse(window.CONCURSADO_PREMIUM_UNTIL || "");
+        const expires = Date.parse(window.ORION_PREMIUM_UNTIL || "");
         return Number.isFinite(expires) && expires > Date.now();
     }
     if (plan === "free") {
-        const expires = Date.parse(window.CONCURSADO_TRIAL_UNTIL || "");
+        const expires = Date.parse(window.ORION_TRIAL_UNTIL || "");
         return Number.isFinite(expires) && expires > Date.now();
     }
     return false;
 }
 
 function getTrialDaysRemaining() {
-    if ((window.CONCURSADO_PLAN || "free") !== "free") return 0;
-    const expires = Date.parse(window.CONCURSADO_TRIAL_UNTIL || "");
+    if ((window.ORION_PLAN || "free") !== "free") return 0;
+    const expires = Date.parse(window.ORION_TRIAL_UNTIL || "");
     if (!Number.isFinite(expires) || expires <= Date.now()) return 0;
     return Math.ceil((expires - Date.now()) / 86400000);
 }
@@ -1181,7 +1182,8 @@ function showPremiumReportModal() {
                 </div>
                 <p>Os filtros Mês, Ano, Tudo e Personalizado são exclusivos de assinantes Premium, administradores e usuários durante o teste de 7 dias.</p>
                 <div class="conc-modal-actions">
-                    <button type="button" class="secondary-btn" id="dismissPremiumReport">Agora não</button>
+                    <button type="button" class="secondary-btn" id="dismissPremiumReport">Continuar no FREE</button>
+                    <button type="button" class="primary-btn" id="subscribePremiumReport">👑 Assinar Premium</button>
                 </div>
             </div>`;
         document.body.appendChild(overlay);
@@ -1191,6 +1193,13 @@ function showPremiumReportModal() {
         };
         overlay.querySelector("#closePremiumReport").addEventListener("click", close);
         overlay.querySelector("#dismissPremiumReport").addEventListener("click", close);
+        overlay.querySelector("#subscribePremiumReport").addEventListener("click", () => {
+            window.open(
+                "https://pay.hotmart.com/X108120079Y?off=8lz79btf",
+                "_blank",
+                "noopener,noreferrer"
+            );
+        });
         overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
     }
     overlay.classList.remove("hidden");
@@ -1198,10 +1207,24 @@ function showPremiumReportModal() {
     overlay.querySelector("#dismissPremiumReport").focus();
 }
 
+// Abre o checkout do ORION Premium pelo menu da conta.
+document.getElementById("authPremiumBtn")?.addEventListener("click", () => {
+    window.open(
+        "https://pay.hotmart.com/X108120079Y?off=8lz79btf",
+        "_blank",
+        "noopener,noreferrer"
+    );
+});
+
 // Atualiza apenas os cadeados dos filtros e o selo do plano no Painel.
 // Não altera a lógica de filtros, estudos ou sincronização.
 function refreshPremiumVisuals() {
     const allowed = hasPremiumReportsAccess();
+        const authPremiumBtn = document.getElementById("authPremiumBtn");
+
+    if (authPremiumBtn) {
+        authPremiumBtn.hidden = allowed;
+    }
     document.querySelectorAll('[data-history-filter], [data-filter]').forEach(button => {
         const value = button.dataset.historyFilter || button.dataset.filter;
         if (!["month", "year", "all", "custom"].includes(value)) return;
@@ -1233,7 +1256,7 @@ function refreshPremiumVisuals() {
         badge.style.cssText = "display:inline-flex;align-items:center;gap:5px;margin-left:auto;font-size:13px;font-weight:800;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.15);white-space:nowrap";
         headingRow.appendChild(badge);
     }
-    const plan = window.CONCURSADO_PLAN || "free";
+    const plan = window.ORION_PLAN || "free";
     if (plan === "admin") {
         badge.textContent = "👑 🛡️ ADMIN";
         badge.style.color = "#ffdf00";
@@ -1243,15 +1266,44 @@ function refreshPremiumVisuals() {
             ? `👑 TESTE PREMIUM · ${remaining} ${remaining === 1 ? "dia restante" : "dias restantes"}`
             : "👑 PREMIUM";
         badge.style.color = "#ffdf00";
-    } else {
+        } else {
         badge.textContent = "FREE";
         badge.style.color = "#9ca9a2";
     }
+
+    let premiumButton = document.getElementById("orionDashboardPremiumBtn");
+
+    if (!premiumButton) {
+        premiumButton = document.createElement("button");
+        premiumButton.id = "orionDashboardPremiumBtn";
+        premiumButton.type = "button";
+        premiumButton.textContent = "👑 Assinar Premium";
+
+        premiumButton.style.cssText = `
+            background: #00b85c;
+            color: #ffffff;
+            border: none;
+            border-radius: 999px;
+            padding: 7px 12px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        `;
+
+        badge.insertAdjacentElement("afterend", premiumButton);
+
+        premiumButton.addEventListener("click", () => {
+            document.getElementById("authPremiumBtn")?.click();
+        });
+    }
+
+    premiumButton.hidden = plan === "admin" || allowed;
 }
 
 // Atualiza o visual quando o auth.js recebe o plano do Supabase.
 refreshPremiumVisuals();
-window.addEventListener("concursado:plan-updated", refreshPremiumVisuals);
+window.addEventListener("orion:plan-updated", refreshPremiumVisuals);
 // Reavalia a validade enquanto a página estiver aberta (inclusive após 7 dias).
 setInterval(refreshPremiumVisuals, 60000);
 window.addEventListener("focus", refreshPremiumVisuals);
@@ -1261,6 +1313,545 @@ document.addEventListener("visibilitychange", () => {
 
 let historyCustomStart = null;
 let historyCustomEnd = null;
+let historySelectedDay = getDateKey(new Date());
+let historySelectedPeriod = getDateKey(new Date());
+
+const historyPeriodInput =
+    document.getElementById("historySelectedPeriod");
+
+if (historyPeriodInput) {
+
+    historyPeriodInput.value =
+        historySelectedPeriod.split("-").reverse().join("/");
+
+    historyPeriodInput.addEventListener("change", () => {
+
+        if (!historyPeriodInput.value) return;
+
+        const activeFilter = document.querySelector(
+            '[data-history-filter].active'
+        )?.dataset.historyFilter;
+
+        if (!["week", "month", "year"].includes(activeFilter)) {
+            return;
+        }
+
+        historySelectedPeriod = historyPeriodInput.value;
+
+        renderHistory(activeFilter);
+    });
+}
+const historySelectedDateInput =
+    document.getElementById("historySelectedDate");
+const historyCalendarOverlay =
+    document.getElementById("historyCalendarOverlay");
+
+const closeHistoryCalendarButton =
+    document.getElementById("closeHistoryCalendar");
+
+function closeHistoryCalendar() {
+    if (!historyCalendarOverlay) return;
+
+    historyCalendarOverlay.classList.add("hidden");
+    document.body.classList.remove("conc-modal-open");
+}
+// CALENDÁRIO PERSONALIZADO — HISTÓRICO
+
+let historyCalendarView = new Date();
+
+// MODO DE SELEÇÃO DO CALENDÁRIO
+let historyCalendarMode = "day";
+
+// Campo ativo do período personalizado
+let historyCustomCalendarField = null;
+
+// ABRIR CALENDÁRIO DO PERÍODO PERSONALIZADO
+["historyDateStart", "historyDateEnd"].forEach(id => {
+    const input = document.getElementById(id);
+
+    if (!input) return;
+
+    input.addEventListener("click", () => {
+        historyCustomCalendarField = id;
+        historyCalendarMode = "custom";
+
+        // Abre no mês da data já preenchida ou no mês atual
+        const match = input.value.match(
+            /^(\d{2})\/(\d{2})\/(\d{4})$/
+        );
+
+        if (match) {
+            historyCalendarView = new Date(
+                Number(match[3]),
+                Number(match[2]) - 1,
+                Number(match[1])
+            );
+        } else {
+            historyCalendarView = new Date();
+        }
+
+        historyCalendarOverlay.classList.remove("hidden");
+        historyCalendarOverlay.style.zIndex = "99999";
+        renderHistoryCalendar();
+    });
+});
+
+// CALENDÁRIO — SELEÇÃO DE ANO
+function renderHistoryYearCalendar() {
+    const container =
+        document.getElementById("historyCalendarContent");
+
+    if (!container) return;
+
+    const selectedYear = Number(
+        historySelectedPeriod.slice(0, 4)
+    );
+
+    const currentYear = historyCalendarView.getFullYear();
+
+    // Exibe 12 anos por página
+    const startYear =
+        Math.floor(currentYear / 12) * 12;
+
+    container.innerHTML = "";
+
+    const header = document.createElement("div");
+
+    header.style.display = "flex";
+    header.style.alignItems = "center";
+    header.style.justifyContent = "space-between";
+    header.style.gap = "12px";
+
+    const title = document.createElement("h3");
+    title.textContent =
+        `${startYear} – ${startYear + 11}`;
+    title.style.margin = "0";
+
+    const previousYears = document.createElement("button");
+    previousYears.type = "button";
+    previousYears.className = "secondary-btn";
+    previousYears.textContent = "‹";
+
+    const nextYears = document.createElement("button");
+    nextYears.type = "button";
+    nextYears.className = "secondary-btn";
+    nextYears.textContent = "›";
+
+    previousYears.addEventListener("click", () => {
+        historyCalendarView =
+            new Date(startYear - 12, 0, 1);
+
+        renderHistoryYearCalendar();
+    });
+
+    nextYears.addEventListener("click", () => {
+        historyCalendarView =
+            new Date(startYear + 12, 0, 1);
+
+        renderHistoryYearCalendar();
+    });
+
+    header.appendChild(previousYears);
+    header.appendChild(title);
+    header.appendChild(nextYears);
+
+    container.appendChild(header);
+
+    const grid = document.createElement("div");
+
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(3, 1fr)";
+    grid.style.gap = "10px";
+    grid.style.marginTop = "18px";
+
+    for (let year = startYear; year < startYear + 12; year++) {
+        const cell = document.createElement("button");
+
+        cell.type = "button";
+        cell.className = "secondary-btn";
+        cell.textContent = year;
+
+        cell.style.padding = "14px 8px";
+        cell.style.borderRadius = "8px";
+
+        if (year === selectedYear) {
+            cell.style.setProperty(
+                "background", "#009739", "important"
+            );
+            cell.style.setProperty(
+                "color", "#ffffff", "important"
+            );
+            cell.style.fontWeight = "700";
+        }
+
+        cell.addEventListener("click", () => {
+            // Mantém o formato interno AAAA-MM-DD
+            historySelectedPeriod = `${year}-01-01`;
+
+            // Exibe somente o ano selecionado
+            if (historyPeriodInput) {
+                historyPeriodInput.value = String(year);
+            }
+
+            renderHistory("year");
+            closeHistoryCalendar();
+        });
+
+        grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
+}
+
+// CALENDÁRIO — SELEÇÃO DE MÊS
+function renderHistoryMonthCalendar() {
+    const container =
+        document.getElementById("historyCalendarContent");
+
+    if (!container) return;
+
+    const year = historyCalendarView.getFullYear();
+
+    const months = [
+        "Jan", "Fev", "Mar",
+        "Abr", "Mai", "Jun",
+        "Jul", "Ago", "Set",
+        "Out", "Nov", "Dez"
+    ];
+
+    container.innerHTML = "";
+
+    const header = document.createElement("div");
+
+    header.style.display = "flex";
+    header.style.alignItems = "center";
+    header.style.justifyContent = "space-between";
+    header.style.gap = "12px";
+
+    const title = document.createElement("h3");
+    title.textContent = year;
+    title.style.margin = "0";
+
+    const previousYear = document.createElement("button");
+    previousYear.type = "button";
+    previousYear.className = "secondary-btn";
+    previousYear.textContent = "‹";
+    previousYear.setAttribute("aria-label", "Ano anterior");
+
+    const nextYear = document.createElement("button");
+    nextYear.type = "button";
+    nextYear.className = "secondary-btn";
+    nextYear.textContent = "›";
+    nextYear.setAttribute("aria-label", "Próximo ano");
+
+    previousYear.addEventListener("click", () => {
+        historyCalendarView = new Date(year - 1, 0, 1);
+        renderHistoryMonthCalendar();
+    });
+
+    nextYear.addEventListener("click", () => {
+        historyCalendarView = new Date(year + 1, 0, 1);
+        renderHistoryMonthCalendar();
+    });
+
+    header.appendChild(previousYear);
+    header.appendChild(title);
+    header.appendChild(nextYear);
+
+    container.appendChild(header);
+
+    const grid = document.createElement("div");
+
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(3, 1fr)";
+    grid.style.gap = "10px";
+    grid.style.marginTop = "18px";
+
+    months.forEach((name, index) => {
+        const cell = document.createElement("button");
+
+        cell.type = "button";
+        cell.className = "secondary-btn";
+        cell.textContent = name;
+
+        cell.style.padding = "14px 8px";
+        cell.style.borderRadius = "8px";
+
+        // DESTACAR O MÊS SELECIONADO
+        const selectedYear = Number(historySelectedPeriod.slice(0, 4));
+        const selectedMonth = Number(historySelectedPeriod.slice(5, 7)) - 1;
+
+        if (year === selectedYear && index === selectedMonth) {
+            cell.style.setProperty("background", "#009739", "important");
+            cell.style.setProperty("color", "#ffffff", "important");
+            cell.style.fontWeight = "700";
+        }
+
+        cell.addEventListener("click", () => {
+            const selectedMonth = String(index + 1).padStart(2, "0");
+
+            // Mantém o formato interno AAAA-MM-DD
+            historySelectedPeriod = `${year}-${selectedMonth}-01`;
+
+            // Exibe o mês e o ano no campo
+            if (historyPeriodInput) {
+                historyPeriodInput.value =
+                    `${selectedMonth}/${year}`;
+            }
+
+            renderHistory("month");
+            closeHistoryCalendar();
+        });
+
+        grid.appendChild(cell);
+    });
+
+    container.appendChild(grid);
+}
+
+function renderHistoryCalendar() {
+    const container =
+        document.getElementById("historyCalendarContent");
+
+    if (!container) return;
+
+    const year = historyCalendarView.getFullYear();
+    const month = historyCalendarView.getMonth();
+
+    const monthName = historyCalendarView.toLocaleDateString(
+        "pt-BR",
+        { month: "long", year: "numeric" }
+    );
+
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const weekdays = ["D", "S", "T", "Q", "Q", "S", "S"];
+
+    container.innerHTML = "";
+
+    const heading = document.createElement("h3");
+    heading.textContent =
+        monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+    const calendarHeader = document.createElement("div");
+
+    calendarHeader.style.display = "flex";
+    calendarHeader.style.alignItems = "center";
+    calendarHeader.style.justifyContent = "space-between";
+    calendarHeader.style.gap = "12px";
+
+    heading.style.margin = "0";
+
+    const previousMonth = document.createElement("button");
+    previousMonth.type = "button";
+    previousMonth.textContent = "‹";
+    previousMonth.className = "secondary-btn";
+    previousMonth.setAttribute("aria-label", "Mês anterior");
+
+    const nextMonth = document.createElement("button");
+    nextMonth.type = "button";
+    nextMonth.textContent = "›";
+    nextMonth.className = "secondary-btn";
+    nextMonth.setAttribute("aria-label", "Próximo mês");
+
+    previousMonth.addEventListener("click", () => {
+        historyCalendarView = new Date(year, month - 1, 1);
+        renderHistoryCalendar();
+    });
+
+    nextMonth.addEventListener("click", () => {
+        historyCalendarView = new Date(year, month + 1, 1);
+        renderHistoryCalendar();
+    });
+
+    calendarHeader.appendChild(previousMonth);
+    calendarHeader.appendChild(heading);
+    calendarHeader.appendChild(nextMonth);
+
+    container.appendChild(calendarHeader);
+
+    const grid = document.createElement("div");
+    grid.style.display = "grid";
+    grid.style.gridTemplateColumns = "repeat(7, 1fr)";
+    grid.style.gap = "6px";
+    grid.style.marginTop = "16px";
+    grid.style.textAlign = "center";
+
+    weekdays.forEach(name => {
+        const label = document.createElement("span");
+        label.textContent = name;
+        label.style.color = "#9ca9a2";
+        grid.appendChild(label);
+    });
+
+    for (let i = 0; i < firstWeekday; i++) {
+        grid.appendChild(document.createElement("span"));
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const cell = document.createElement("span");
+
+        cell.textContent = day;
+        cell.style.padding = "10px 0";
+        cell.style.borderRadius = "8px";
+        const selectedYear = Number(historySelectedPeriod.slice(0, 4));
+        const selectedMonth = Number(historySelectedPeriod.slice(5, 7)) - 1;
+
+
+        cell.style.cursor = "pointer";
+
+        cell.addEventListener("click", () => {
+            const activeFilter =
+                document.querySelector(
+                    '[data-history-filter].active'
+                )?.dataset.historyFilter;
+            if (
+                historyCalendarMode === "custom" &&
+                historyCustomCalendarField
+            ) {
+                const input = document.getElementById(
+                    historyCustomCalendarField
+                );
+
+                if (input) {
+                    input.value = dateKey.split("-").reverse().join("/");
+                }
+
+                closeHistoryCalendar();
+                return;
+            }
+
+            if (activeFilter === "week") {
+                historySelectedPeriod = dateKey;
+
+                const periodInput =
+                    document.getElementById("historySelectedPeriod");
+
+                if (periodInput) {
+                    periodInput.value = dateKey.split("-").reverse().join("/");
+                }
+
+                renderHistory("week");
+
+            } else {
+                historySelectedDay = dateKey;
+
+                historySelectedDateInput.value =
+                    dateKey.split("-").reverse().join("/");
+
+                renderHistory("today");
+            }
+
+            closeHistoryCalendar();
+        });
+
+        const dateKey = getDateKey(new Date(year, month, day));
+        const activeHistoryFilter =
+            document.querySelector(
+                '[data-history-filter].active'
+            )?.dataset.historyFilter;
+
+        if (activeHistoryFilter === "week") {
+            const selectedDate = new Date(
+                historySelectedPeriod + "T12:00:00"
+            );
+
+            const weekStart = new Date(selectedDate);
+            weekStart.setDate(
+                selectedDate.getDate() - selectedDate.getDay()
+            );
+
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+
+            const currentDate = new Date(year, month, day, 12);
+
+            if (currentDate >= weekStart && currentDate <= weekEnd) {
+                cell.style.background = "#009739";
+                cell.style.color = "#ffffff";
+                cell.style.fontWeight = "700";
+            }
+        } else if (dateKey === historySelectedDay) {
+            cell.style.background = "#009739";
+            cell.style.color = "#ffffff";
+            cell.style.fontWeight = "700";
+        }
+
+        grid.appendChild(cell);
+    }
+
+    container.appendChild(grid);
+}
+if (historyPeriodInput && historyCalendarOverlay) {
+    historyPeriodInput.addEventListener("click", () => {
+        const activeFilter = document.querySelector(
+            '[data-history-filter].active'
+        )?.dataset.historyFilter;
+
+        historyCalendarMode =
+            activeFilter === "year" ? "year" :
+                activeFilter === "month" ? "month" :
+                    activeFilter === "week" ? "week" : "day";
+        historyCalendarView = new Date(
+            historySelectedPeriod + "T12:00:00"
+        );
+
+        historyCalendarOverlay.classList.remove("hidden");
+        document.body.classList.add("conc-modal-open");
+
+        if (historyCalendarMode === "year") {
+            renderHistoryYearCalendar();
+        } else if (historyCalendarMode === "month") {
+            renderHistoryMonthCalendar();
+        } else {
+            renderHistoryCalendar();
+        }
+    });
+}
+if (historySelectedDateInput && historyCalendarOverlay) {
+
+    historySelectedDateInput.addEventListener("click", () => {
+        historyCalendarOverlay.classList.remove("hidden");
+        document.body.classList.add("conc-modal-open");
+        renderHistoryCalendar();
+    });
+
+    closeHistoryCalendarButton?.addEventListener(
+        "click",
+        closeHistoryCalendar
+    );
+
+    historyCalendarOverlay.addEventListener("click", event => {
+        if (event.target === historyCalendarOverlay) {
+            closeHistoryCalendar();
+        }
+    });
+}
+
+if (historySelectedDateInput) {
+
+    historySelectedDateInput.value =
+        historySelectedDay.split("-").reverse().join("/");
+
+    historySelectedDateInput.addEventListener("change", () => {
+
+        const selectedDate = historySelectedDateInput.value;
+
+        if (!selectedDate) return;
+
+        historySelectedDay = selectedDate;
+
+        historyFilters.forEach(button => {
+            button.classList.toggle(
+                "active",
+                button.dataset.historyFilter === "today"
+            );
+        });
+
+        renderHistory("today");
+    });
+}
 
 const premiumHistoryFilters = [
     "month",
@@ -1282,6 +1873,21 @@ historyFilters.forEach(button => {
         }
 
         if (filter === "custom") {
+
+            const daySelector =
+                document.getElementById("historyDateSelector");
+
+            const periodSelector =
+                document.getElementById("historyPeriodSelector");
+
+            if (daySelector) {
+                daySelector.hidden = true;
+            }
+
+            if (periodSelector) {
+                periodSelector.hidden = true;
+            }
+
             openHistoryDateModal();
             return;
         }
@@ -1291,6 +1897,22 @@ historyFilters.forEach(button => {
         });
 
         button.classList.add("active");
+
+        const daySelector =
+            document.getElementById("historyDateSelector");
+
+        const periodSelector =
+            document.getElementById("historyPeriodSelector");
+
+        if (daySelector) {
+            daySelector.hidden = filter !== "today";
+        }
+
+        if (periodSelector) {
+            periodSelector.hidden =
+                !["week", "month", "year"].includes(filter);
+        }
+
         renderHistory(filter);
     });
 });
@@ -1316,8 +1938,38 @@ function closeHistoryDateModal() {
 const historyDateForm = document.getElementById("historyDateForm");
 historyDateForm?.addEventListener("submit", event => {
     event.preventDefault();
-    const start = document.getElementById("historyDateStart").value;
-    const end = document.getElementById("historyDateEnd").value;
+    const startValue =
+        document.getElementById("historyDateStart").value;
+
+    const endValue =
+        document.getElementById("historyDateEnd").value;
+
+    function toHistoryISO(value) {
+        const match = value.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+
+        if (!match) return "";
+
+        const [, day, month, year] = match;
+
+        const date = new Date(
+            Number(year),
+            Number(month) - 1,
+            Number(day)
+        );
+
+        if (
+            date.getFullYear() !== Number(year) ||
+            date.getMonth() !== Number(month) - 1 ||
+            date.getDate() !== Number(day)
+        ) {
+            return "";
+        }
+
+        return `${year}-${month}-${day}`;
+    }
+
+    const start = toHistoryISO(startValue);
+    const end = toHistoryISO(endValue);
     const error = document.getElementById("historyDateError");
     if (!start || !end || start > end) {
         error.classList.remove("hidden");
@@ -1364,19 +2016,24 @@ function parseHistoryInputDate(value) {
 
 
 function getHistoryStartDate(filter) {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+
+    const [year, month, day] = historySelectedPeriod
+        .split("-")
+        .map(Number);
+
+    const referenceDate = new Date(year, month - 1, day);
+    referenceDate.setHours(0, 0, 0, 0);
 
     if (filter === "today") {
-        return today;
+        return referenceDate;
     }
 
     if (filter === "week") {
-        const start = new Date(today);
+        const start = new Date(referenceDate);
 
         // Semana começa no domingo
         start.setDate(
-            today.getDate() - today.getDay()
+            referenceDate.getDate() - referenceDate.getDay()
         );
 
         return start;
@@ -1384,15 +2041,15 @@ function getHistoryStartDate(filter) {
 
     if (filter === "month") {
         return new Date(
-            today.getFullYear(),
-            today.getMonth(),
+            referenceDate.getFullYear(),
+            referenceDate.getMonth(),
             1
         );
     }
 
     if (filter === "year") {
         return new Date(
-            today.getFullYear(),
+            referenceDate.getFullYear(),
             0,
             1
         );
@@ -1400,7 +2057,6 @@ function getHistoryStartDate(filter) {
 
     return null;
 }
-
 
 function renderHistory(filter = "today") {
 
@@ -1425,7 +2081,26 @@ function renderHistory(filter = "today") {
 
     const startDate = getHistoryStartDate(filter);
 
-    let filtered = [...studies];
+    const simulationHistory = simulations.flatMap(simulation => {
+
+        const attempts = Array.isArray(simulation.attempts)
+            ? simulation.attempts
+            : [];
+
+        return attempts.map(attempt => ({
+            id: attempt.id,
+            date: attempt.date,
+            subject: simulation.name,
+            category: "Simulado",
+            questions: attempt.questions,
+            correct: attempt.correct,
+            minutes: 0,
+            type: "simulation"
+        }));
+
+    });
+
+    let filtered = [...studies, ...simulationHistory];
 
     if (filter === "custom") {
 
@@ -1438,15 +2113,43 @@ function renderHistory(filter = "today") {
             );
         });
 
+    } else if (filter === "today") {
+
+        filtered = filtered.filter(study => {
+            return study.date === historySelectedDay;
+        });
+
     } else if (startDate) {
 
         const startKey = getDateKey(startDate);
-        const todayKey = getDateKey(new Date());
+
+        const [year, month, day] = historySelectedPeriod
+            .split("-")
+            .map(Number);
+
+        const referenceDate = new Date(year, month - 1, day);
+
+        let endDate = new Date(referenceDate);
+
+        if (filter === "week") {
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+        }
+
+        if (filter === "month") {
+            endDate = new Date(year, month, 0);
+        }
+
+        if (filter === "year") {
+            endDate = new Date(year, 11, 31);
+        }
+
+        const endKey = getDateKey(endDate);
 
         filtered = filtered.filter(study => {
             return (
                 study.date >= startKey &&
-                study.date <= todayKey
+                study.date <= endKey
             );
         });
     }
@@ -1563,13 +2266,12 @@ function renderHistory(filter = "today") {
 
                     const percent =
                         questions > 0
-                            ? Math.round(
-                                (
-                                    correct /
-                                    questions
-                                ) * 100
-                            )
+                            ? (correct / questions) * 100
                             : 0;
+
+                    const percentText = percent.toLocaleString("pt-BR", {
+                        maximumFractionDigits: 1
+                    });
 
 
                     entry.innerHTML = `
@@ -1593,14 +2295,16 @@ function renderHistory(filter = "today") {
 
                         <div class="history-entry-stats">
 
-                            <div class="history-stat">
-                                <span>Tempo</span>
-                                <strong>
-                                    ${formatStudyDuration(
+                            ${study.type === "simulation" ? "" : `
+                        <div class="history-stat">
+                            <span>Tempo</span>
+                            <strong>
+                                ${formatStudyDuration(
                         getStudyMinutes(study)
                     )}
-                                </strong>
-                            </div>
+                            </strong>
+                        </div>
+                    `}
 
                             <div class="history-stat">
                                 <span>Questões</span>
@@ -1613,11 +2317,18 @@ function renderHistory(filter = "today") {
                                 <span>Acertos</span>
                                 <strong>
                                     ${correct}
-                                    ${questions > 0
-                            ? ` (${percent}%)`
+                                    ${study.type !== "simulation" && questions > 0
+                            ? ` (${Math.round(percent)}%)`
                             : ""}
                                 </strong>
                             </div>
+
+                            ${study.type === "simulation" ? `
+                                <div class="history-stat">
+                                    <span>Aproveitamento</span>
+                                    <strong>${percentText}%</strong>
+                                </div>
+                            ` : ""}
 
                         </div>
                     `;
@@ -1806,9 +2517,7 @@ function renderCycle() {
 
 
         const studiedMinutes =
-            getSubjectStudiedMinutes(
-                nextSubject.name
-            );
+            getCycleStudiedMinutes(nextSubject);
 
 
         const remaining =
@@ -1833,7 +2542,7 @@ function renderCycle() {
 
         const questionOnly = nextSubject.cycleMode === "questions";
         const remainingLabel = questionOnly
-            ? `${Math.max(0, Number(nextSubject.questions || 0) - cycleQuestionsDone(nextSubject.name))} questões`
+            ? `${Math.max(0, Number(nextSubject.questions || 0) - getCycleQuestionsDone(nextSubject))} questões`
             : formatStudyDuration(remaining);
 
         setText("nextRemaining", remainingLabel);
@@ -1942,9 +2651,7 @@ function getSubjectProgress(
 
 
     const studied =
-        getSubjectStudiedMinutes(
-            subjectName
-        );
+        getCycleStudiedMinutes(subject);
 
 
     return Math.min(
@@ -1995,10 +2702,7 @@ function renderCycleSubjects() {
             ) * 60;
 
 
-        const studied =
-            getSubjectStudiedMinutes(
-                subject.name
-            );
+        const studied = getCycleStudiedMinutes(subject);
 
 
         const percent = cyclePercentFor(subject);
@@ -2045,12 +2749,12 @@ function renderCycleSubjects() {
 <div class="cycle-subject-meta">
 
     <span>
-        ${subject.cycleMode === 'questions'
-            ? `Resolvidas: ${cycleQuestionsDone(subject.name)} questões`
-            : subject.cycleMode === 'both'
-                ? `Estudado: ${formatStudyDuration(studied)} | Resolvidas: ${cycleQuestionsDone(subject.name)} questões`
-                : `Estudado: ${formatStudyDuration(studied)}`
-        }
+       ${subject.cycleMode === 'questions'
+                ? `Resolvidas: ${getCycleQuestionsDone(subject)} questões`
+                : subject.cycleMode === 'both'
+                    ? `Estudado: ${formatStudyDuration(studied)} | Resolvidas: ${getCycleQuestionsDone(subject)} questões`
+                    : `Estudado: ${formatStudyDuration(studied)}`
+            }
     </span>
 
 
@@ -2082,11 +2786,11 @@ function textoParaHoras(value) {
     const text = String(value ?? '').trim();
     if (!text) return NaN;
     if (/^\d+(?::[0-5]\d){2}$/.test(text)) {
-        const [h,m,s] = text.split(':').map(Number);
+        const [h, m, s] = text.split(':').map(Number);
         return h + m / 60 + s / 3600;
     }
     if (/^\d+(?::[0-5]\d)$/.test(text)) {
-        const [h,m] = text.split(':').map(Number);
+        const [h, m] = text.split(':').map(Number);
         return h + m / 60;
     }
     const n = Number(text.replace(',', '.'));
@@ -2097,7 +2801,7 @@ function horasParaTexto(value) {
     const h = Math.floor(total / 3600);
     const m = Math.floor(total % 3600 / 60);
     const s = total % 60;
-    return [h,m,s].map(x => String(x).padStart(2,'0')).join(':');
+    return [h, m, s].map(x => String(x).padStart(2, '0')).join(':');
 }
 
 const subjectForm =
@@ -2127,19 +2831,6 @@ if (subjectForm) {
                 )?.value.trim();
 
 
-            const hours = textoParaHoras(
-                document.getElementById("subjectHours").value || "00:00:00"
-            );
-
-
-            const questions =
-                Number(
-                    document.getElementById(
-                        "subjectQuestions"
-                    )?.value || 0
-                );
-
-
             if (!name) {
 
                 showToast(
@@ -2166,40 +2857,25 @@ if (subjectForm) {
                     subject.color = validSubjectColor(color) ? color : getSubjectColor(subject.name);
                     subject.name =
                         name;
-
-                    subject.hours =
-                        Math.max(
-                            0,
-                            hours
-                        );
-
-                    subject.questions =
-                        Math.max(
-                            0,
-                            questions
-                        );
                 }
 
             } else {
 
-                subjects.push({
+    if (!hasPremiumReportsAccess() && subjects.length >= 12) {
+        showToast("O plano FREE permite até 12 matérias. Assine o Premium para cadastrar mais.");
+        return;
+    }
+
+    subjects.push({
 
                     id: Date.now(),
 
                     name,
                     color: validSubjectColor(color) ? color : nextSubjectColor(),
 
-                    hours:
-                        Math.max(
-                            0,
-                            hours
-                        ),
+                    hours: 0,
 
-                    questions:
-                        Math.max(
-                            0,
-                            questions
-                        )
+                    questions: 0
 
                 });
 
@@ -2282,11 +2958,6 @@ function renderSettingsSubjects() {
         )}
                 </span>
 
-                <span class="settings-item-meta">
-                    ${Number(subject.hours || 0)}h
-                    •
-                    ${Number(subject.questions || 0)} questões planejadas
-                </span>
 
             </div>
 
@@ -2429,7 +3100,7 @@ async function deleteSubject(id) {
 
     if (!subject) return;
 
-    const confirmed = await showConcursadoConfirm({
+    const confirmed = await showOrionConfirm({
         title: "Excluir matéria?",
         message: `Deseja realmente excluir a matéria "${subject.name}"?`,
         confirmLabel: "Excluir matéria"
@@ -2638,6 +3309,552 @@ const statsFilters =
 
 let statsCustomStart = null;
 let statsCustomEnd = null;
+let statsSelectedPeriod = getDateKey(new Date());
+
+const statsPeriodInput =
+    document.getElementById("statsSelectedPeriod");
+
+if (statsPeriodInput) {
+    const statsWeekPicker = document.createElement("input");
+    statsWeekPicker.type = "date";
+    statsWeekPicker.value = statsSelectedPeriod;
+    statsWeekPicker.style.position = "absolute";
+    statsWeekPicker.style.opacity = "0";
+    statsWeekPicker.style.pointerEvents = "none";
+
+    statsPeriodInput.insertAdjacentElement(
+        "afterend",
+        statsWeekPicker
+    );
+
+    function updateStatsWeekLabel(filter) {
+        const selected = new Date(
+            statsSelectedPeriod + "T12:00:00"
+        );
+
+        const activeFilter = filter ||
+            document.querySelector(".stats-filters .stats-filter.active")?.dataset.filter ||
+            "week";
+
+        if (activeFilter === "month") {
+            statsPeriodInput.value =
+                selected.toLocaleDateString("pt-BR", {
+                    month: "2-digit",
+                    year: "numeric"
+                });
+            return;
+        }
+
+        if (activeFilter === "year") {
+            statsPeriodInput.value =
+                String(selected.getFullYear());
+            return;
+        }
+
+        const sunday = new Date(selected);
+        sunday.setDate(selected.getDate() - selected.getDay());
+
+        const saturday = new Date(sunday);
+        saturday.setDate(sunday.getDate() + 6);
+
+        const format = date =>
+            date.toLocaleDateString("pt-BR");
+
+        statsPeriodInput.value =
+            `${format(sunday)} a ${format(saturday)}`;
+    }
+
+    updateStatsWeekLabel();
+
+    statsPeriodInput.addEventListener("click", () => {
+
+        const activeFilter = [...statsFilters]
+            .find(button => button.classList.contains("active"))
+            ?.dataset.filter;
+
+        if (["week", "month", "year"].includes(activeFilter)) {
+            openStatsDayCalendar();
+        } else {
+            statsWeekPicker.showPicker();
+        }
+
+    });
+
+    statsWeekPicker.addEventListener("change", () => {
+        if (!statsWeekPicker.value) return;
+
+        statsSelectedPeriod = statsWeekPicker.value;
+
+        const activeFilter = [...statsFilters]
+            .find(button => button.classList.contains("active"))
+            ?.dataset.filter || "week";
+
+        updateStatsWeekLabel(activeFilter);
+        updateStatistics(activeFilter);
+    });
+}
+
+let statsSelectedDay = getDateKey(new Date());
+
+const statsSelectedDateInput =
+    document.getElementById("statsSelectedDate");
+
+if (statsSelectedDateInput) {
+    statsSelectedDateInput.value =
+        statsSelectedDay.split("-").reverse().join("/");
+
+    const statsNativeDatePicker = document.createElement("input");
+    statsNativeDatePicker.type = "date";
+    statsNativeDatePicker.value = statsSelectedDay;
+    statsNativeDatePicker.style.position = "absolute";
+    statsNativeDatePicker.style.opacity = "0";
+    statsNativeDatePicker.style.pointerEvents = "none";
+    statsSelectedDateInput.insertAdjacentElement("afterend", statsNativeDatePicker);
+
+    statsSelectedDateInput.addEventListener("click", () => {
+        openStatsDayCalendar();
+    });
+
+    statsNativeDatePicker.addEventListener("change", () => {
+        if (!statsNativeDatePicker.value) return;
+
+        statsSelectedDay = statsNativeDatePicker.value;
+        statsSelectedDateInput.value =
+            statsSelectedDay.split("-").reverse().join("/");
+
+        updateStatistics("today");
+    });
+}
+
+// CALENDÁRIO PERSONALIZADO — ESTATÍSTICAS (DIA)
+
+function openStatsDayCalendar() {
+    const overlay = document.getElementById("statsCalendarOverlay");
+    const content = document.getElementById("statsCalendarContent");
+    const title = document.getElementById("statsCalendarTitle");
+
+    if (!overlay || !content) return;
+
+    const activeStatsFilter =
+        [...statsFilters].find(button =>
+            button.classList.contains("active")
+        )?.dataset.filter || "today";
+
+    const isWeek = activeStatsFilter === "week";
+    const isMonth = activeStatsFilter === "month";
+    const isYear = activeStatsFilter === "year";
+
+    let calendarView = new Date(
+        (isWeek || isMonth || isYear
+            ? statsSelectedPeriod
+            : statsSelectedDay) + "T12:00:00"
+    );
+
+    if (title) {
+        title.textContent = isYear
+            ? "Selecionar ano"
+            : isMonth
+                ? "Selecionar mês"
+                : isWeek
+                    ? "Selecionar semana"
+                    : "Selecionar dia";
+    }
+
+    function closeCalendar() {
+        overlay.classList.add("hidden");
+        document.body.classList.remove("conc-modal-open");
+    }
+
+    function renderCalendar() {
+        const year = calendarView.getFullYear();
+        const month = calendarView.getMonth();
+
+        content.innerHTML = "";
+
+        const header = document.createElement("div");
+        header.style.cssText =
+            "display:flex;align-items:center;justify-content:space-between;gap:12px";
+
+        const previous = document.createElement("button");
+        previous.type = "button";
+        previous.className = "secondary-btn";
+        previous.textContent = "‹";
+
+        const next = document.createElement("button");
+        next.type = "button";
+        next.className = "secondary-btn";
+        next.textContent = "›";
+
+        const heading = document.createElement("h3");
+        const monthName = calendarView.toLocaleDateString("pt-BR", {
+            month: "long",
+            year: "numeric"
+        });
+
+        heading.textContent = isYear
+            ? `${Math.floor(year / 12) * 12} – ${Math.floor(year / 12) * 12 + 11}`
+            : monthName.charAt(0).toUpperCase() + monthName.slice(1);
+        heading.style.margin = "0";
+
+        previous.addEventListener("click", () => {
+            calendarView = isYear
+                ? new Date(year - 12, 0, 1)
+                : new Date(year, month - 1, 1);
+
+            renderCalendar();
+        });
+
+        next.addEventListener("click", () => {
+            calendarView = isYear
+                ? new Date(year + 12, 0, 1)
+                : new Date(year, month + 1, 1);
+
+            renderCalendar();
+        });
+
+        header.append(previous, heading, next);
+        content.appendChild(header);
+        // SELEÇÃO DE ANO — ESTATÍSTICAS
+        if (isYear) {
+            const yearGrid = document.createElement("div");
+
+            yearGrid.style.cssText =
+                "display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px";
+
+            const selectedYear = new Date(
+                statsSelectedPeriod + "T12:00:00"
+            ).getFullYear();
+
+            const startYear = Math.floor(year / 12) * 12;
+
+            // Navegação entre grupos de 12 anos
+            previous.onclick = null;
+            next.onclick = null;
+
+            previous.replaceWith(previous.cloneNode(true));
+            next.replaceWith(next.cloneNode(true));
+
+            const prevButton = header.firstElementChild;
+            const nextButton = header.lastElementChild;
+
+            heading.textContent = `${startYear} – ${startYear + 11}`;
+
+            prevButton.addEventListener("click", () => {
+                calendarView = new Date(startYear - 12, 0, 1);
+                renderCalendar();
+            });
+
+            nextButton.addEventListener("click", () => {
+                calendarView = new Date(startYear + 12, 0, 1);
+                renderCalendar();
+            });
+
+            for (let i = 0; i < 12; i++) {
+                const optionYear = startYear + i;
+
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "secondary-btn";
+                button.textContent = optionYear;
+
+                button.style.cssText =
+                    "padding:14px 8px;border-radius:10px";
+
+                if (optionYear === selectedYear) {
+                    button.style.background = "#009739";
+                    button.style.color = "#ffffff";
+                    button.style.fontWeight = "700";
+                }
+
+                button.addEventListener("click", () => {
+                    statsSelectedPeriod = getDateKey(
+                        new Date(optionYear, 0, 1)
+                    );
+
+                    updateStatsWeekLabel("year");
+                    updateStatistics("year");
+                    closeCalendar();
+                });
+
+                yearGrid.appendChild(button);
+            }
+
+            content.appendChild(yearGrid);
+            return;
+        }
+
+        // SELEÇÃO DE MÊS — ESTATÍSTICAS
+        if (isMonth) {
+            const monthGrid = document.createElement("div");
+
+            monthGrid.style.cssText =
+                "display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:20px";
+
+            const monthNames = [
+                "Jan", "Fev", "Mar", "Abr",
+                "Mai", "Jun", "Jul", "Ago",
+                "Set", "Out", "Nov", "Dez"
+            ];
+
+            const selectedMonth = new Date(
+                statsSelectedPeriod + "T12:00:00"
+            );
+
+            monthNames.forEach((name, index) => {
+                const button = document.createElement("button");
+
+                button.type = "button";
+                button.textContent = name;
+                button.className = "secondary-btn";
+
+                button.style.cssText =
+                    "padding:14px 8px;border-radius:10px";
+
+                if (
+                    selectedMonth.getFullYear() === year &&
+                    selectedMonth.getMonth() === index
+                ) {
+                    button.style.background = "#009739";
+                    button.style.color = "#ffffff";
+                    button.style.fontWeight = "700";
+                }
+
+                button.addEventListener("click", () => {
+                    statsSelectedPeriod = getDateKey(
+                        new Date(year, index, 1)
+                    );
+
+                    updateStatsWeekLabel("month");
+                    updateStatistics("month");
+                    closeCalendar();
+                });
+
+                monthGrid.appendChild(button);
+            });
+
+            content.appendChild(monthGrid);
+            return;
+        }
+
+        const grid = document.createElement("div");
+        grid.style.cssText =
+            "display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;text-align:center";
+
+        ["D", "S", "T", "Q", "Q", "S", "S"].forEach(name => {
+            const label = document.createElement("span");
+            label.textContent = name;
+            label.style.color = "#9ca9a2";
+            grid.appendChild(label);
+        });
+
+        const firstWeekday = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstWeekday; i++) {
+            grid.appendChild(document.createElement("span"));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = getDateKey(new Date(year, month, day));
+
+            const cell = document.createElement("button");
+            cell.type = "button";
+            cell.textContent = day;
+            cell.style.cssText =
+                "padding:10px 0;border:0;border-radius:8px;cursor:pointer;background:transparent;color:inherit";
+
+            let isSelected = dateKey === statsSelectedDay;
+
+            if (isWeek) {
+                const selected = new Date(statsSelectedPeriod + "T12:00:00");
+
+                const sunday = new Date(selected);
+                sunday.setDate(selected.getDate() - selected.getDay());
+
+                const saturday = new Date(sunday);
+                saturday.setDate(sunday.getDate() + 6);
+
+                const startKey = getDateKey(sunday);
+                const endKey = getDateKey(saturday);
+
+                isSelected = dateKey >= startKey && dateKey <= endKey;
+            }
+
+            if (isSelected) {
+                cell.style.background = "#009739";
+                cell.style.color = "#ffffff";
+                cell.style.fontWeight = "700";
+            }
+
+            cell.addEventListener("click", () => {
+
+                if (isWeek) {
+                    statsSelectedPeriod = dateKey;
+
+                    updateStatsWeekLabel("week");
+                    updateStatistics("week");
+
+                } else {
+                    statsSelectedDay = dateKey;
+
+                    statsSelectedDateInput.value =
+                        dateKey.split("-").reverse().join("/");
+
+                    updateStatistics("today");
+                }
+
+                closeCalendar();
+            });
+
+            grid.appendChild(cell);
+        }
+
+        content.appendChild(grid);
+    }
+
+    overlay.classList.remove("hidden");
+    document.body.classList.add("conc-modal-open");
+
+    const closeButton = document.getElementById("closeStatsCalendar");
+
+    if (closeButton) {
+        closeButton.onclick = closeCalendar;
+    }
+
+    overlay.onclick = event => {
+        if (event.target === overlay) {
+            closeCalendar();
+        }
+    };
+
+    renderCalendar();
+}
+
+function openStatsCustomCalendar(input) {
+    const overlay = document.getElementById("statsCalendarOverlay");
+    const content = document.getElementById("statsCalendarContent");
+    const title = document.getElementById("statsCalendarTitle");
+
+    if (!overlay || !content || !input) return;
+
+    const initialDate =
+        input.dataset.date || getDateKey(new Date());
+
+    let calendarView = new Date(initialDate + "T12:00:00");
+
+    if (title) {
+        title.textContent = input.id === "statsDateStart"
+            ? "Selecionar data inicial"
+            : "Selecionar data final";
+    }
+
+    function closeCalendar() {
+        overlay.classList.add("hidden");
+    }
+
+    function renderCalendar() {
+        const year = calendarView.getFullYear();
+        const month = calendarView.getMonth();
+
+        content.innerHTML = "";
+
+        const header = document.createElement("div");
+        header.style.cssText =
+            "display:flex;align-items:center;justify-content:space-between;gap:12px";
+
+        const previous = document.createElement("button");
+        previous.type = "button";
+        previous.className = "secondary-btn";
+        previous.textContent = "‹";
+
+        const next = document.createElement("button");
+        next.type = "button";
+        next.className = "secondary-btn";
+        next.textContent = "›";
+
+        const heading = document.createElement("h3");
+        heading.textContent = calendarView.toLocaleDateString("pt-BR", {
+            month: "long",
+            year: "numeric"
+        });
+        heading.style.margin = "0";
+
+        previous.onclick = () => {
+            calendarView = new Date(year, month - 1, 1);
+            renderCalendar();
+        };
+
+        next.onclick = () => {
+            calendarView = new Date(year, month + 1, 1);
+            renderCalendar();
+        };
+
+        header.append(previous, heading, next);
+        content.appendChild(header);
+
+        const grid = document.createElement("div");
+        grid.style.cssText =
+            "display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:16px;text-align:center";
+
+        ["D", "S", "T", "Q", "Q", "S", "S"].forEach(name => {
+            const label = document.createElement("span");
+            label.textContent = name;
+            label.style.color = "#9ca9a2";
+            grid.appendChild(label);
+        });
+
+        const firstWeekday = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+        for (let i = 0; i < firstWeekday; i++) {
+            grid.appendChild(document.createElement("span"));
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateKey = getDateKey(new Date(year, month, day));
+
+            const cell = document.createElement("button");
+            cell.type = "button";
+            cell.textContent = day;
+
+            cell.style.cssText =
+                "padding:10px 0;border:0;border-radius:8px;cursor:pointer;background:transparent;color:inherit";
+
+            if (dateKey === input.dataset.date) {
+                cell.style.background = "#009739";
+                cell.style.color = "#ffffff";
+                cell.style.fontWeight = "700";
+            }
+
+            cell.onclick = () => {
+                input.dataset.date = dateKey;
+                input.value = dateKey.split("-").reverse().join("/");
+                closeCalendar();
+            };
+
+            grid.appendChild(cell);
+        }
+
+        content.appendChild(grid);
+    }
+
+    const closeButton = document.getElementById("closeStatsCalendar");
+
+    if (closeButton) {
+        closeButton.onclick = closeCalendar;
+    }
+
+    overlay.onclick = event => {
+        if (event.target === overlay) closeCalendar();
+    };
+
+    document.body.appendChild(overlay);
+
+    overlay.style.setProperty("z-index", "12001", "important");
+
+    overlay.classList.remove("hidden");
+    renderCalendar();
+}
 
 function openStatsDateModal() {
     let overlay = document.getElementById("statsDateOverlay");
@@ -2653,8 +3870,10 @@ function openStatsDateModal() {
                 </div>
                 <p>Selecione as datas para consultar suas estatísticas.</p>
                 <form id="statsDateForm" class="conc-modal-form">
-                    <label>Data inicial<input id="statsDateStart" type="date" required></label>
-                    <label>Data final<input id="statsDateEnd" type="date" required></label>
+                    <label>Data inicial<input id="statsDateStart" type="text" placeholder="Selecione a data inicial" readonly required></label>
+
+                <label>Data final<input id="statsDateEnd" type="text" placeholder="Selecione a data final" readonly required>
+                </label>
                     <p id="statsDateError" class="conc-modal-error hidden">Confira o período: a data inicial não pode ser posterior à final.</p>
                     <div class="conc-modal-actions">
                         <button type="button" class="secondary-btn" id="cancelStatsDates">Cancelar</button>
@@ -2672,26 +3891,56 @@ function openStatsDateModal() {
         overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
         overlay.querySelector("#statsDateForm").addEventListener("submit", event => {
             event.preventDefault();
-            const from = overlay.querySelector("#statsDateStart").value;
-            const to = overlay.querySelector("#statsDateEnd").value;
+            const from = overlay.querySelector("#statsDateStart").dataset.date;
+            const to = overlay.querySelector("#statsDateEnd").dataset.date;
             if (!from || !to || from > to) {
                 overlay.querySelector("#statsDateError").classList.remove("hidden");
                 return;
             }
             statsCustomStart = from;
             statsCustomEnd = to;
-            statsFilters.forEach(item => item.classList.toggle("active", item.dataset.filter === "custom"));
+
+            statsFilters.forEach(item => {
+                item.classList.toggle(
+                    "active",
+                    item.dataset.filter === "custom"
+                );
+            });
+
+            document.getElementById("statsDateSelector")?.setAttribute("hidden", "");
+            document.getElementById("statsPeriodSelector")?.setAttribute("hidden", "");
+
             close();
             updateStatistics("custom");
         });
     }
-    const today = getDateKey(new Date());
-    overlay.querySelector("#statsDateStart").value = statsCustomStart || today;
-    overlay.querySelector("#statsDateEnd").value = statsCustomEnd || today;
+
+    if (!overlay.querySelector("#statsDateStart") ||
+    !overlay.querySelector("#statsDateEnd")) {
+    console.error("ORION: campos de data não encontrados no modal.");
+    return;
+}
+        const today = getDateKey(new Date());
+
+    const startInput = overlay.querySelector("#statsDateStart");
+    const endInput = overlay.querySelector("#statsDateEnd");
+
+    const startDate = statsCustomStart || today;
+    const endDate = statsCustomEnd || today;
+
+    startInput.dataset.date = startDate;
+    endInput.dataset.date = endDate;
+
+    startInput.value = startDate.split("-").reverse().join("/");
+    endInput.value = endDate.split("-").reverse().join("/");
+
+    startInput.onclick = () => openStatsCustomCalendar(startInput);
+    endInput.onclick = () => openStatsCustomCalendar(endInput);
+
     overlay.querySelector("#statsDateError").classList.add("hidden");
     overlay.classList.remove("hidden");
     document.body.classList.add("conc-modal-open");
-    overlay.querySelector("#statsDateStart").focus();
+    startInput.focus();
 }
 
 statsFilters.forEach(button => {
@@ -2707,6 +3956,25 @@ statsFilters.forEach(button => {
         }
         statsFilters.forEach(item => item.classList.remove("active"));
         button.classList.add("active");
+
+        const daySelector =
+            document.getElementById("statsDateSelector");
+
+        const periodSelector =
+            document.getElementById("statsPeriodSelector");
+
+        if (daySelector) {
+            daySelector.hidden = filter !== "today";
+        }
+
+        if (periodSelector) {
+            periodSelector.hidden =
+                !["week", "month", "year"].includes(filter);
+        }
+
+        if (["week", "month", "year"].includes(filter)) {
+            updateStatsWeekLabel(filter);
+        }
         updateStatistics(filter);
     });
 });
@@ -2728,35 +3996,67 @@ function getStudiesByFilter(filter) {
         new Date(today);
 
 
-    if (filter === "day") {
+    if (filter === "today" || filter === "day") {
 
-        start =
-            new Date(today);
+        return studies.filter(study =>
+            study.date === statsSelectedDay
+        );
 
     } else if (filter === "week") {
 
+        const selected = new Date(
+            statsSelectedPeriod + "T12:00:00"
+        );
+
+        start = new Date(selected);
+
         start.setDate(
-            start.getDate() -
-            start.getDay()
+            selected.getDate() - selected.getDay()
+        );
+
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+
+        const startKey = getDateKey(start);
+        const endKey = getDateKey(end);
+
+        return studies.filter(study =>
+            study.date >= startKey &&
+            study.date <= endKey
         );
 
     } else if (filter === "month") {
 
-        start =
-            new Date(
-                today.getFullYear(),
-                today.getMonth(),
-                1
-            );
+        const selected = new Date(
+            statsSelectedPeriod + "T12:00:00"
+        );
+
+        const year = selected.getFullYear();
+        const month = selected.getMonth();
+
+        const startKey = getDateKey(
+            new Date(year, month, 1)
+        );
+
+        const endKey = getDateKey(
+            new Date(year, month + 1, 0)
+        );
+
+        return studies.filter(study =>
+            study.date >= startKey &&
+            study.date <= endKey
+        );
 
     } else if (filter === "year") {
 
-        start =
-            new Date(
-                today.getFullYear(),
-                0,
-                1
-            );
+        const year = new Date(
+            statsSelectedPeriod + "T12:00:00"
+        ).getFullYear();
+
+        return studies.filter(study =>
+            study.date >= `${year}-01-01` &&
+            study.date <= `${year}-12-31`
+        );
 
     } else if (filter === "all") {
 
@@ -2774,9 +4074,10 @@ function getStudiesByFilter(filter) {
         getDateKey(start);
 
 
-    return studies.filter(
-        study =>
-            study.date >= startKey
+    const endKey = getDateKey(new Date());
+
+    return studies.filter(study =>
+        study.date >= startKey && study.date <= endKey
     );
 }
 
@@ -3038,11 +4339,11 @@ function renderTimeChart(filtered) {
         >
             ${entries.map(({ date, minutes }, index) => {
 
-                const height = minutes > 0
-                    ? Math.max(5, (minutes / max) * 150)
-                    : 0;
+        const height = minutes > 0
+            ? Math.max(5, (minutes / max) * 150)
+            : 0;
 
-                return `
+        return `
                     <div
                         style="
                             flex:1;
@@ -3090,7 +4391,7 @@ function renderTimeChart(filtered) {
                         </small>
                     </div>
                 `;
-            }).join("")}
+    }).join("")}
         </div>
     `;
 
@@ -3121,8 +4422,8 @@ function renderTimeChart(filtered) {
                 </h3>
 
                 ${Object.entries(bySubject)
-                    .sort((a, b) => b[1] - a[1])
-                    .map(([name, minutes]) => `
+                .sort((a, b) => b[1] - a[1])
+                .map(([name, minutes]) => `
                         <div style="margin:12px 0">
                             <div
                                 style="
@@ -3340,115 +4641,68 @@ function renderPerformance(
    CATEGORIAS
 ========================================================= */
 
-function renderCategories(
-    filtered = studies
-) {
 
-    const container =
-        document.getElementById(
-            "categoryBars"
-        );
+function renderCategories(filtered = studies) {
+    const container = document.getElementById("categoryBars");
 
+    if (!container) return;
 
-    if (!container) {
-        return;
-    }
+    const totalMinutes = filtered.reduce(
+        (sum, study) => sum + getStudyMinutes(study),
+        0
+    );
 
+    const totalQuestions = filtered.reduce(
+        (sum, study) => sum + Number(study.questions || 0),
+        0
+    );
 
-    const categories = {};
-
-
-    filtered.forEach(study => {
-
-        const category =
-            study.category ||
-            "Teoria";
-
-
-        categories[category] =
-            (
-                categories[category] || 0
-            ) +
-            getStudyMinutes(study);
-
-    });
-
-
-    const entries =
-        Object.entries(
-            categories
-        );
-
-
-    if (!entries.length) {
-
+    if (!filtered.length) {
         container.innerHTML = `
             <div class="settings-empty">
                 Nenhum estudo registrado.
             </div>
         `;
-
         return;
     }
 
+    const items = [
+        {
+            label: "Tempo",
+            value: totalMinutes,
+            display: formatStudyDuration(totalMinutes)
+        },
+        {
+            label: "Questões",
+            value: totalQuestions,
+            display: `${totalQuestions} questões`
+        }
+    ];
 
-    const max =
-        Math.max(
-            ...entries.map(
-                ([, value]) =>
-                    value
-            ),
-            1
-        );
+    container.innerHTML = items.map(item => {
+        const percent = item.value > 0 ? 100 : 0;
 
+        return `
+            <div class="bar-row">
+                <span class="bar-label">
+                    ${escapeHTML(item.label)}
+                </span>
 
-    container.innerHTML =
-        entries
-            .map(
-                ([category, minutes]) => {
+                <div class="bar-track">
+                    <div
+                        class="bar-fill"
+                        style="width:${percent}%"
+                    ></div>
+                </div>
 
-                    const percent =
-                        (
-                            minutes /
-                            max
-                        ) * 100;
-
-
-                    return `
-
-                        <div class="bar-row">
-
-                            <span class="bar-label">
-                                ${escapeHTML(
-                        category
-                    )}
-                            </span>
-
-                            <div class="bar-track">
-
-                                <div
-                                    class="bar-fill"
-                                    style="
-                                        width:${percent}%;
-                                    "
-                                ></div>
-
-                            </div>
-
-                            <span class="bar-value">
-                                ${formatStudyDuration(
-                        minutes
-                    )}
-                            </span>
-
-                        </div>
-
-                    `;
-
-                }
-            )
-            .join("");
+                <span class="bar-value">
+                    ${item.display}
+                </span>
+            </div>
+        `;
+    }).join("");
 }
+
 
 
 function createBar(
@@ -3969,13 +5223,17 @@ if (simulationForm) {
         event.preventDefault();
 
         const name = document.getElementById("simulationName")?.value.trim();
+        const questions = Number(document.getElementById("simulationQuestionsInput")?.value);
         const duration = document.getElementById("simulationDuration")?.value.trim();
 
         if (!name) {
             showToast("Informe o nome do simulado.");
             return;
         }
-
+        if (!Number.isSafeInteger(questions) || questions <= 0) {
+            showToast("Informe uma quantidade válida de questões.");
+            return;
+        }
         const match = duration?.match(/^(\d+):([0-5]\d):([0-5]\d)$/);
 
         if (!match) {
@@ -3994,6 +5252,11 @@ if (simulationForm) {
             return;
         }
 
+        if (!hasPremiumReportsAccess() && simulations.length >= 1) {
+    showToast("O plano FREE permite apenas 1 simulado. Assine o Premium para criar mais.");
+    return;
+}
+
         const simulation = {
             id: Date.now(),
             name,
@@ -4001,7 +5264,7 @@ if (simulationForm) {
             hours,
             minutes,
             seconds,
-            questions: 0,
+            questions,
             correct: 0,
             subjects: []
         };
@@ -4303,6 +5566,11 @@ if (settingsSimulationForm) {
 
             } else {
 
+                if (!hasPremiumReportsAccess() && simulations.length >= 1) {
+                    showToast("O plano FREE permite apenas 1 simulado. Assine o Premium para criar mais.");
+                    return;
+                }
+
                 simulations.push({
 
                     id:
@@ -4536,7 +5804,7 @@ document.getElementById('simulationEditModalForm')?.addEventListener('submit', e
     if (typeof updateAll === 'function') updateAll();
     showToast('Simulado atualizado!');
 });
-['closeSimulationEdit','cancelSimulationModal'].forEach(id =>
+['closeSimulationEdit', 'cancelSimulationModal'].forEach(id =>
     document.getElementById(id)?.addEventListener('click', closeSimulationEditModal));
 document.getElementById('simulationEditOverlay')?.addEventListener('click', event => {
     if (event.target.id === 'simulationEditOverlay') closeSimulationEditModal();
@@ -4606,7 +5874,7 @@ async function deleteSimulation(id) {
     }
 
 
-    const confirmed = await showConcursadoConfirm({
+    const confirmed = await showOrionConfirm({
         title: "Excluir simulado?",
         message: `Deseja realmente excluir o simulado "${simulation.name}"?`,
         confirmLabel: "Excluir simulado"
@@ -4734,6 +6002,50 @@ function renderSimulationStatistics() {
 
     }
 
+    const info = document.getElementById("simulationSelectedInfo");
+
+    if (info) {
+        if (!simulation) {
+            info.classList.add("hidden");
+            info.innerHTML = "";
+        } else {
+            const questions = Number(simulation.questions || 0);
+            const correct = Number(simulation.correct || 0);
+
+            const percent = questions > 0
+                ? (correct / questions) * 100
+                : 0;
+
+            const percentText = percent.toLocaleString("pt-BR", {
+                maximumFractionDigits: 1
+            });
+
+            info.innerHTML = `
+            <div class="simulation-selected-summary">
+                <strong>${escapeHTML(simulation.name)}</strong>
+
+                <div class="simulation-selected-grid">
+                    <div>
+                        <strong>${questions}</strong>
+                        <span>Questões</span>
+                    </div>
+
+                    <div>
+                        <strong>${correct}</strong>
+                        <span>Acertos</span>
+                    </div>
+
+                    <div>
+                        <strong>${percentText}%</strong>
+                        <span>Aproveitamento</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+            info.classList.remove("hidden");
+        }
+    }
 
     renderSimulationEvolution();
 
@@ -4742,362 +6054,196 @@ function renderSimulationStatistics() {
 
 
 function renderSimulationEvolution() {
+    const container = document.getElementById("simulationChartBars");
+    const labels = document.getElementById("simulationChartLabels");
 
-    const line =
-        document.getElementById(
-            "simulationChartLine"
-        );
-
-
-    const area =
-        document.getElementById(
-            "simulationChartArea"
-        );
-
-
-    const points =
-        document.getElementById(
-            "simulationChartPoints"
-        );
-
-
-    const labels =
-        document.getElementById(
-            "simulationChartLabels"
-        );
-
-
-    if (
-        !line ||
-        !area ||
-        !points ||
-        !labels
-    ) {
-        return;
-    }
-
+    if (!container || !labels) return;
 
     if (!simulations.length) {
-
-        line.setAttribute(
-            "d",
-            ""
-        );
-
-        area.setAttribute(
-            "d",
-            ""
-        );
-
-        points.innerHTML =
-            "";
-
-        labels.innerHTML =
-            "";
-
+        container.innerHTML = "";
+        labels.innerHTML = "";
         return;
     }
 
+    const data = simulations.flatMap(simulation => {
 
-    const width =
-        800;
+        const attempts = Array.isArray(simulation.attempts)
+            ? simulation.attempts
+            : [];
 
+        return attempts.map((attempt, index) => {
 
-    const height =
-        230;
+            const questions = Number(attempt.questions || 0);
+            const correct = Number(attempt.correct || 0);
 
+            const percent = questions > 0
+                ? Math.max(0, Math.min(100, (correct / questions) * 100))
+                : 0;
 
-    const padding =
-        25;
+            return {
+                name: `${simulation.name} #${index + 1}`,
+                percent,
+                date: attempt.date
+            };
 
+        });
 
-    const data =
-        simulations.map(
-            simulation => {
-
-                const questions =
-                    Number(
-                        simulation.questions || 0
-                    );
-
-
-                const correct =
-                    Number(
-                        simulation.correct || 0
-                    );
+    });
 
 
-                return {
+    const width = 800;
+    const top = 35;
+    const bottom = 195;
+    const chartHeight = bottom - top;
+    const left = 55;
+    const right = 790;
+    const chartWidth = right - left;
+    const slot = chartWidth / data.length;
+    const barWidth = Math.min(110, slot * 0.65);
 
-                    simulation,
+    let html = "";
 
-                    percent:
-                        questions > 0
-                            ? (
-                                correct /
-                                questions
-                            ) * 100
-                            : 0
+    [0, 25, 50, 75, 100].forEach(value => {
+        const y = bottom - (value / 100) * chartHeight;
 
-                };
+        html += `
+            <line
+                x1="${left}" y1="${y}"
+                x2="${right}" y2="${y}"
+                stroke="rgba(255,255,255,0.12)"
+                stroke-dasharray="8 8"
+            />
 
-            }
-        );
+            <text
+                x="${left - 10}" y="${y + 5}"
+                text-anchor="end"
+                fill="#9ca9a2"
+                font-size="15"
+            >${value}%</text>
+        `;
+    });
 
+    data.forEach((item, index) => {
+        const center = left + slot * (index + 0.5);
+        const x = center - barWidth / 2;
+        const barHeight = item.percent / 100 * chartHeight;
+        const y = bottom - barHeight;
 
-    const maxIndex =
-        Math.max(
-            1,
-            data.length - 1
-        );
+        const percentText = item.percent.toLocaleString("pt-BR", {
+            maximumFractionDigits: 1
+        });
 
+        html += `
+            <rect
+                x="${x}"
+                y="${y}"
+                width="${barWidth}"
+                height="${barHeight}"
+                rx="7"
+                fill="#16c75b"
+            >
+                <title>${escapeHTML(item.name)}: ${percentText}%</title>
+            </rect>
 
-    const coords =
-        data.map(
-            (item, index) => {
+            <text
+                x="${center}"
+                y="${Math.max(20, y - 8)}"
+                text-anchor="middle"
+                fill="#ffffff"
+                font-size="17"
+                font-weight="700"
+            >${percentText}%</text>
+        `;
+    });
 
-                const x =
-                    padding +
-                    (
-                        index /
-                        maxIndex
-                    ) *
-                    (
-                        width -
-                        padding * 2
-                    );
+    data.forEach((item, index) => {
+        const center = left + slot * (index + 0.5);
 
+        const name = String(item.name || "");
 
-                const y =
-                    height -
-                    padding -
-                    (
-                        item.percent /
-                        100
-                    ) *
-                    (
-                        height -
-                        padding * 2
-                    );
+        const shortName = name.length > 14
+            ? name.slice(0, 12) + "…"
+            : name;
 
+        html += `
+        <text
+            x="${center}"
+            y="230"
+            text-anchor="middle"
+            fill="#9ca9a2"
+            font-size="13"
+        >
+            <title>${escapeHTML(name)}</title>
+            ${escapeHTML(shortName)}
+        </text>
+    `;
+    });
 
-                return {
-                    ...item,
-                    x,
-                    y
-                };
+    container.innerHTML = html;
 
-            }
-        );
-
-
-    const path =
-        coords
-            .map(
-                (point, index) =>
-                    `${index === 0 ? "M" : "L"} ${point.x} ${point.y}`
-            )
-            .join(" ");
-
-
-    line.setAttribute(
-        "d",
-        path
-    );
-
-
-    const areaPath =
-        coords.length > 0
-            ? `${path}
-               L ${coords[coords.length - 1].x} ${height - padding}
-               L ${coords[0].x} ${height - padding}
-               Z`
-            : "";
-
-
-    area.setAttribute(
-        "d",
-        areaPath
-    );
-
-
-    points.innerHTML =
-        coords
-            .map(
-                point => `
-
-                    <circle
-                        class="chart-point"
-                        cx="${point.x}"
-                        cy="${point.y}"
-                        r="6"
-                    >
-                        <title>
-                            ${escapeHTML(
-                    point.simulation.name
-                )}
-                            —
-                            ${Math.round(
-                    point.percent
-                )}%
-                        </title>
-                    </circle>
-
-                `
-            )
-            .join("");
-
-
-    labels.innerHTML =
-        coords
-            .map(
-                point => `
-
-                    <span>
-                        ${escapeHTML(
-                    point.simulation.name
-                )}
-                    </span>
-
-                `
-            )
-            .join("");
+    labels.innerHTML = "";
 }
 
 
 function renderSimulationSubjects() {
 
-    const container =
-        document.getElementById(
-            "simulationSubjectBars"
-        );
+    const container = document.getElementById("simulationSubjectBars");
 
+    if (!container) return;
 
-    if (!container) {
+    const results = simulations.filter(simulation => {
+        const questions = Number(simulation.questions);
+        return Number.isFinite(questions) && questions > 0;
+    });
+
+    if (!results.length) {
+        container.innerHTML = `
+            <div class="settings-empty">
+                Ainda não há resultados de simulados.
+            </div>
+        `;
         return;
     }
 
+    container.innerHTML = results.map(simulation => {
 
-    const grouped = {};
+        const questions = Number(simulation.questions);
+        const correct = Number(simulation.correct || 0);
 
-
-    simulations.forEach(
-        simulation => {
-
-            if (
-                !Array.isArray(
-                    simulation.subjects
-                )
-            ) {
-                return;
-            }
-
-
-            simulation.subjects.forEach(
-                subject => {
-
-                    const name =
-                        subject.name ||
-                        "Sem matéria";
-
-
-                    if (!grouped[name]) {
-
-                        grouped[name] = {
-                            questions: 0,
-                            correct: 0
-                        };
-
-                    }
-
-
-                    grouped[name].questions +=
-                        Number(
-                            subject.questions || 0
-                        );
-
-
-                    grouped[name].correct +=
-                        Number(
-                            subject.correct || 0
-                        );
-
-                }
-            );
-
-        }
-    );
-
-
-    const entries =
-        Object.entries(
-            grouped
+        const percent = Math.max(
+            0,
+            Math.min(100, (correct / questions) * 100)
         );
 
+        const percentText = percent.toLocaleString("pt-BR", {
+            maximumFractionDigits: 1
+        });
 
-    if (!entries.length) {
+        return `
+            <div class="simulation-bar-row">
 
-        container.innerHTML = `
-            <div class="settings-empty">
-                Ainda não há desempenho por matéria nos simulados.
+                <span
+                    class="bar-label"
+                    title="${escapeHTML(simulation.name)}"
+                >
+                    ${escapeHTML(simulation.name)}
+                </span>
+
+                <div class="simulation-bar-track">
+                    <div
+                        class="simulation-bar-fill"
+                        style="width:${percent}%"
+                    ></div>
+                </div>
+
+                <strong class="bar-value">
+                    ${percentText}%
+                </strong>
+
             </div>
         `;
 
-        return;
-    }
-
-
-    container.innerHTML =
-        entries
-            .map(
-                ([name, data]) => {
-
-                    const percent =
-                        data.questions > 0
-                            ? Math.round(
-                                (
-                                    data.correct /
-                                    data.questions
-                                ) * 100
-                            )
-                            : 0;
-
-
-                    return `
-
-                        <div class="simulation-bar-row">
-
-                            <span
-                                class="bar-label"
-                                title="${escapeHTML(name)}"
-                            >
-                                ${escapeHTML(name)}
-                            </span>
-
-                            <div class="simulation-bar-track">
-
-                                <div
-                                    class="simulation-bar-fill"
-                                    style="
-                                        width:${percent}%;
-                                    "
-                                ></div>
-
-                            </div>
-
-                            <strong
-                                class="bar-value"
-                            >
-                                ${percent}%
-                            </strong>
-
-                        </div>
-
-                    `;
-
-                }
-            )
-            .join("");
+    }).join("");
 }
 
 
@@ -5128,13 +6274,32 @@ function simulationButtons() {
     toggle("continueSimulation", simulationStarted && !simulationRunning && simulationRemaining > 0);
 }
 
+let activeSimulationId = null;
+
 function startSimulationTimer(seconds, name) {
+    const activeSimulation = simulations.find(
+        item => item.name === name
+    );
+
+    activeSimulationId = activeSimulation?.id ?? null;
     clearInterval(simulationInterval);
     simulationInterval = null;
     simulationRemaining = Math.max(0, Math.floor(Number(seconds) || 0));
     simulationInitial = simulationRemaining;
     simulationRunning = false;
     simulationStarted = false;
+    const simulation = simulations.find(
+        item => item.id === activeSimulationId
+    );
+
+    if (simulation) {
+        document.getElementById("simulationResultQuestions").value =
+            simulation.questions || 0;
+
+        document.getElementById("simulationResultCorrect").value = "";
+
+        setText("simulationResultTitle", simulation.name);
+    }
     document.getElementById("simulationTimer")?.classList.remove("hidden");
     document.getElementById("simulationEndOverlay")?.classList.add("hidden");
     setText("simulationTimerName", name || "Simulado");
@@ -5229,16 +6394,86 @@ function finishSimulationTimer(automatic = false) {
     } else {
         document.getElementById("simulationTimer")?.classList.add("hidden");
         document.getElementById("simulationEndOverlay")?.classList.add("hidden");
-        showToast("Simulado finalizado.");
+
+        document.getElementById("simulationResultOverlay")?.classList.remove("hidden");
     }
 }
 
 document.getElementById("startSimulation")?.addEventListener("click", runSimulation);
 document.getElementById("pauseSimulation")?.addEventListener("click", pauseSimulationTimer);
 document.getElementById("continueSimulation")?.addEventListener("click", runSimulation);
-document.getElementById("finishSimulation")?.addEventListener("click", () => finishSimulationTimer(false));
+document.getElementById("finishSimulation")?.addEventListener("click", () => {
+    document.getElementById("simulationConfirmOverlay")?.classList.remove("hidden");
+});
+
+document.getElementById("cancelSimulationConfirm")?.addEventListener("click", () => {
+    document.getElementById("simulationConfirmOverlay")?.classList.add("hidden");
+});
+
+document.getElementById("confirmSimulationFinish")?.addEventListener("click", () => {
+    document.getElementById("simulationConfirmOverlay")?.classList.add("hidden");
+
+    finishSimulationTimer(false);
+});
 document.getElementById("dismissSimulationEnd")?.addEventListener("click", () => {
     document.getElementById("simulationEndOverlay")?.classList.add("hidden");
+});
+document.getElementById("cancelSimulationResult")?.addEventListener("click", () => {
+    document.getElementById("simulationResultOverlay")?.classList.add("hidden");
+});
+document.getElementById("simulationResultForm")?.addEventListener("submit", event => {
+    event.preventDefault();
+
+    const simulation = simulations.find(
+        item => item.id === activeSimulationId
+    );
+
+    if (!simulation) {
+        showToast("Simulado não encontrado.");
+        return;
+    }
+
+    const questions = Number(simulation.questions);
+    const correctInput = document.getElementById("simulationResultCorrect");
+    const correct = Number(correctInput?.value);
+
+    if (
+        !correctInput?.value.trim() ||
+        !Number.isSafeInteger(correct) ||
+        correct < 0 ||
+        correct > questions
+    ) {
+        showToast("Informe uma quantidade válida de acertos.");
+        return;
+    }
+
+    const attempt = {
+        id: Date.now(),
+        date: getDateKey(new Date()),
+        questions: questions,
+        correct: correct,
+        percent: questions > 0
+            ? (correct / questions) * 100
+            : 0
+    };
+
+    if (!Array.isArray(simulation.attempts)) {
+        simulation.attempts = [];
+    }
+
+    simulation.attempts.push(attempt);
+
+    simulation.correct = correct;
+    simulation.date = formatDateShort(new Date());
+
+    saveSimulations();
+    renderSimulationStatistics();
+
+    document.getElementById("simulationResultOverlay")?.classList.add("hidden");
+
+    activeSimulationId = null;
+
+    showToast("Resultado do simulado salvo com sucesso!");
 });
 
 /* =========================================================
@@ -6825,14 +8060,14 @@ if (installBtn) {
 
         if (isIOS) {
             alert(
-                "Para instalar o CONCURSADO:\n\n" +
+                "Para instalar o ORION:\n\n" +
                 "1. Abra o site no Safari.\n" +
                 "2. Toque em Compartilhar.\n" +
                 "3. Escolha Adicionar à Tela de Início."
             );
         } else {
             alert(
-                "Para instalar o CONCURSADO:\n\n" +
+                "Para instalar o ORION:\n\n" +
                 "1. Abra o site no Google Chrome.\n" +
                 "2. Toque nos três pontos (⋮).\n" +
                 "3. Escolha Instalar app ou " +
@@ -7033,6 +8268,21 @@ void cloudInitialize();
 function cycleActiveSubjects() {
     return subjects.filter(subject => subject.cycleEnabled !== false);
 }
+/* ORION — PROGRESSO DO CICLO ATUAL */
+
+function getCycleStudiedMinutes(subject) {
+    const total = getSubjectStudiedMinutes(subject.name);
+    const anterior = Number(subject.cycleResetMinutes || 0);
+
+    return Math.max(0, total - anterior);
+}
+
+function getCycleQuestionsDone(subject) {
+    const total = cycleQuestionsDone(subject.name);
+    const anterior = Number(subject.cycleResetQuestions || 0);
+
+    return Math.max(0, total - anterior);
+}
 function cycleQuestionsDone(name) {
     return studies.filter(study => String(study.subject).toLowerCase() === String(name).toLowerCase())
         .reduce((sum, study) => sum + Number(study.questions || 0), 0);
@@ -7041,8 +8291,8 @@ function cyclePercentFor(subject) {
     const mode = subject.cycleMode || 'time';
     const timeGoal = Math.max(0, Number(subject.hours || 0) * 60);
     const questionGoal = Math.max(0, Number(subject.questions || 0));
-    const timeRatio = timeGoal ? Math.min(1, getSubjectStudiedMinutes(subject.name) / timeGoal) : 0;
-    const questionRatio = questionGoal ? Math.min(1, cycleQuestionsDone(subject.name) / questionGoal) : 0;
+    const timeRatio = timeGoal ? Math.min(1, getCycleStudiedMinutes(subject) / timeGoal) : 0;
+    const questionRatio = questionGoal ? Math.min(1, getCycleQuestionsDone(subject) / questionGoal) : 0;
     if (mode === 'questions') return Math.round(questionRatio * 100);
     if (mode === 'both') return Math.round((timeRatio + questionRatio) * 50);
     return Math.round(timeRatio * 100);
@@ -7342,7 +8592,7 @@ document.addEventListener("click", event => {
 });
 syncSubjectColorTriggers();
 
-function showConcursadoConfirm({ title, message, confirmLabel = "Confirmar" }) {
+function showOrionConfirm({ title, message, confirmLabel = "Confirmar" }) {
     return new Promise(resolve => {
         if (!document.getElementById("concursado-confirm-styles")) {
             const style = document.createElement("style");
@@ -7469,3 +8719,92 @@ function showConcursadoConfirm({ title, message, confirmLabel = "Confirmar" }) {
         }
     });
 })();
+
+/* =========================================================
+   ORION — JANELA REINICIAR MATÉRIA
+   Apenas abertura e fechamento
+   ========================================================= */
+
+const cycleResetOverlay = document.getElementById("cycleResetOverlay");
+const openCycleReset = document.getElementById("openCycleReset");
+const closeCycleReset = document.getElementById("closeCycleReset");
+const cancelCycleReset = document.getElementById("cancelCycleReset");
+
+function closeCycleResetModal() {
+    cycleResetOverlay?.classList.add("hidden");
+    document.body.classList.remove("conc-modal-open");
+}
+
+openCycleReset?.addEventListener("click", () => {
+    const select = document.getElementById("cycleResetSubject");
+    const confirmButton = document.getElementById("confirmCycleReset");
+
+    if (!cycleResetOverlay || !select) return;
+
+    select.innerHTML = '<option value="">Selecione uma matéria</option>';
+
+    subjects.forEach(subject => {
+        const option = document.createElement("option");
+        option.value = String(subject.id);
+        option.textContent = subject.name;
+        select.appendChild(option);
+    });
+
+    if (confirmButton) confirmButton.disabled = true;
+
+    cycleResetOverlay.classList.remove("hidden");
+    document.body.classList.add("conc-modal-open");
+});
+
+document.getElementById("cycleResetSubject")?.addEventListener("change", event => {
+    const confirmButton = document.getElementById("confirmCycleReset");
+
+    if (confirmButton) {
+        confirmButton.disabled = !event.target.value;
+    }
+});
+
+closeCycleReset?.addEventListener("click", closeCycleResetModal);
+
+cancelCycleReset?.addEventListener("click", closeCycleResetModal);
+
+cycleResetOverlay?.addEventListener("click", event => {
+    if (event.target === cycleResetOverlay) {
+        closeCycleResetModal();
+    }
+});
+/* =========================================================
+   ORION — CONFIRMAR REINICIALIZAÇÃO DA MATÉRIA
+   ========================================================= */
+
+document.getElementById("confirmCycleReset")?.addEventListener("click", () => {
+
+    const select = document.getElementById("cycleResetSubject");
+
+    if (!select || !select.value) return;
+
+    const subject = subjects.find(
+        item => String(item.id) === String(select.value)
+    );
+
+    if (!subject) {
+        showToast("Matéria não encontrada.");
+        return;
+    }
+
+    // Guarda os totais anteriores como ponto de reinício.
+    // Nenhum registro do histórico será excluído.
+    subject.cycleResetMinutes = getSubjectStudiedMinutes(subject.name);
+    subject.cycleResetQuestions = cycleQuestionsDone(subject.name);
+
+    // Salva a alteração na matéria e envia para sincronização.
+    saveSubjects();
+
+    // Fecha a janela.
+    closeCycleResetModal();
+
+    // Atualiza os indicadores.
+    updateAll();
+
+    showToast(`Ciclo de ${subject.name} reiniciado!`);
+});
