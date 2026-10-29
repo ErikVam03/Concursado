@@ -9,28 +9,26 @@ const forgot = document.getElementById('authForgot');
 let signup = false;
 let client;
 function status(message) { statusEl.textContent = message || ''; }
-function unlock(user) {
-  if (!user) return;
-  window.CALIBRE_USER_ID = user.id;
-  window.CALIBRE_PLAN = "free";
-  window.CALIBRE_PREMIUM = false;
-  window.CALIBRE_TRIAL = false;
-  window.CALIBRE_TRIAL_UNTIL = null;
-  window.CALIBRE_PREMIUM_UNTIL = null;
-
-  (async () => {
+// Reconsulta o plano sem exigir logout ou recarregar a página.
+let calibrePlanRefreshInProgress = false;
+async function refreshCalibrePlan() {
+  const userId = window.CALIBRE_USER_ID;
+  if (!client || !userId || calibrePlanRefreshInProgress) return;
+  calibrePlanRefreshInProgress = true;
+  try {
     const { data, error } = await client
       .from("user_plans")
       .select("plan, premium_until, trial_until")
-      .eq("user_id", user.id)
+      .eq("user_id", userId)
       .maybeSingle();
 
     if (error) {
       console.error("Erro ao consultar plano:", error.message);
       return;
     }
+    // Ignora resposta de uma sessão que já foi substituída.
+    if (window.CALIBRE_USER_ID !== userId) return;
 
-    // A validade é determinada pelas datas armazenadas no Supabase.
     const plan = data?.plan || "free";
     const now = Date.now();
     const premiumUntil = data?.premium_until || null;
@@ -47,14 +45,33 @@ function unlock(user) {
     window.CALIBRE_PREMIUM = Boolean(
       plan === "admin" || premiumPagoAtivo || trialAtivo
     );
-
-    // Permite que o script.js atualize os cadeados e o selo após a consulta.
     window.dispatchEvent(new Event("calibre:plan-updated"));
+  } catch (error) {
+    console.error("Erro ao atualizar plano CALIBRE:", error);
+  } finally {
+    calibrePlanRefreshInProgress = false;
+  }
+}
 
-    console.log("Plano CALIBRE:", plan);
-    console.log("Teste Premium ativo:", window.CALIBRE_TRIAL);
-    console.log("Acesso Premium:", window.CALIBRE_PREMIUM);
-  })();
+// Verifica alterações de assinatura enquanto a conta estiver aberta.
+setInterval(() => {
+  if (!document.hidden) void refreshCalibrePlan();
+}, 60000);
+window.addEventListener("focus", () => { void refreshCalibrePlan(); });
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) void refreshCalibrePlan();
+});
+
+function unlock(user) {
+  if (!user) return;
+  window.CALIBRE_USER_ID = user.id;
+  window.CALIBRE_PLAN = "free";
+  window.CALIBRE_PREMIUM = false;
+  window.CALIBRE_TRIAL = false;
+  window.CALIBRE_TRIAL_UNTIL = null;
+  window.CALIBRE_PREMIUM_UNTIL = null;
+
+  void refreshCalibrePlan();
 
   document.getElementById('authUserEmail').textContent = user.email || 'Minha conta';
   const meta = user.user_metadata || {};
