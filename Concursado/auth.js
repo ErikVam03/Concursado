@@ -77,6 +77,9 @@ function unlock(user) {
   const meta = user.user_metadata || {};
   document.getElementById('authUserName').textContent = meta.full_name || meta.name || user.email?.split('@')[0] || 'Minha conta';
   const photo = meta.avatar_url || meta.picture;
+  window.CALIBRE_GOOGLE_PHOTO = photo || '';
+  window.CALIBRE_PROFILE_PHOTO = photo || '';
+  window.CALIBRE_CURRENT_USER = user;
   const avatar = document.getElementById('authAvatar');
   const fallback = document.getElementById('authAvatarFallback');
   avatar.hidden = true; fallback.hidden = false;
@@ -85,6 +88,7 @@ function unlock(user) {
     avatar.onerror = () => { avatar.hidden = true; fallback.hidden = false; };
     avatar.src = photo;
   }
+  void loadCalibreProfilePhoto(user);
   document.getElementById('authAccount').hidden = false;
   document.getElementById('authScreen').hidden = true;
   document.body.classList.remove('auth-locked');
@@ -158,3 +162,240 @@ document.getElementById('authLogout').addEventListener('click', async () => {
   window.location.reload();
 });
 start().catch(error => status('Erro de conexão: ' + error.message));
+
+/* Foto personalizada: Storage privado, URL assinada por sessão. */
+async function loadCalibreProfilePhoto(user) {
+  const path = user?.user_metadata?.calibre_avatar_path;
+  if (!path || path !== `${user.id}/avatar.jpg` || !client) return;
+  const { data, error } = await client.storage.from('profile-avatars').createSignedUrl(path, 3600);
+  if (error || !data?.signedUrl || window.CALIBRE_USER_ID !== user.id) {
+    if (error) console.warn('CALIBRE: não foi possível carregar foto personalizada:', error.message);
+    return;
+  }
+  window.CALIBRE_PROFILE_PHOTO = data.signedUrl;
+  const avatar = document.getElementById('authAvatar');
+  const fallback = document.getElementById('authAvatarFallback');
+  avatar.onload = () => { avatar.hidden = false; fallback.hidden = true; };
+  avatar.onerror = () => { avatar.hidden = true; fallback.hidden = false; };
+  avatar.src = data.signedUrl;
+}
+
+/* Perfil: altera apenas metadados de exibição e foto, sem mudar o e-mail. */
+(function setupCalibreProfileEditor() {
+  const openButton = document.getElementById('authEditProfile');
+  const overlay = document.getElementById('calibreProfileOverlay');
+  const form = document.getElementById('calibreProfileForm');
+  const nameInput = document.getElementById('calibreProfileName');
+  const photoInput = document.getElementById('calibreProfilePhoto');
+  const preview = document.getElementById('calibreProfilePreview');
+  const previewFallback = document.getElementById('calibreProfilePreviewFallback');
+  const message = document.getElementById('calibreProfileStatus');
+  const saveButton = document.getElementById('calibreProfileSave');
+  if (!openButton || !overlay || !form || !nameInput || !photoInput || !preview) return;
+  let previewUrl = null;
+  let busy = false;
+  let priorFocus = null;
+  function setPreview(url) {
+    if (url) { preview.src = url; preview.hidden = false; previewFallback.hidden = true; }
+    else { preview.removeAttribute('src'); preview.hidden = true; previewFallback.hidden = false; }
+  }
+  function cleanup() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    photoInput.value = '';
+  }
+  function close() {
+    if (busy) return;
+    overlay.hidden = true;
+    overlay.classList.add('hidden');
+    document.body.style.overflow = '';
+    cleanup();
+    priorFocus?.focus();
+  }
+  openButton.addEventListener('click', () => {
+    priorFocus = document.activeElement;
+    document.querySelector('#authAccount .auth-account-details').open = false;
+    nameInput.value = document.getElementById('authUserName').textContent.trim();
+    cleanup();
+    setPreview(window.CALIBRE_PROFILE_PHOTO);
+    message.textContent = '';
+    overlay.hidden = false;
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    nameInput.focus();
+  });
+  document.getElementById('calibreProfileClose').addEventListener('click', close);
+  document.getElementById('calibreProfileCancel').addEventListener('click', close);
+  overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+  overlay.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); close(); }
+    if (event.key !== 'Tab') return;
+    const focusable = [...overlay.querySelectorAll('button:not(:disabled),input:not([type="hidden"]):not(:disabled),label.calibre-profile-upload')].filter(el => el.getClientRects().length);
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+  photoInput.addEventListener('change', () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = null;
+    const file = photoInput.files?.[0];
+    if (!file) { setPreview(window.CALIBRE_PROFILE_PHOTO); return; }
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024) {
+      message.textContent = 'Escolha uma imagem JPG, PNG ou WebP de até 5 MB.';
+      photoInput.value = '';
+      setPreview(window.CALIBRE_PROFILE_PHOTO);
+      return;
+    }
+    previewUrl = URL.createObjectURL(file);
+    setPreview(previewUrl);
+    message.textContent = '';
+  });
+  async function compressPhoto(file) {
+    const bitmap = await createImageBitmap(file);
+    try {
+      const canvas = document.createElement('canvas');
+      const scale = Math.min(1, 512 / Math.max(bitmap.width, bitmap.height));
+      canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+      canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#12241b'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+      return await new Promise((resolve,reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('Falha ao preparar a foto.')), 'image/jpeg', .85));
+    } finally { bitmap.close(); }
+  }
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+    if (busy || !client) return;
+    const name = nameInput.value.trim().replace(/\s+/g,' ');
+    if (name.length < 2 || name.length > 60) { message.textContent = 'Digite um nome entre 2 e 60 caracteres.'; return; }
+    const file = photoInput.files?.[0];
+    if (file && (!['image/jpeg','image/png','image/webp'].includes(file.type) || file.size > 5 * 1024 * 1024)) {
+      message.textContent = 'Foto inválida. Escolha JPG, PNG ou WebP de até 5 MB.'; return;
+    }
+    busy = true; saveButton.disabled = true; message.textContent = 'Salvando perfil...';
+    try {
+      const { data: current, error: sessionError } = await client.auth.getUser();
+      if (sessionError || !current?.user || current.user.id !== window.CALIBRE_USER_ID) throw new Error('Sessão expirada. Entre novamente.');
+      const user = current.user;
+      const metadata = { full_name: name };
+      let uploaded = false;
+      if (file) {
+        const blob = await compressPhoto(file);
+        const path = `${user.id}/avatar.jpg`;
+        const { error: uploadError } = await client.storage.from('profile-avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg', cacheControl: '60' });
+        if (uploadError) throw new Error('Não foi possível salvar a foto. Confira se o bucket privado profile-avatars e as políticas foram configurados. ' + uploadError.message);
+        metadata.calibre_avatar_path = path;
+        uploaded = true;
+      }
+      const { data, error } = await client.auth.updateUser({ data: metadata });
+      if (error) throw error;
+      window.CALIBRE_CURRENT_USER = data.user;
+      document.getElementById('authUserName').textContent = name;
+      if (typeof updateGreeting === 'function') updateGreeting();
+      if (uploaded) await loadCalibreProfilePhoto(data.user);
+      message.textContent = 'Perfil atualizado com sucesso!';
+      busy = false; saveButton.disabled = false;
+      close();
+    } catch (error) {
+      console.error('CALIBRE: erro ao salvar perfil:', error);
+      message.textContent = error.message || 'Erro ao salvar perfil.';
+      busy = false; saveButton.disabled = false;
+    }
+  });
+})();
+
+/* CALIBRE — ações e informações do menu de conta. */
+(function setupCalibreAccountMenu() {
+  const menuPhoto = document.getElementById('authMenuAvatar');
+  const menuFallback = document.getElementById('authMenuAvatarFallback');
+  const headerPhoto = document.getElementById('authAvatar');
+  function syncMenuPhoto() {
+    if (!menuPhoto || !headerPhoto) return;
+    const visible = !headerPhoto.hidden && headerPhoto.complete && headerPhoto.naturalWidth > 0;
+    menuPhoto.hidden = !visible;
+    menuFallback.hidden = visible;
+    if (visible && menuPhoto.src !== headerPhoto.src) menuPhoto.src = headerPhoto.src;
+  }
+  headerPhoto?.addEventListener('load', syncMenuPhoto);
+  headerPhoto?.addEventListener('error', syncMenuPhoto);
+  document.querySelector('#authAccount .auth-account-details')?.addEventListener('toggle', syncMenuPhoto);
+  function updatePlanLabel() {
+    const label = document.getElementById('authMenuPlan');
+    if (!label) return;
+    const plan = window.CALIBRE_PLAN;
+    label.textContent = plan === 'admin' ? 'Plano ADMIN' : window.CALIBRE_TRIAL ? 'Teste PREMIUM' : window.CALIBRE_PREMIUM ? 'Plano PREMIUM' : 'Plano FREE';
+  }
+  window.addEventListener('calibre:plan-updated', updatePlanLabel);
+  updatePlanLabel();
+  document.getElementById('authChangePhoto')?.addEventListener('click', () => {
+    document.getElementById('authEditProfile')?.click();
+    document.getElementById('calibreProfilePhoto')?.click();
+  });
+  /* Consulta as datas já lidas de user_plans; não modifica assinaturas. */
+  const subscriptionOverlay = document.getElementById('calibreSubscriptionOverlay');
+  const subscriptionDialog = subscriptionOverlay?.querySelector('.calibre-subscription-dialog');
+  let subscriptionPreviousFocus = null;
+  let subscriptionPreviousOverflow = '';
+  function closeSubscription() {
+    if (!subscriptionOverlay || subscriptionOverlay.hidden) return;
+    subscriptionOverlay.hidden = true;
+    document.body.style.overflow = subscriptionPreviousOverflow;
+    subscriptionPreviousFocus?.focus();
+  }
+  function renderSubscription() {
+    const plan = document.getElementById('calibreSubscriptionPlan');
+    const remaining = document.getElementById('calibreSubscriptionRemaining');
+    const price = document.getElementById('calibreSubscriptionPrice');
+    const end = document.getElementById('calibreSubscriptionEnd');
+    const note = document.getElementById('calibreSubscriptionNote');
+    if (!plan || !remaining || !price || !end || !note) return;
+    const rawPlan = window.CALIBRE_PLAN || 'free';
+    const trial = Boolean(window.CALIBRE_TRIAL);
+    const paid = rawPlan === 'premium' && Boolean(window.CALIBRE_PREMIUM);
+    const admin = rawPlan === 'admin';
+    plan.textContent = admin ? 'ADMIN' : trial ? 'TESTE PREMIUM' : paid ? 'PREMIUM' : 'FREE';
+    price.textContent = paid ? 'R$ 12,49' : trial ? 'Gratuito' : '—';
+    remaining.textContent = '—';
+    end.textContent = '';
+    note.textContent = admin ? 'Conta de administrador: sem prazo de assinatura.' :
+      trial ? 'Período de teste gratuito de 7 dias.' :
+      paid ? 'A data exibida não confirma renovação ou cancelamento na Hotmart.' :
+      'Você está no plano gratuito. Para assinar, use o botão Assinar Premium no menu da conta.';
+    const expiration = trial ? window.CALIBRE_TRIAL_UNTIL : paid ? window.CALIBRE_PREMIUM_UNTIL : null;
+    const timestamp = expiration ? Date.parse(expiration) : NaN;
+    if (Number.isFinite(timestamp) && timestamp > Date.now()) {
+      const days = Math.ceil((timestamp - Date.now()) / 86400000);
+      remaining.textContent = `${days} ${days === 1 ? 'dia' : 'dias'}`;
+      end.textContent = `Acesso válido até: ${new Intl.DateTimeFormat('pt-BR', {dateStyle:'long', timeStyle:'short'}).format(new Date(timestamp))}`;
+    } else if (trial || paid) {
+      note.textContent = 'Não foi possível confirmar a data de término do acesso. Consulte novamente mais tarde.';
+    }
+  }
+  document.getElementById('authSubscription')?.addEventListener('click', async () => {
+    if (!subscriptionOverlay) return;
+    subscriptionPreviousFocus = document.activeElement;
+    document.querySelector('#authAccount .auth-account-details').open = false;
+    subscriptionPreviousOverflow = document.body.style.overflow;
+    subscriptionOverlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+    renderSubscription();
+    subscriptionDialog?.focus();
+    // Atualiza o plano antes de apresentar o prazo mais recente, quando possível.
+    await refreshCalibrePlan();
+    if (!subscriptionOverlay.hidden) renderSubscription();
+  });
+  document.getElementById('calibreSubscriptionClose')?.addEventListener('click', closeSubscription);
+  document.getElementById('calibreSubscriptionDone')?.addEventListener('click', closeSubscription);
+  subscriptionOverlay?.addEventListener('click', event => { if (event.target === subscriptionOverlay) closeSubscription(); });
+  subscriptionOverlay?.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { event.preventDefault(); closeSubscription(); }
+    if (event.key !== 'Tab') return;
+    const focusable = [...subscriptionOverlay.querySelectorAll('button:not(:disabled)')];
+    if (!focusable.length) return;
+    const first = focusable[0], last = focusable[focusable.length - 1];
+    if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+    else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+  });
+  window.addEventListener('calibre:plan-updated', () => { if (subscriptionOverlay && !subscriptionOverlay.hidden) renderSubscription(); });
+})();

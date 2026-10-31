@@ -267,17 +267,21 @@
 
 
 
-            <button data-section="configuracoes">
+            <button data-section="creditos">
 
-                ⚙️ Configurações
+                ✨ Créditos
 
             </button>
 
 
 
-            <button data-section="creditos">
+            <button data-section="suporte">
+                🛠️ Suporte
+            </button>
 
-                ✨ Créditos
+            <button data-section="configuracoes">
+
+                ⚙️ Configurações
 
             </button>
 
@@ -296,17 +300,25 @@
                             class="auth-avatar-fallback">👤</span><img id="authAvatar" class="auth-avatar"
                             alt="Foto do perfil" referrerpolicy="no-referrer" hidden></summary>
                     <div class="auth-account-dropdown">
-                    <div class="auth-profile-meta">
-                        <strong id="authUserName">Minha conta</strong>
-                        <span id="authUserEmail"></span>
+                        <div class="auth-account-header">
+                            <div class="auth-account-header-photo">
+                                <img id="authMenuAvatar" alt="Foto do perfil" hidden>
+                                <span id="authMenuAvatarFallback" aria-hidden="true">♙</span>
+                            </div>
+                            <div class="auth-profile-meta">
+                                <strong id="authUserName">Minha conta</strong>
+                                <span id="authUserEmail"></span>
+                                <small id="authMenuPlan">Plano FREE</small>
+                            </div>
+                        </div>
+                        <div class="auth-account-divider"></div>
+                        <button id="authEditProfile" type="button"><span aria-hidden="true">♙</span> Editar perfil</button>
+                        <button id="authChangePhoto" type="button"><span aria-hidden="true">▣</span> Alterar foto</button>
+                        <button id="authSubscription" type="button"><span aria-hidden="true">♕</span> Minha assinatura</button>
+                        <button id="authPremiumBtn" type="button" hidden>👑 Assinar Premium</button>
+                        <div class="auth-account-divider"></div>
+                        <button id="authLogout" type="button"><span aria-hidden="true">⇥</span> Sair da conta</button>
                     </div>
-
-                    <button id="authPremiumBtn" type="button" hidden>
-                        👑 Assinar Premium
-                    </button>
-
-                    <button id="authLogout" type="button">Sair</button>
-                </div>
                 </details>
             </div>
             <button id="menuBtn" class="icon-btn" aria-label="Abrir menu">☰</button>
@@ -383,17 +395,21 @@
 
 
 
-        <button data-section="configuracoes">
+        <button data-section="creditos">
 
-            ⚙️ Configurações
+            ✨ Créditos
 
         </button>
 
 
 
-        <button data-section="creditos">
+        <button data-section="suporte">
+            🛠️ Suporte
+        </button>
 
-            ✨ Créditos
+        <button data-section="configuracoes">
+
+            ⚙️ Configurações
 
         </button>
 
@@ -1542,7 +1558,7 @@
             <option value="">Selecione uma matéria</option>
         </select>
 
-        <p>O progresso do ciclo atual voltará para 0%. Seu histórico e suas estatísticas serão preservados.</p>
+        <p>Selecione uma matéria ou a opção "Todas as matérias". O progresso do ciclo atual voltará para 0%. Seu histórico e suas estatísticas serão preservados.</p>
 
         <div class="conc-modal-actions">
             <button type="button"
@@ -1564,6 +1580,22 @@
 
 
 
+
+        <!-- CONFIRMAÇÃO EXTRA: REINICIAR TODAS AS MATÉRIAS -->
+<div id="cycleResetAllConfirmOverlay" class="conc-modal-overlay hidden">
+    <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="cycleResetAllTitle">
+        <div class="conc-modal-heading">
+            <h2 id="cycleResetAllTitle">⚠️ Reiniciar todas as matérias?</h2>
+            <button type="button" class="secondary-btn" id="closeCycleResetAll" aria-label="Fechar">✕</button>
+        </div>
+        <p>O progresso do ciclo atual de <strong>todas as matérias</strong> voltará para 0%.</p>
+        <p>As matérias cadastradas, os estudos anteriores, o histórico, as estatísticas e os simulados serão preservados.</p>
+        <div class="conc-modal-actions">
+            <button type="button" class="secondary-btn" id="cancelCycleResetAll">Cancelar</button>
+            <button type="button" class="primary-btn" id="confirmCycleResetAll">🔄 Sim, reiniciar todas</button>
+        </div>
+    </div>
+</div>
 
         <!-- =====================================================
 
@@ -3236,54 +3268,51 @@
 
 
 
+            <!-- Gerenciamento de parceiros: visível apenas após validação ADMIN no JavaScript. -->
+            <div id="partnersAdminPanel" class="card hidden" hidden>
+                <div class="card-title">
+                    <div>
+                        <span class="eyebrow">ADMINISTRAÇÃO</span>
+                        <h2>Gerenciar parceiros</h2>
+                        <p>Cadastre e organize os parceiros exibidos nos Créditos.</p>
+                    </div>
+                    <button id="addPartnerBtn" class="primary-btn" type="button">+ Adicionar parceiro</button>
+                </div>
+            </div>
+
+            <!-- Formulário de parceiros: será ativado somente após integração segura com o Supabase. -->
+            <div id="partnerFormOverlay" class="conc-modal-overlay hidden" hidden>
+                <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="partnerFormTitle">
+                    <div class="conc-modal-heading">
+                        <h2 id="partnerFormTitle">Adicionar parceiro</h2>
+                        <button id="closePartnerForm" type="button" class="secondary-btn" aria-label="Fechar">✕</button>
+                    </div>
+                    <form id="partnerForm" class="conc-modal-form">
+                        <input id="partnerId" type="hidden">
+                        <label>Nome do parceiro
+                            <input id="partnerName" type="text" maxlength="120" required autocomplete="off">
+                        </label>
+                        <label>Instagram (usuário, sem @)
+                            <input id="partnerInstagram" type="text" maxlength="100" required autocomplete="off" placeholder="exemplo_perfil">
+                        </label>
+                        <label>URL da foto (opcional)
+                            <input id="partnerPhotoUrl" type="url" maxlength="2000" placeholder="https://...">
+                        </label>
+                        <div class="conc-modal-actions">
+                            <button id="cancelPartnerForm" type="button" class="secondary-btn">Cancelar</button>
+                            <button id="savePartnerBtn" type="submit" class="primary-btn">Salvar parceiro</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
             <div class="credits-grid">
 
-                <article class="card credits-instagram">
-
-                    <span class="credits-kicker">PARCEIROS</span>
-
-                    <div class="credits-profile">
-
-                        <img src="bizu-de-mat.jpg" alt="Avatar provisório do perfil Bizu de Mat" class="credits-avatar">
-
-                        <div>
-
-                            <h2>Bizu de Mat</h2>
-
-                            <p>@bizu_de_mat</p>
-
-                        </div>
-
-                    </div>
-
-                    <p class="credits-description">Acompanhe o perfil para ver conteúdos e dicas de estudo.</p>
-
-                    <a class="credits-link" href="https://www.instagram.com/bizu_de_mat/" target="_blank"
-                        rel="noopener noreferrer">
-
-                        <span aria-hidden="true">📸</span> Visitar Instagram <span aria-hidden="true">↗</span>
-
-                    </a>
-
-                    <small class="credits-photo-note">Perfil oficial no Instagram</small>
-
-                </article>
-
-
-
-                <article class="card credits-created">
+<article class="card credits-created">
 
                     <span class="credits-kicker">DESENVOLVIMENTO</span>
 
                     <p class="credits-creator">
-
-                    <h2>
-
-                        <span>💡 ASP R2 Romeu — Idealizador</span>
-
-                    </h2>
-
-
 
                     <h2>
 
@@ -3333,11 +3362,70 @@
 
 
 
+        <!-- SUPORTE — abertura de mensagem pré-preenchida no Gmail -->
+        <section id="suporte" class="section">
+            <div class="page-heading">
+                <span class="eyebrow">CENTRAL DE AJUDA</span>
+                <h1>Suporte</h1>
+                <p>Precisa de ajuda com o CALIBRE? Descreva sua solicitação.</p>
+            </div>
+            <div class="card calibre-support-card">
+                <form id="calibreSupportForm" class="calibre-support-form" novalidate>
+                    <label for="calibreSupportCategory">Assunto
+                        <select id="calibreSupportCategory" name="category" required>
+                            <option value="">Selecione um assunto</option>
+                            <option value="erro">Erro no sistema</option>
+                            <option value="pagamento">Pagamento / Assinatura</option>
+                            <option value="duvida">Dúvida</option>
+                            <option value="sugestao">Sugestão</option>
+                        </select>
+                    </label>
+                    <label for="calibreSupportMessage">Descreva sua solicitação
+                        <textarea id="calibreSupportMessage" name="message" rows="6" minlength="10" maxlength="3000" placeholder="Explique o que aconteceu ou como podemos ajudar..." required></textarea>
+                    </label>
+                    <p class="calibre-support-attachment-note">📎 Se precisar enviar um print, anexe a imagem diretamente no Gmail após abrir a mensagem.</p>
+                    <p id="calibreSupportStatus" class="calibre-support-status" role="status">O Gmail será aberto com sua mensagem preenchida. Confira e clique em Enviar no Gmail para concluir.</p>
+                    <div class="form-actions">
+                        <button type="submit" id="calibreSupportSubmit" class="primary-btn" aria-describedby="calibreSupportStatus">✉️ Enviar pelo Gmail</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
     </main>
 
 
 
 
+
+    <!-- CALIBRE — edição de nome e foto (e-mail permanece inalterado) -->
+    <div id="calibreProfileOverlay" class="calibre-profile-overlay hidden" hidden>
+        <div class="calibre-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="calibreProfileTitle">
+            <div class="calibre-profile-heading">
+                <h2 id="calibreProfileTitle">Editar perfil</h2>
+                <button id="calibreProfileClose" type="button" class="calibre-profile-close" aria-label="Fechar">✕</button>
+            </div>
+            <form id="calibreProfileForm">
+                <div class="calibre-profile-photo-row">
+                    <img id="calibreProfilePreview" alt="Prévia da foto do perfil" hidden>
+                    <span id="calibreProfilePreviewFallback" aria-hidden="true">👤</span>
+                    <div>
+                        <label for="calibreProfilePhoto" class="calibre-profile-upload">📷 Escolher foto</label>
+                        <input id="calibreProfilePhoto" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                        <small>JPG, PNG ou WebP • até 5 MB</small>
+                    </div>
+                </div>
+                <label for="calibreProfileName">Nome de exibição</label>
+                <input id="calibreProfileName" type="text" minlength="2" maxlength="60" autocomplete="name" required>
+                <p class="calibre-profile-hint">Esse nome aparece na sua conta e na saudação do Painel. Seu e-mail não será alterado.</p>
+                <p id="calibreProfileStatus" role="status" aria-live="polite"></p>
+                <div class="calibre-profile-actions">
+                    <button id="calibreProfileCancel" type="button" class="secondary-btn">Cancelar</button>
+                    <button id="calibreProfileSave" type="submit" class="primary-btn">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div id="toast" class="toast">
 
@@ -3500,6 +3588,27 @@
                     id="cancelSubjectPalette">Cancelar</button><button type="button" class="primary-btn"
                     id="applySubjectPalette">Aplicar cor</button></div>
         </div>
+    </div>
+
+    <!-- CALIBRE — informações da assinatura (somente leitura) -->
+    <div id="calibreSubscriptionOverlay" class="calibre-subscription-overlay" hidden>
+        <section class="calibre-subscription-dialog" role="dialog" aria-modal="true" aria-labelledby="calibreSubscriptionTitle" tabindex="-1">
+            <div class="calibre-subscription-heading">
+                <h2 id="calibreSubscriptionTitle">👑 Minha assinatura</h2>
+                <button id="calibreSubscriptionClose" type="button" aria-label="Fechar informações da assinatura">✕</button>
+            </div>
+            <div class="calibre-subscription-plan">
+                <span>PLANO ATUAL</span>
+                <strong id="calibreSubscriptionPlan">Consultando...</strong>
+            </div>
+            <div class="calibre-subscription-grid">
+                <div><span>Tempo restante</span><strong id="calibreSubscriptionRemaining">—</strong></div>
+                <div><span>Valor mensal</span><strong id="calibreSubscriptionPrice">—</strong></div>
+            </div>
+            <p id="calibreSubscriptionEnd" class="calibre-subscription-end"></p>
+            <p id="calibreSubscriptionNote" class="calibre-subscription-note" role="status"></p>
+            <button id="calibreSubscriptionDone" type="button" class="secondary-btn">Fechar</button>
+        </section>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>

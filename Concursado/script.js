@@ -1194,11 +1194,8 @@ function showPremiumReportModal() {
         overlay.querySelector("#closePremiumReport").addEventListener("click", close);
         overlay.querySelector("#dismissPremiumReport").addEventListener("click", close);
         overlay.querySelector("#subscribePremiumReport").addEventListener("click", () => {
-            window.open(
-                "https://pay.hotmart.com/X108120079Y?off=8lz79btf",
-                "_blank",
-                "noopener,noreferrer"
-            );
+            close();
+            showPremiumEmailNotice();
         });
         overlay.addEventListener("click", event => { if (event.target === overlay) close(); });
     }
@@ -1207,14 +1204,57 @@ function showPremiumReportModal() {
     overlay.querySelector("#dismissPremiumReport").focus();
 }
 
-// Abre o checkout do CALIBRE Premium pelo menu da conta.
-document.getElementById("authPremiumBtn")?.addEventListener("click", () => {
-    window.open(
-        "https://pay.hotmart.com/X108120079Y?off=8lz79btf",
-        "_blank",
-        "noopener,noreferrer"
-    );
-});
+// Confirma o e-mail da conta antes de enviar o usuário à Hotmart.
+// O pagamento e a liberação Premium continuam sendo validados pelo backend.
+function showPremiumEmailNotice() {
+    let overlay = document.getElementById("premiumEmailNoticeOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "premiumEmailNoticeOverlay";
+        overlay.className = "conc-modal-overlay hidden";
+        overlay.innerHTML = `
+            <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="premiumEmailNoticeTitle">
+                <div class="conc-modal-heading">
+                    <h2 id="premiumEmailNoticeTitle">⚠️ Atenção antes de continuar</h2>
+                    <button type="button" class="secondary-btn" id="closePremiumEmailNotice" aria-label="Fechar">✕</button>
+                </div>
+                <p>Para vincular sua assinatura Premium à conta CALIBRE, use <strong>o mesmo e-mail da sua conta CALIBRE</strong> na compra pela Hotmart.</p>
+                <p><strong>E-mail da sua conta:</strong> <span id="premiumEmailNoticeAddress"></span></p>
+                <div class="conc-modal-actions">
+                    <button type="button" class="secondary-btn" id="cancelPremiumEmailNotice">Cancelar</button>
+                    <button type="button" class="primary-btn" id="confirmPremiumEmailNotice">Entendi, continuar</button>
+                </div>
+            </div>`;
+        document.body.appendChild(overlay);
+        const close = () => {
+            overlay.classList.add("hidden");
+            document.body.classList.remove("conc-modal-open");
+        };
+        overlay.querySelector("#closePremiumEmailNotice").addEventListener("click", close);
+        overlay.querySelector("#cancelPremiumEmailNotice").addEventListener("click", close);
+        overlay.querySelector("#confirmPremiumEmailNotice").addEventListener("click", () => {
+            // Abertura diretamente pelo clique para não bloquear a nova aba.
+            window.open(
+                "https://pay.hotmart.com/X108120079Y?off=pp7bhthn",
+                "_blank",
+                "noopener,noreferrer"
+            );
+            close();
+        });
+        overlay.addEventListener("click", event => {
+            if (event.target === overlay) close();
+        });
+    }
+    const email = document.getElementById("authUserEmail")?.textContent?.trim();
+    overlay.querySelector("#premiumEmailNoticeAddress").textContent =
+        email && email !== "Minha conta" ? email : "Verifique o e-mail da sua conta antes de comprar.";
+    overlay.classList.remove("hidden");
+    document.body.classList.add("conc-modal-open");
+    overlay.querySelector("#confirmPremiumEmailNotice").focus();
+}
+
+// O botão do Painel reutiliza este botão, portanto também passa pelo aviso.
+document.getElementById("authPremiumBtn")?.addEventListener("click", showPremiumEmailNotice);
 
 // Atualiza apenas os cadeados dos filtros e o selo do plano no Painel.
 // Não altera a lógica de filtros, estudos ou sincronização.
@@ -8237,6 +8277,319 @@ function initializeApp() {
 }
 
 
+
+/* =========================================================
+   CALIBRE — PARCEIROS (Supabase / ADMIN)
+   Independente da sincronização de estudos.
+========================================================= */
+(() => {
+    const db = window.CALIBRE_SUPABASE;
+    const panel = document.getElementById("partnersAdminPanel");
+    const addBtn = document.getElementById("addPartnerBtn");
+    const overlay = document.getElementById("partnerFormOverlay");
+    const form = document.getElementById("partnerForm");
+    const grid = document.querySelector("#credits .credits-grid") ||
+        document.querySelector(".credits-page .credits-grid") ||
+        document.querySelector(".credits-grid");
+    if (!db || !panel || !addBtn || !overlay || !form || !grid) {
+        console.warn("CALIBRE: interface de parceiros incompleta ou Supabase indisponível.");
+        return;
+    }
+
+    const fixedCard = grid.querySelector(".credits-instagram");
+    const idField = document.getElementById("partnerId");
+    const nameField = document.getElementById("partnerName");
+    const instagramField = document.getElementById("partnerInstagram");
+    const photoField = document.getElementById("partnerPhotoUrl");
+    const saveBtn = document.getElementById("savePartnerBtn");
+    let partners = [];
+    let loaded = false;
+    let busy = false;
+    const isAdmin = () => window.CALIBRE_PLAN === "admin";
+
+    function adminVisibility() {
+        const allowed = isAdmin();
+        panel.hidden = !allowed;
+        panel.classList.toggle("hidden", !allowed);
+        if (!allowed) closeForm();
+        renderPartners();
+    }
+
+    function closeForm() {
+        overlay.hidden = true;
+        overlay.classList.add("hidden");
+        document.body.classList.remove("conc-modal-open");
+        form.reset();
+        idField.value = "";
+    }
+
+    function openForm(partner = null) {
+        if (!isAdmin() || busy) return;
+        form.reset();
+        idField.value = partner ? String(partner.id) : "";
+        nameField.value = partner?.name || "";
+        instagramField.value = partner?.instagram || "";
+        photoField.value = partner?.photo_url || "";
+        document.getElementById("partnerFormTitle").textContent =
+            partner ? "Editar parceiro" : "Adicionar parceiro";
+        overlay.hidden = false;
+        overlay.classList.remove("hidden");
+        document.body.classList.add("conc-modal-open");
+        nameField.focus();
+    }
+
+    function safePhotoUrl(value) {
+        if (!value) return "";
+        try {
+            const url = new URL(value);
+            return url.protocol === "https:" ? url.href : "";
+        } catch {
+            return "";
+        }
+    }
+
+    function renderPartners() {
+        grid.querySelectorAll("[data-calibre-partner]").forEach(el => el.remove());
+        panel.querySelector("#partnersManageList")?.remove();
+        if (!loaded) return;
+
+        // O cartão antigo permanece como fallback até o Bizu ser cadastrado no banco.
+        if (fixedCard) {
+            fixedCard.hidden = partners.some(p =>
+                String(p.instagram).replace(/^@/, "").toLowerCase() === "bizu_de_mat"
+            );
+        }
+
+        for (const partner of partners) {
+            const card = document.createElement("article");
+            card.className = "card credits-instagram";
+            card.dataset.calibrePartner = String(partner.id);
+
+            const kicker = document.createElement("span");
+            kicker.className = "credits-kicker";
+            kicker.textContent = "PARCEIROS";
+            card.appendChild(kicker);
+
+            const profile = document.createElement("div");
+            profile.className = "credits-profile";
+            const url = safePhotoUrl(partner.photo_url);
+            if (url) {
+                const img = document.createElement("img");
+                img.src = url;
+                img.alt = "Foto de " + partner.name;
+                img.className = "credits-avatar";
+                img.loading = "lazy";
+                img.referrerPolicy = "no-referrer";
+                img.onerror = () => img.replaceWith(defaultAvatar());
+                profile.appendChild(img);
+            } else {
+                profile.appendChild(defaultAvatar());
+            }
+            const info = document.createElement("div");
+            const name = document.createElement("h2");
+            const handle = document.createElement("p");
+            const instagramUrl = "https://www.instagram.com/" +
+                encodeURIComponent(String(partner.instagram).replace(/^@/, "")) + "/";
+            for (const [target, label] of [[name, partner.name],
+                [handle, "@" + String(partner.instagram).replace(/^@/, "")]]) {
+                const a = document.createElement("a");
+                a.href = instagramUrl;
+                a.target = "_blank";
+                a.rel = "noopener noreferrer";
+                a.textContent = label;
+                a.style.color = "inherit";
+                a.style.textDecoration = "none";
+                target.appendChild(a);
+            }
+            info.append(name, handle);
+            profile.appendChild(info);
+            card.appendChild(profile);
+            grid.insertBefore(card, fixedCard || grid.firstChild);
+        }
+
+        if (isAdmin()) {
+            const list = document.createElement("div");
+            list.id = "partnersManageList";
+            list.style.cssText = "display:flex;flex-direction:column;gap:10px;margin-top:16px";
+            partners.forEach((partner, index) => {
+                const line = document.createElement("div");
+                line.style.cssText = "display:flex;align-items:center;gap:8px;flex-wrap:wrap";
+                const label = document.createElement("strong");
+                label.textContent = partner.name;
+                label.style.marginRight = "auto";
+                line.appendChild(label);
+                const controls = [
+                    ["↑", () => movePartner(index, -1), index === 0],
+                    ["↓", () => movePartner(index, 1), index === partners.length - 1],
+                    ["Editar", () => openForm(partner), false],
+                    ["Excluir", () => deletePartner(partner), false]
+                ];
+                for (const [text, action, disabled] of controls) {
+                    const button = document.createElement("button");
+                    button.type = "button";
+                    button.className = "secondary-btn";
+                    button.textContent = text;
+                    button.disabled = disabled || busy;
+                    button.addEventListener("click", action);
+                    line.appendChild(button);
+                }
+                list.appendChild(line);
+            });
+            panel.appendChild(list);
+        }
+    }
+
+    function defaultAvatar() {
+        const span = document.createElement("span");
+        span.className = "credits-avatar-fallback";
+        span.textContent = "📸";
+        span.setAttribute("aria-label", "Instagram");
+        return span;
+    }
+
+    async function loadPartners() {
+        const { data, error } = await db.from("partners")
+            .select("id,name,instagram,photo_url,display_order")
+            .order("display_order", { ascending: true })
+            .order("id", { ascending: true });
+        if (error) {
+            console.error("CALIBRE: erro ao carregar parceiros:", error);
+            if (typeof showToast === "function")
+                showToast("Não foi possível carregar os parceiros.");
+            return;
+        }
+        partners = data || [];
+        loaded = true;
+        renderPartners();
+    }
+
+    async function movePartner(index, direction) {
+        if (!isAdmin() || busy) return;
+        const other = index + direction;
+        if (other < 0 || other >= partners.length) return;
+        busy = true;
+        try {
+            // Valores temporários únicos evitam colisões de ordem durante a troca.
+            const current = partners[index], adjacent = partners[other];
+            const orderA = Number(current.display_order);
+            const orderB = Number(adjacent.display_order);
+            const temp = Math.max(0, ...partners.map(p => Number(p.display_order) || 0)) + 1000;
+            for (const [id, display_order] of [
+                [current.id, temp], [adjacent.id, orderA], [current.id, orderB]
+            ]) {
+                const { error } = await db.from("partners")
+                    .update({ display_order }).eq("id", id).select("id").single();
+                if (error) throw error;
+            }
+            await loadPartners();
+        } catch (error) {
+            console.error("CALIBRE: erro ao reordenar:", error);
+            showToast("Não foi possível alterar a ordem. Atualize e tente novamente.");
+            await loadPartners();
+        } finally {
+            busy = false;
+            renderPartners();
+        }
+    }
+
+    async function deletePartner(partner) {
+        if (!isAdmin() || busy) return;
+        // Confirmação no padrão do site, sem confirm() do navegador.
+        const confirmation = document.createElement("div");
+        confirmation.className = "conc-modal-overlay";
+        confirmation.innerHTML = `
+            <div class="card conc-modal" role="dialog" aria-modal="true">
+                <h2>Excluir parceiro?</h2>
+                <p id="partnerDeleteDescription"></p>
+                <div class="conc-modal-actions">
+                    <button type="button" class="secondary-btn" data-cancel>Cancelar</button>
+                    <button type="button" class="primary-btn" data-delete>Excluir</button>
+                </div>
+            </div>`;
+        confirmation.querySelector("#partnerDeleteDescription").textContent =
+            "Deseja excluir " + partner.name + " dos Créditos?";
+        document.body.appendChild(confirmation);
+        const dismiss = () => confirmation.remove();
+        confirmation.querySelector("[data-cancel]").addEventListener("click", dismiss);
+        confirmation.addEventListener("click", e => {
+            if (e.target === confirmation) dismiss();
+        });
+        confirmation.querySelector("[data-delete]").addEventListener("click", async () => {
+            if (!isAdmin() || busy) return;
+            busy = true;
+            try {
+                const { data, error } = await db.from("partners")
+                    .delete().eq("id", partner.id).select("id");
+                if (error) throw error;
+                if (!data?.length) throw new Error("Exclusão não autorizada.");
+                dismiss();
+                await loadPartners();
+                showToast("Parceiro excluído.");
+            } catch (error) {
+                console.error("CALIBRE: erro ao excluir parceiro:", error);
+                showToast("Não foi possível excluir o parceiro.");
+            } finally {
+                busy = false;
+                renderPartners();
+            }
+        });
+    }
+
+    addBtn.addEventListener("click", () => openForm());
+    document.getElementById("closePartnerForm")?.addEventListener("click", closeForm);
+    document.getElementById("cancelPartnerForm")?.addEventListener("click", closeForm);
+    overlay.addEventListener("click", e => {
+        if (e.target === overlay) closeForm();
+    });
+    form.addEventListener("submit", async e => {
+        e.preventDefault();
+        if (!isAdmin() || busy) return;
+        const name = nameField.value.trim();
+        const instagram = instagramField.value.trim().replace(/^@/, "");
+        const photo_url = photoField.value.trim();
+        if (!name || !/^[A-Za-z0-9._]{1,30}$/.test(instagram)) {
+            showToast("Informe nome e usuário válido do Instagram.");
+            return;
+        }
+        if (photo_url && !safePhotoUrl(photo_url)) {
+            showToast("A foto precisa ter um endereço HTTPS válido.");
+            return;
+        }
+        const id = idField.value;
+        const payload = { name, instagram, photo_url: photo_url || null };
+        busy = true;
+        saveBtn.disabled = true;
+        try {
+            let query;
+            if (id) {
+                query = db.from("partners").update(payload).eq("id", Number(id));
+            } else {
+                payload.display_order = partners.reduce(
+                    (max, p) => Math.max(max, Number(p.display_order) || 0), -1
+                ) + 1;
+                query = db.from("partners").insert(payload);
+            }
+            const { data, error } = await query.select("id");
+            if (error) throw error;
+            if (!data?.length) throw new Error("Operação não autorizada.");
+            closeForm();
+            await loadPartners();
+            showToast(id ? "Parceiro atualizado!" : "Parceiro cadastrado!");
+        } catch (error) {
+            console.error("CALIBRE: erro ao salvar parceiro:", error);
+            showToast("Não foi possível salvar o parceiro.");
+        } finally {
+            busy = false;
+            saveBtn.disabled = false;
+            renderPartners();
+        }
+    });
+
+    window.addEventListener("calibre:plan-updated", adminVisibility);
+    adminVisibility();
+    void loadPartners();
+})();
+
 void cloudInitialize();
 
 
@@ -8743,6 +9096,11 @@ openCycleReset?.addEventListener("click", () => {
 
     select.innerHTML = '<option value="">Selecione uma matéria</option>';
 
+    const allOption = document.createElement("option");
+    allOption.value = "__all__";
+    allOption.textContent = "🔄 Todas as matérias";
+    select.appendChild(allOption);
+
     subjects.forEach(subject => {
         const option = document.createElement("option");
         option.value = String(subject.id);
@@ -8783,6 +9141,19 @@ document.getElementById("confirmCycleReset")?.addEventListener("click", () => {
 
     if (!select || !select.value) return;
 
+    if (select.value === "__all__") {
+        if (!subjects.length) {
+            showToast("Nenhuma matéria cadastrada.");
+            return;
+        }
+
+        const confirmationOverlay = document.getElementById("cycleResetAllConfirmOverlay");
+        if (!confirmationOverlay) return;
+        confirmationOverlay.classList.remove("hidden");
+        document.body.classList.add("conc-modal-open");
+        return;
+    }
+
     const subject = subjects.find(
         item => String(item.id) === String(select.value)
     );
@@ -8808,3 +9179,90 @@ document.getElementById("confirmCycleReset")?.addEventListener("click", () => {
 
     showToast(`Ciclo de ${subject.name} reiniciado!`);
 });
+
+/* Confirmação adicional exclusiva para reiniciar todas as matérias. */
+(function initCycleResetAllConfirmation() {
+    const overlay = document.getElementById("cycleResetAllConfirmOverlay");
+    if (!overlay) return;
+
+    const close = () => {
+        overlay.classList.add("hidden");
+        if (document.getElementById("cycleResetOverlay")?.classList.contains("hidden")) {
+            document.body.classList.remove("conc-modal-open");
+        }
+    };
+
+    document.getElementById("cancelCycleResetAll")?.addEventListener("click", close);
+    document.getElementById("closeCycleResetAll")?.addEventListener("click", close);
+    overlay.addEventListener("click", event => {
+        if (event.target === overlay) close();
+    });
+
+    document.getElementById("confirmCycleResetAll")?.addEventListener("click", () => {
+        if (!subjects.length) {
+            close();
+            showToast("Nenhuma matéria cadastrada.");
+            return;
+        }
+
+        subjects.forEach(subject => {
+            subject.cycleResetMinutes = getSubjectStudiedMinutes(subject.name);
+            subject.cycleResetQuestions = cycleQuestionsDone(subject.name);
+        });
+
+        saveSubjects();
+        close();
+        closeCycleResetModal();
+        updateAll();
+        showToast("Ciclo de todas as matérias reiniciado!");
+    });
+})();
+
+
+/* SUPORTE — compõe a solicitação no Gmail sem enviar automaticamente. */
+(function initCalibreSupportForm() {
+    const form = document.getElementById("calibreSupportForm");
+    const category = document.getElementById("calibreSupportCategory");
+    const message = document.getElementById("calibreSupportMessage");
+    const status = document.getElementById("calibreSupportStatus");
+    if (!form || !category || !message) return;
+
+    form.addEventListener("submit", event => {
+        event.preventDefault();
+        const selected = category.options[category.selectedIndex];
+        const subject = selected && category.value ? selected.textContent.trim() : "";
+        const description = message.value.trim();
+
+        if (!subject) {
+            if (status) status.textContent = "Selecione um assunto antes de continuar.";
+            category.focus();
+            return;
+        }
+        if (description.length < 10 || description.length > 3000) {
+            if (status) status.textContent = "Descreva sua solicitação com 10 a 3000 caracteres.";
+            message.focus();
+            return;
+        }
+
+        const emailSubject = `CALIBRE - Suporte - ${subject}`;
+        const emailBody = `Olá, equipe CALIBRE!\n\nAssunto: ${subject}\n\nDescrição da solicitação:\n${description}\n\nEnviado pela aba Suporte do CALIBRE.`;
+        // mailto: permite que o Android ofereça o aplicativo Gmail para compor o e-mail.
+        const url = "mailto:concursadoia@gmail.com" +
+            "?subject=" + encodeURIComponent(emailSubject) +
+            "&body=" + encodeURIComponent(emailBody);
+
+        // No computador, abre a composição no Gmail Web.
+        // No celular, preserva o comportamento atual com mailto:.
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        if (isMobile) {
+            window.location.href = url;
+        } else {
+            const gmailUrl = "https://mail.google.com/mail/?view=cm&fs=1" +
+                "&to=" + encodeURIComponent("concursadoia@gmail.com") +
+                "&su=" + encodeURIComponent(emailSubject) +
+                "&body=" + encodeURIComponent(emailBody);
+            window.open(gmailUrl, "_blank", "noopener,noreferrer");
+        }
+        if (status) status.textContent = "Confira a mensagem no Gmail, anexe um print se desejar e clique em Enviar. O CALIBRE não envia o e-mail automaticamente.";
+    });
+})();;

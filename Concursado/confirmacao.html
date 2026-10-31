@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#07110d">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Confirmação de acesso | CALIBRE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{color-scheme:dark;--bg:#07110d;--card:#0e1c16;--green:#009739;--light:#16c75b;--text:#f4f7f5;--muted:#9ca9a2;--border:rgba(255,255,255,.1)}
+    *{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 80% 0%,rgba(0,151,57,.15),transparent 45%),var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;display:grid;place-items:center;padding:24px}
+    main{width:min(510px,100%);padding:42px 30px;text-align:center;border:1px solid var(--border);border-radius:20px;background:linear-gradient(145deg,rgba(255,255,255,.035),rgba(255,255,255,.012)),var(--card);box-shadow:0 24px 70px rgba(0,0,0,.23)}
+    .brand{font-weight:800;letter-spacing:2px;color:#8cffb4;font-size:15px;margin-bottom:30px}.symbol{width:76px;height:76px;border:1px solid rgba(22,199,91,.28);background:rgba(0,151,57,.12);border-radius:22px;margin:0 auto 22px;display:grid;place-items:center;font-size:35px;color:#83ffae}
+    h1{font-size:clamp(25px,5vw,32px);line-height:1.2;margin:0 0 13px}p{font-size:15px;line-height:1.65;color:var(--muted);margin:0 0 24px}.status{font-size:13px;color:#a9bcb0;min-height:20px;margin-bottom:20px}.actions{display:flex;flex-direction:column;gap:10px}.btn{border:0;border-radius:12px;padding:15px 20px;font:700 14px Inter,system-ui,sans-serif;text-decoration:none;cursor:pointer;display:block}.primary{background:linear-gradient(135deg,var(--green),#00b94f);color:white}.secondary{background:#13251d;color:#e8f5ec;border:1px solid var(--border)}.btn:focus-visible{outline:2px solid #8cffb4;outline-offset:3px}.fine{margin:25px 0 0;font-size:12px;color:#84948b}
+    [hidden]{display:none!important}
+  </style>
+</head>
+<body>
+  <main aria-live="polite">
+    <div class="brand">✦ CALIBRE</div>
+    <div class="symbol" id="symbol" aria-hidden="true">⌛</div>
+    <h1 id="heading">Verificando seu acesso</h1>
+    <p id="description">Estamos consultando sua assinatura. O acesso Premium é liberado após a confirmação segura do pagamento.</p>
+    <div class="status" id="status" role="status">Aguarde um instante...</div>
+    <div class="actions">
+      <a class="btn primary" href="/" id="enter">Entrar no CALIBRE</a>
+      <button class="btn secondary" id="retry" type="button" hidden>Verificar novamente</button>
+    </div>
+    <p class="fine">O pagamento e a assinatura são validados pela Hotmart e pelo Supabase.</p>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script>
+    (() => {
+      'use strict';
+      // Apenas chave pública (publishable). Nunca inserir service_role ou tokens privados aqui.
+      const SUPABASE_URL = 'https://uuhugqmakngtlrfuilyk.supabase.co';
+      const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_R5VfMPZeDtQQiCRAf5OQ4g_1yl6rjRO';
+      const heading = document.getElementById('heading');
+      const description = document.getElementById('description');
+      const status = document.getElementById('status');
+      const symbol = document.getElementById('symbol');
+      const retry = document.getElementById('retry');
+      let busy = false;
+      function display(icon, title, message, detail, canRetry) {
+        symbol.textContent = icon;
+        heading.textContent = title;
+        description.textContent = message;
+        status.textContent = detail || '';
+        retry.hidden = !canRetry;
+      }
+      async function verify() {
+        if (busy) return;
+        busy = true;
+        retry.hidden = true;
+        status.textContent = 'Consultando seu plano...';
+        try {
+          if (!window.supabase?.createClient) throw new Error('Biblioteca indisponível');
+          const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+          const { data: auth, error: authError } = await db.auth.getUser();
+          if (authError || !auth?.user) {
+            display('🔐','Entre na sua conta','Para conferir o Premium, entre no CALIBRE com o mesmo e-mail utilizado na compra.','Você poderá verificar o plano após o login.',false);
+            return;
+          }
+          const { data, error } = await db.from('user_plans')
+            .select('plan,premium_until,trial_until')
+            .eq('user_id',auth.user.id).maybeSingle();
+          if (error) throw error;
+          const activePaid = data?.plan === 'premium' && Boolean(data.premium_until) && Date.parse(data.premium_until) > Date.now();
+          if (activePaid) {
+            display('✓','Premium ativado!','Seu pagamento já foi reconhecido e seu acesso Premium está disponível no CALIBRE.','Tudo pronto para estudar!',false);
+          } else if (data?.plan === 'admin') {
+            display('✓','Acesso disponível','Sua conta possui acesso administrativo ao CALIBRE.','Você já pode entrar na plataforma.',false);
+          } else {
+            display('⌛','Aguardando confirmação','Seu acesso Premium ainda não aparece como ativo. Se acabou de pagar, aguarde a confirmação da Hotmart e verifique novamente.','Nenhum acesso é liberado apenas por abrir esta página.',true);
+          }
+        } catch (error) {
+          console.error('CALIBRE: não foi possível verificar o plano:',error);
+          display('!','Não foi possível verificar agora','Houve uma falha de conexão ou consulta. Seu pagamento não foi alterado.','Tente novamente em instantes ou entre no CALIBRE.',true);
+        } finally { busy = false; }
+      }
+      retry.addEventListener('click',verify);
+      void verify();
+    })();
+  </script>
+</body>
+</html>
