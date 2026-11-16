@@ -2374,7 +2374,7 @@
 
 
 
-                       <svg viewBox="0 0 800 260" preserveAspectRatio="none">
+                       <svg viewBox="0 0 800 300" preserveAspectRatio="none">
 
     <g id="simulationChartBars"></g>
 
@@ -2413,8 +2413,7 @@
                         Aproveitamento por simulado
 
                     </h2>
-
-
+                    <p class="simulation-average-help">O percentual considera a média geral do seu desempenho em todas as tentativas registradas para cada simulado.</p>
 
 
 
@@ -2737,6 +2736,9 @@
                                 required>
                         </label>
 
+                        <label>Cor do simulado
+                            <div class="subject-color-control"><input id="simulationColorInput" type="hidden" value="#16c75b"><button type="button" class="conc-color-trigger" data-color-for="simulationColorInput"><span class="conc-color-dot" style="background:#16c75b"></span> Escolher cor</button></div>
+                        </label>
 
                         <div class="form-actions">
 
@@ -2830,22 +2832,51 @@
 
 
 
-            <div id="simulationResultOverlay" class="simulation-end-overlay hidden" role="dialog" aria-modal="true"
-                aria-labelledby="simulationResultTitle">
-                <div class="card simulation-end-modal" style="width:min(480px,100%)">
-                    <span class="eyebrow">RESULTADO DO SIMULADO</span>
-                    <h2 id="simulationResultTitle">Finalizar simulado</h2>
-                    <p id="simulationResultDescription">Informe o número de acertos para registrar seu desempenho.</p>
-                    <form id="simulationResultForm" class="simulation-result-form">
-                        <label>Total de questões
-                            <input id="simulationResultQuestions" type="number" readonly>
-                        </label>
-                        <label>Quantas questões você acertou?
-                            <input id="simulationResultCorrect" type="number" min="0" step="1" required>
-                        </label>
+            <div id="simulationResultOverlay" class="conc-modal-overlay hidden" role="presentation">
+                <div class="card conc-modal simulation-result-modal" role="dialog" aria-modal="true"
+                    aria-labelledby="simulationResultTitle">
+                    <div class="conc-modal-heading">
+                        <h2 id="simulationResultTitle">Resultado do simulado</h2>
+                        <button type="button" id="cancelSimulationResult" class="icon-btn" aria-label="Fechar">✕</button>
+                    </div>
+                    <p id="simulationResultDescription">Informe seu desempenho e registre observações para identificar melhor esta tentativa.</p>
+                    <form id="simulationResultForm" class="conc-modal-form simulation-result-form">
+                        <div class="simulation-result-fields">
+                            <label>Total de questões
+                                <input id="simulationResultQuestions" type="number" readonly>
+                            </label>
+                            <label>Quantas questões você acertou?
+                                <input id="simulationResultCorrect" type="number" min="0" step="1" required>
+                            </label>
+                        </div>
                         <div id="simulationResultSubjects" class="simulation-result-subjects"></div>
-                        <div class="form-actions">
-                            <button type="button" id="cancelSimulationResult" class="secondary-btn">Cancelar</button>
+                        <div class="simulation-observations-fields">
+                            <h3>Observações da tentativa</h3>
+                            <label>Plataforma utilizada
+                                <input id="simulationResultPlatform" type="text" maxlength="80" placeholder="Ex.: Qconcursos, Gran, Estratégia...">
+                            </label>
+                            <div class="simulation-result-fields">
+                                <label>Assistiu às aulas?
+                                    <select id="simulationResultWatchedClasses">
+                                        <option value="">Não informado</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                                <label>Fez redação?
+                                    <select id="simulationResultEssay">
+                                        <option value="">Não informado</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <label>Comentários
+                                <textarea id="simulationResultComment" rows="3" maxlength="500" placeholder="Anotações sobre esta tentativa..."></textarea>
+                            </label>
+                        </div>
+                        <div class="conc-modal-actions">
+                            <button type="button" id="cancelSimulationResultSecondary" class="secondary-btn">Cancelar</button>
                             <button type="submit" class="primary-btn">💾 Salvar resultado</button>
                         </div>
                     </form>
@@ -3198,8 +3229,9 @@
 
                     </label>
 
-
-
+                    <label>Cor do simulado
+                        <div class="subject-color-control"><input id="settingsSimulationColor" type="hidden" value="#16c75b"><button type="button" class="conc-color-trigger" data-color-for="settingsSimulationColor"><span class="conc-color-dot" style="background:#16c75b"></span> Escolher cor</button></div>
+                    </label>
 
 
                     <div class="form-actions">
@@ -3468,6 +3500,7 @@
                         placeholder="02:00:00" required></label>
                 <label>Quantidade de questões<input id="modalSimulationQuestions" type="number" min="1"
                         required></label>
+                <label>Cor do simulado<div class="subject-color-control"><input id="modalSimulationColor" type="hidden" value="#16c75b"><button type="button" class="conc-color-trigger" data-color-for="modalSimulationColor"><span class="conc-color-dot" style="background:#16c75b"></span> Escolher cor</button></div></label>
                 <div class="subject-edit-actions"><button id="cancelSimulationModal" type="button"
                         class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar
                         alterações</button></div>
@@ -3553,7 +3586,7 @@
     <div id="subjectPaletteOverlay" class="conc-modal-overlay hidden" role="presentation">
         <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="subjectPaletteTitle">
             <div class="conc-modal-heading">
-                <h2 id="subjectPaletteTitle">🎨 Cor da matéria</h2><button type="button" class="icon-btn"
+                <h2 id="subjectPaletteTitle">🎨 Escolher cor</h2><button type="button" class="icon-btn"
                     id="closeSubjectPalette" aria-label="Fechar">✕</button>
             </div>
             <p>Escolha uma cor para identificar sua matéria no ciclo e nos gráficos.</p>

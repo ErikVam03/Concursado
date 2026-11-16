@@ -2985,7 +2985,8 @@ function renderSettingsSubjects() {
 
 
         item.className =
-            "settings-item";
+            "settings-item subject-color-card";
+        item.style.setProperty("--subject-card-color", getSubjectColor(subject.name));
 
 
         item.innerHTML = `
@@ -4862,6 +4863,18 @@ function updateDashboardSummary() {
    SIMULADOS
 ========================================================= */
 
+const SIMULATION_PALETTE = ["#16c75b", "#3b82f6", "#a855f7", "#f59e0b", "#06b6d4", "#ef4444", "#ec4899"];
+function getSimulationColor(simulation) {
+    const color = String(simulation?.color || "");
+    if (/^#[0-9a-fA-F]{6}$/.test(color)) return color;
+    const index = simulations.findIndex(item => String(item.id) === String(simulation?.id));
+    return SIMULATION_PALETTE[Math.max(0, index) % SIMULATION_PALETTE.length];
+}
+function selectedSimulationColor(inputId, fallback = "#16c75b") {
+    const color = document.getElementById(inputId)?.value || fallback;
+    return /^#[0-9a-fA-F]{6}$/.test(color) ? color : fallback;
+}
+
 function renderSimulationSelect() {
 
     const select =
@@ -5305,6 +5318,7 @@ if (simulationForm) {
             minutes,
             seconds,
             questions,
+            color: selectedSimulationColor("simulationColorInput"),
             correct: 0,
             subjects: []
         };
@@ -5376,7 +5390,7 @@ function renderSimulationList(
             .map(
                 simulation => `
 
-                    <div class="saved-simulation-item">
+                    <div class="saved-simulation-item simulation-color-card" style="--sim-color:${getSimulationColor(simulation)}">
 
                         <div class="saved-simulation-info">
 
@@ -5601,6 +5615,7 @@ if (settingsSimulationForm) {
                             1,
                             questions
                         );
+                    simulation.color = selectedSimulationColor("settingsSimulationColor", getSimulationColor(simulation));
 
                 }
 
@@ -5644,6 +5659,7 @@ if (settingsSimulationForm) {
                             questions
                         ),
 
+                    color: selectedSimulationColor("settingsSimulationColor"),
                     correct: 0,
 
                     subjects: []
@@ -5710,7 +5726,7 @@ function renderSettingsSimulations() {
             .map(
                 simulation => `
 
-                    <div class="settings-item">
+                    <div class="settings-item simulation-color-card" style="--sim-color:${getSimulationColor(simulation)}">
 
                         <div class="settings-item-info">
 
@@ -5812,6 +5828,7 @@ function editSimulation(id) {
     document.getElementById('modalSimulationTime').value =
         [hours, minutes, 0].map(n => String(n).padStart(2, '0')).join(':');
     document.getElementById('modalSimulationQuestions').value = simulation.questions || 0;
+    document.getElementById('modalSimulationColor').value = getSimulationColor(simulation);
     overlay.classList.remove('hidden');
     document.body.classList.add('subject-edit-open');
     document.getElementById('modalSimulationName').focus();
@@ -5836,6 +5853,7 @@ document.getElementById('simulationEditModalForm')?.addEventListener('submit', e
     simulation.hours = Number(match[1]);
     simulation.minutes = Number(match[2]) + Number(match[3]) / 60;
     simulation.questions = questions;
+    simulation.color = selectedSimulationColor("modalSimulationColor", getSimulationColor(simulation));
     saveSimulations();
     closeSimulationEditModal();
     renderSimulationSelect();
@@ -6061,7 +6079,7 @@ function renderSimulationStatistics() {
             });
 
             info.innerHTML = `
-            <div class="simulation-selected-summary">
+            <div class="simulation-selected-summary simulation-color-card" style="--sim-color:${getSimulationColor(simulation)}">
                 <strong>${escapeHTML(simulation.name)}</strong>
 
                 <div class="simulation-selected-grid">
@@ -6093,135 +6111,137 @@ function renderSimulationStatistics() {
 }
 
 
+// Janela de detalhes de uma tentativa, no padrão visual do CALIBRE.
+function openSimulationAttemptDetails(item) {
+    let overlay = document.getElementById("calibreAttemptDetailsOverlay");
+    if (!overlay) {
+        overlay = document.createElement("div");
+        overlay.id = "calibreAttemptDetailsOverlay";
+        overlay.className = "conc-modal-overlay hidden";
+        overlay.style.zIndex = "100005";
+        document.body.appendChild(overlay);
+        overlay.addEventListener("click", event => {
+            if (event.target === overlay) closeSimulationAttemptDetails();
+        });
+    }
+    const obs = item.observations || {};
+    const value = (text) => escapeHTML(String(text || "Não informado"));
+    const choice = (text) => text === "sim" ? "Sim" : text === "nao" ? "Não" : (text || "Não informado");
+    const percent = item.percent.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+    overlay.innerHTML = `
+        <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="calibreAttemptDetailsTitle" style="max-width:530px;width:min(94vw,530px);max-height:88vh;overflow-y:auto;background:#0d2018;color:#f4f7f5;border:1px solid #284237;box-shadow:0 22px 65px rgba(0,0,0,.55)">
+            <div class="conc-modal-heading" style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+                <div><small style="color:${item.color};font-weight:800">DETALHES DA TENTATIVA</small><h2 id="calibreAttemptDetailsTitle" style="margin:5px 0">${escapeHTML(item.name)}</h2></div>
+                <button type="button" class="secondary-btn" id="calibreCloseAttemptDetails" aria-label="Fechar">✕</button>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0">
+                ${[["Aproveitamento",percent+"%"],["Questões",item.questions],["Acertos",item.correct],["Data",item.date || "Não informada"]].map(([label,val]) => `<div style="background:#10291e;border:1px solid #284237;border-radius:10px;padding:12px"><small style="display:block;color:#9ca9a2;margin-bottom:5px">${label}</small><strong>${escapeHTML(String(val))}</strong></div>`).join("")}
+            </div>
+            <h3 style="margin:0 0 10px">Observações</h3>
+            <div style="background:#10291e;border:1px solid #284237;border-radius:10px;padding:14px;line-height:1.8;overflow-wrap:anywhere">
+                <div><strong>Plataforma:</strong> ${value(obs.platform)}</div>
+                <div><strong>Assistiu às aulas:</strong> ${value(choice(obs.watchedClasses))}</div>
+                <div><strong>Fez redação:</strong> ${value(choice(obs.essay))}</div>
+                <div style="margin-top:9px"><strong>Comentário:</strong><div style="white-space:pre-wrap;color:#c9d5ce">${value(obs.comment)}</div></div>
+            </div>
+            <div class="conc-modal-actions" style="margin-top:18px;display:flex;justify-content:flex-end"><button type="button" class="primary-btn" id="calibreDoneAttemptDetails">Fechar</button></div>
+        </div>`;
+    overlay.querySelector("#calibreCloseAttemptDetails").addEventListener("click", closeSimulationAttemptDetails);
+    overlay.querySelector("#calibreDoneAttemptDetails").addEventListener("click", closeSimulationAttemptDetails);
+    overlay.classList.remove("hidden");
+    document.body.classList.add("conc-modal-open");
+    overlay.querySelector("#calibreCloseAttemptDetails").focus();
+}
+function closeSimulationAttemptDetails() {
+    document.getElementById("calibreAttemptDetailsOverlay")?.classList.add("hidden");
+    document.body.classList.remove("conc-modal-open");
+}
+document.addEventListener("keydown", event => {
+    if (event.key === "Escape" && !document.getElementById("calibreAttemptDetailsOverlay")?.classList.contains("hidden")) closeSimulationAttemptDetails();
+});
+
 function renderSimulationEvolution() {
     const container = document.getElementById("simulationChartBars");
+    const svg = container?.ownerSVGElement;
     const labels = document.getElementById("simulationChartLabels");
+    if (!container || !svg || !labels) return;
 
-    if (!container || !labels) return;
-
-    if (!simulations.length) {
-        container.innerHTML = "";
-        labels.innerHTML = "";
-        return;
+    // Orientação discreta sobre as barras clicáveis, sem alterar o HTML/CSS original.
+    const chart = svg.closest(".line-chart");
+    if (chart && !document.getElementById("calibreChartClickHint")) {
+        const hint = document.createElement("p");
+        hint.id = "calibreChartClickHint";
+        hint.setAttribute("role", "note");
+        hint.innerHTML = '<span aria-hidden="true" style="font-size:15px">☝</span> Clique em uma barra para visualizar os detalhes do simulado.';
+        hint.style.cssText = "display:flex;align-items:center;gap:8px;margin:12px 0 0;color:#9db9ac;font-size:12px;line-height:1.5;";
+        chart.parentNode.insertBefore(hint, chart);
     }
 
-    const data = simulations.flatMap(simulation => {
-
-        const attempts = Array.isArray(simulation.attempts)
-            ? simulation.attempts
-            : [];
-
-        return attempts.map((attempt, index) => {
-
+    const data = simulations.flatMap(simulation =>
+        (Array.isArray(simulation.attempts) ? simulation.attempts : []).map((attempt, index) => {
             const questions = Number(attempt.questions || 0);
             const correct = Number(attempt.correct || 0);
-
-            const percent = questions > 0
-                ? Math.max(0, Math.min(100, (correct / questions) * 100))
-                : 0;
-
+            const obs = attempt.observations || {};
+            const observationParts = [
+                obs.platform,
+                obs.watchedClasses === "sim" ? "Aulas: sim" : obs.watchedClasses === "nao" ? "Aulas: não" : "",
+                obs.essay === "sim" ? "Redação: sim" : obs.essay === "nao" ? "Redação: não" : "",
+                obs.comment
+            ].filter(Boolean);
             return {
                 name: `${simulation.name} #${index + 1}`,
-                percent,
-                date: attempt.date
+                color: getSimulationColor(simulation),
+                percent: questions > 0 ? Math.max(0, Math.min(100, correct / questions * 100)) : 0,
+                observation: observationParts.join(" • "),
+                observations: obs,
+                questions, correct, date: attempt.date
             };
+        })
+    );
 
-        });
-
-    });
-
-
-    const width = 800;
-    const top = 35;
-    const bottom = 195;
-    const chartHeight = bottom - top;
-    const left = 55;
-    const right = 790;
-    const chartWidth = right - left;
-    const slot = chartWidth / data.length;
-    const barWidth = Math.min(110, slot * 0.65);
-
-    let html = "";
-
-    [0, 25, 50, 75, 100].forEach(value => {
-        const y = bottom - (value / 100) * chartHeight;
-
-        html += `
-            <line
-                x1="${left}" y1="${y}"
-                x2="${right}" y2="${y}"
-                stroke="rgba(255,255,255,0.12)"
-                stroke-dasharray="8 8"
-            />
-
-            <text
-                x="${left - 10}" y="${y + 5}"
-                text-anchor="end"
-                fill="#9ca9a2"
-                font-size="15"
-            >${value}%</text>
-        `;
-    });
-
-    data.forEach((item, index) => {
-        const center = left + slot * (index + 0.5);
-        const x = center - barWidth / 2;
-        const barHeight = item.percent / 100 * chartHeight;
-        const y = bottom - barHeight;
-
-        const percentText = item.percent.toLocaleString("pt-BR", {
-            maximumFractionDigits: 1
-        });
-
-        html += `
-            <rect
-                x="${x}"
-                y="${y}"
-                width="${barWidth}"
-                height="${barHeight}"
-                rx="7"
-                fill="#16c75b"
-            >
-                <title>${escapeHTML(item.name)}: ${percentText}%</title>
-            </rect>
-
-            <text
-                x="${center}"
-                y="${Math.max(20, y - 8)}"
-                text-anchor="middle"
-                fill="#ffffff"
-                font-size="17"
-                font-weight="700"
-            >${percentText}%</text>
-        `;
-    });
-
-    data.forEach((item, index) => {
-        const center = left + slot * (index + 0.5);
-
-        const name = String(item.name || "");
-
-        const shortName = name.length > 14
-            ? name.slice(0, 12) + "…"
-            : name;
-
-        html += `
-        <text
-            x="${center}"
-            y="230"
-            text-anchor="middle"
-            fill="#9ca9a2"
-            font-size="13"
-        >
-            <title>${escapeHTML(name)}</title>
-            ${escapeHTML(shortName)}
-        </text>
-    `;
-    });
-
-    container.innerHTML = html;
-
+    const width = Math.max(800, 100 + data.length * 120);
+    const left = 64, right = width - 30, top = 52, bottom = 345;
+    const height = bottom - top;
+    svg.setAttribute("viewBox", `0 0 ${width} 440`);
+    svg.style.width = `${width}px`;
+    svg.style.height = "440px";
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
     labels.innerHTML = "";
+
+    if (!data.length) {
+        container.innerHTML = `<text x="${width / 2}" y="215" text-anchor="middle" fill="#9ca9a2" font-size="16">Nenhuma tentativa registrada ainda.</text>`;
+        return;
+    }
+    let output = "";
+    [0, 25, 50, 75, 100].forEach(value => {
+        const y = bottom - value / 100 * height;
+        output += `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="rgba(255,255,255,.11)" stroke-dasharray="5 6" />`;
+        output += `<text x="${left - 12}" y="${y + 5}" text-anchor="end" fill="#9ca9a2" font-size="14">${value}%</text>`;
+    });
+    const slot = (right - left) / data.length;
+    const barWidth = Math.min(68, slot * .62);
+    data.forEach((item, index) => {
+        const center = left + slot * (index + .5);
+        const h = item.percent / 100 * height;
+        const y = bottom - h;
+        const value = item.percent.toLocaleString("pt-BR", {maximumFractionDigits: 1});
+        const shortName = item.name.length > 18 ? item.name.slice(0, 16) + "…" : item.name;
+        output += `<rect class="calibre-attempt-bar" data-attempt-index="${index}" tabindex="0" role="button" aria-label="Ver detalhes do simulado ${escapeHTML(item.name)}" x="${center - barWidth / 2}" y="${y}" width="${barWidth}" height="${Math.max(h, 2)}" rx="7" fill="${item.color}" style="cursor:pointer;outline-offset:3px"><title>Clique para ver detalhes do simulado ${escapeHTML(item.name)}</title></rect>`;
+        output += `<text x="${center}" y="${Math.max(24, y - 11)}" text-anchor="middle" fill="#f4f7f5" font-size="17" font-weight="700">${value}%</text>`;
+        output += `<text x="${center}" y="374" text-anchor="middle" fill="${item.color}" font-size="12" font-weight="700"><title>${escapeHTML(item.name)}</title>${escapeHTML(shortName)}</text>`;
+        if (item.observation) {
+            const shortObs = item.observation.length > 22 ? item.observation.slice(0, 20) + "…" : item.observation;
+            output += `<text x="${center}" y="395" text-anchor="middle" fill="#9ca9a2" font-size="10"><title>${escapeHTML(item.observation)}</title>(${escapeHTML(shortObs)})</text>`;
+        }
+    });
+    container.innerHTML = output;
+    container.querySelectorAll(".calibre-attempt-bar").forEach(bar => {
+        const open = () => openSimulationAttemptDetails(data[Number(bar.dataset.attemptIndex)]);
+        bar.addEventListener("click", open);
+        bar.addEventListener("keydown", event => {
+            if (event.key === "Enter" || event.key === " ") { event.preventDefault(); open(); }
+        });
+    });
 }
 
 
@@ -6249,11 +6269,12 @@ function renderSimulationSubjects() {
 
         const questions = Number(simulation.questions);
         const correct = Number(simulation.correct || 0);
-
-        const percent = Math.max(
-            0,
-            Math.min(100, (correct / questions) * 100)
-        );
+        const attempts = (Array.isArray(simulation.attempts) ? simulation.attempts : [])
+            .filter(attempt => Number(attempt.questions) > 0);
+        const percent = attempts.length
+            ? attempts.reduce((sum, attempt) => sum + Math.max(0, Math.min(100,
+                Number(attempt.correct || 0) / Number(attempt.questions) * 100)), 0) / attempts.length
+            : Math.max(0, Math.min(100, (correct / questions) * 100));
 
         const percentText = percent.toLocaleString("pt-BR", {
             maximumFractionDigits: 1
@@ -6266,13 +6287,13 @@ function renderSimulationSubjects() {
                     class="bar-label"
                     title="${escapeHTML(simulation.name)}"
                 >
-                    ${escapeHTML(simulation.name)}
+                    <i class="simulation-color-dot" style="background:${getSimulationColor(simulation)}"></i>${escapeHTML(simulation.name)}
                 </span>
 
                 <div class="simulation-bar-track">
                     <div
                         class="simulation-bar-fill"
-                        style="width:${percent}%"
+                        style="width:${percent}%;background:${getSimulationColor(simulation)}"
                     ></div>
                 </div>
 
@@ -6494,7 +6515,13 @@ document.getElementById("simulationResultForm")?.addEventListener("submit", even
         correct: correct,
         percent: questions > 0
             ? (correct / questions) * 100
-            : 0
+            : 0,
+        observations: {
+            platform: document.getElementById("simulationResultPlatform")?.value.trim() || "",
+            watchedClasses: document.getElementById("simulationResultWatchedClasses")?.value || "",
+            essay: document.getElementById("simulationResultEssay")?.value || "",
+            comment: document.getElementById("simulationResultComment")?.value.trim() || ""
+        }
     };
 
     if (!Array.isArray(simulation.attempts)) {
@@ -8893,6 +8920,7 @@ document.querySelectorAll("[data-color-for]").forEach(trigger => {
     trigger.addEventListener("click", () => {
         activeSubjectColorInput = document.getElementById(trigger.dataset.colorFor);
         if (!activeSubjectColorInput || !paletteOverlay) return;
+        document.getElementById("subjectPaletteTitle").textContent = trigger.dataset.colorFor.toLowerCase().includes("simulation") ? "🎨 Cor do simulado" : "🎨 Cor da matéria";
         selectedSubjectPaletteColor = activeSubjectColorInput.value || "#22c55e";
         paletteHex.value = selectedSubjectPaletteColor;
         paletteHex.setCustomValidity("");
@@ -8939,7 +8967,7 @@ document.addEventListener("keydown", event => {
 
 // Mantém os indicadores atualizados após a abertura da edição e o cadastro.
 document.addEventListener("click", event => {
-    if (event.target.closest("[data-edit-subject], [data-color-for], [data-settings-tab]")) {
+    if (event.target.closest("[data-edit-subject], [data-edit-simulation], [data-color-for], [data-settings-tab]")) {
         queueMicrotask(syncSubjectColorTriggers);
     }
 });

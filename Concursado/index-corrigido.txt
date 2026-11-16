@@ -1,0 +1,3658 @@
+<!DOCTYPE html>
+
+<html lang="pt-BR">
+
+
+
+<head>
+
+    <meta charset="UTF-8">
+
+
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+
+
+    <meta name="theme-color" content="#07110d">
+
+
+
+    <meta name="description" content="Calibre — organize seus estudos, acompanhe seu desempenho e evolua.">
+
+
+
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="192x192"
+        href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="512x512"
+        href="icons/icon-512.png">
+
+
+
+    <title>CALIBRE</title>
+
+
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+
+
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+
+
+    <link rel="stylesheet" href="style.css">
+
+
+
+    <style>
+        /* Janela de registro ao finalizar Pomodoro/Cronômetro */
+
+        .study-completion-overlay {
+
+            position: fixed;
+
+            inset: 0;
+
+            z-index: 9999;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            padding: 20px;
+
+            background: rgba(0, 0, 0, 0.72);
+
+            backdrop-filter: blur(6px);
+
+        }
+
+
+
+        .study-completion-overlay.hidden {
+
+            display: none;
+
+        }
+
+
+
+        .study-completion-modal {
+
+            width: min(560px, 100%);
+
+            max-height: calc(100vh - 40px);
+
+            overflow-y: auto;
+
+            margin: 0;
+
+            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+
+            animation: studyCompletionIn 0.18s ease-out;
+
+        }
+
+
+
+        .completion-modal-open {
+
+            overflow: hidden;
+
+        }
+
+
+
+        @keyframes studyCompletionIn {
+
+            from {
+                opacity: 0;
+                transform: translateY(12px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+        }
+
+
+
+        .completion-time-hint {
+
+            color: var(--muted);
+
+            font-size: 11px;
+
+            line-height: 1.4;
+
+        }
+    </style>
+
+</head>
+
+
+<script>
+    if ("serviceWorker" in navigator) {
+        window.addEventListener("load", function () {
+            navigator.serviceWorker.register("./service-worker.js")
+                .then(function (registration) {
+                    console.log("Service Worker registrado com sucesso:", registration);
+                })
+                .catch(function (error) {
+                    console.log("Falha ao registrar o Service Worker:", error);
+                });
+        });
+    }
+</script>
+
+
+<body class="auth-locked">
+    <div id="authScreen" class="auth-screen">
+        <div class="auth-panel">
+            <div class="auth-logo">✦ CALIBRE</div>
+            <h1 id="authHeading">Entre para continuar</h1>
+            <p class="auth-subtitle">Seu espaço para evoluir nos estudos.</p>
+            <p id="authStatus" class="auth-status" role="status">Conectando...</p>
+            <form id="authForm" hidden><label>E-mail<input id="authEmail" type="email" autocomplete="email"
+                        required></label><label>Senha<input id="authPassword" type="password"
+                        autocomplete="current-password" minlength="8" required></label><button class="auth-primary"
+                    id="authSubmit" type="submit">Entrar</button></form><button id="authGoogle" class="auth-google"
+                hidden type="button">Continuar com Google</button>
+            <div class="auth-links"><button id="authSwitch" hidden type="button">Criar uma conta</button><button
+                    id="authForgot" hidden type="button">Esqueci minha senha</button></div>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- =====================================================
+
+     HEADER
+
+\===================================================== -->
+
+
+
+    <header class="topbar">
+
+
+
+        <div class="brand">
+
+
+
+            <img src="logo-calibre.png" class="brand-flag" alt="Logo CALIBRE">
+
+
+
+            <strong>
+
+                CALIBRE
+
+            </strong>
+
+
+
+        </div>
+
+
+
+
+
+        <!-- MENU DESKTOP -->
+
+
+
+        <nav class="desktop-nav">
+
+
+
+            <button data-section="inicio" class="active">
+
+                🚀 Painel
+
+            </button>
+
+
+
+            <button data-section="iniciar">
+
+                ✅ Iniciar
+
+            </button>
+
+
+
+            <button data-section="ciclo">
+
+                📚 Ciclo
+
+            </button>
+
+
+
+            <button data-section="historico">
+
+                💾 Histórico
+
+            </button>
+
+
+
+            <button data-section="estatisticas">
+
+                🔥 Estatísticas
+
+            </button>
+
+
+
+            <button data-section="simulado">
+
+                ✏️ Simulado
+
+            </button>
+
+
+
+            <button data-section="creditos">
+
+                ✨ Créditos
+
+            </button>
+
+
+
+            <button data-section="suporte">
+                🛠️ Suporte
+            </button>
+
+            <button data-section="configuracoes">
+
+                ⚙️ Configurações
+
+            </button>
+
+
+
+        </nav>
+
+
+
+
+
+        <div class="top-actions">
+            <div id="authAccount" class="auth-account" hidden>
+                <details class="auth-account-details">
+                    <summary aria-label="Minha conta" title="Minha conta"><span id="authAvatarFallback"
+                            class="auth-avatar-fallback">👤</span><img id="authAvatar" class="auth-avatar"
+                            alt="Foto do perfil" referrerpolicy="no-referrer" hidden></summary>
+                    <div class="auth-account-dropdown">
+                        <div class="auth-account-header">
+                            <div class="auth-account-header-photo">
+                                <img id="authMenuAvatar" alt="Foto do perfil" hidden>
+                                <span id="authMenuAvatarFallback" aria-hidden="true">♙</span>
+                            </div>
+                            <div class="auth-profile-meta">
+                                <strong id="authUserName">Minha conta</strong>
+                                <span id="authUserEmail"></span>
+                                <small id="authMenuPlan">Plano FREE</small>
+                            </div>
+                        </div>
+                        <div class="auth-account-divider"></div>
+                        <button id="authEditProfile" type="button"><span aria-hidden="true">♙</span> Editar perfil</button>
+                        <button id="authChangePhoto" type="button"><span aria-hidden="true">▣</span> Alterar foto</button>
+                        <button id="authSubscription" type="button"><span aria-hidden="true">♕</span> Minha assinatura</button>
+                        <button id="authPremiumBtn" type="button" hidden>👑 Assinar Premium</button>
+                        <div class="auth-account-divider"></div>
+                        <button id="authLogout" type="button"><span aria-hidden="true">⇥</span> Sair da conta</button>
+                    </div>
+                </details>
+            </div>
+            <button id="menuBtn" class="icon-btn" aria-label="Abrir menu">☰</button>
+            <button id="installBtn" class="install-btn">📱 Instalar</button>
+        </div>
+
+
+
+    </header>
+
+
+
+
+
+
+
+    <!-- =====================================================
+
+     MENU MOBILE
+
+\===================================================== -->
+
+
+
+    <div id="mobileMenu" class="mobile-menu">
+
+
+
+        <button data-section="inicio" class="active">
+
+            🚀 Painel
+
+        </button>
+
+
+
+        <button data-section="iniciar">
+
+            ✅ Iniciar
+
+        </button>
+
+
+
+        <button data-section="ciclo">
+
+            📚 Ciclo
+
+        </button>
+
+
+
+        <button data-section="historico">
+
+            💾 Histórico
+
+        </button>
+
+
+
+        <button data-section="estatisticas">
+
+            🔥 Estatísticas
+
+        </button>
+
+
+
+        <button data-section="simulado">
+
+            ✏️ Simulado
+
+        </button>
+
+
+
+        <button data-section="creditos">
+
+            ✨ Créditos
+
+        </button>
+
+
+
+        <button data-section="suporte">
+            🛠️ Suporte
+        </button>
+
+        <button data-section="configuracoes">
+
+            ⚙️ Configurações
+
+        </button>
+
+
+
+    </div>
+
+
+
+
+
+
+
+    <!-- =====================================================
+
+     MAIN
+
+\===================================================== -->
+
+
+
+    <main>
+
+
+
+
+
+
+
+        <!-- =====================================================
+
+     PAINEL
+
+\===================================================== -->
+
+
+
+        <section id="inicio" class="section active">
+
+
+
+
+
+            <div class="welcome">
+
+
+
+                <span class="eyebrow">
+
+                    SEU PLANO DE ESTUDOS
+
+                </span>
+
+
+
+                <h1 id="greeting">
+
+                    Bom dia!
+
+                </h1>
+
+
+
+                <p>
+
+                    Organize seus estudos e acompanhe sua evolução.
+
+                </p>
+
+
+
+                <button class="primary-btn" data-section="iniciar">
+
+                    🚀 Começar a estudar
+
+                </button>
+
+
+
+            </div>
+
+
+
+
+            <!-- RESUMO DO CICLO -->
+
+
+
+            <div class="dashboard-grid">
+
+
+
+
+
+                <div class="card">
+
+
+
+                    <div class="card-title">
+
+
+
+                        <div>
+
+
+
+                            <span class="eyebrow">
+
+                                CICLO ATUAL
+
+                            </span>
+
+
+
+                            <h2>
+
+                                Seu progresso
+
+                            </h2>
+
+
+
+                        </div>
+
+
+
+                        <button class="text-btn" data-section="ciclo">
+
+                            Ver ciclo →
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="cycle-content">
+
+
+
+
+
+                        <div class="donut" id="cycleDonut">
+
+
+
+                            <div>
+
+
+
+                                <strong id="cyclePercent">
+
+                                    0%
+
+                                </strong>
+
+
+
+                                <span>
+
+                                    estudado
+
+                                </span>
+
+
+
+                            </div>
+
+
+
+                        </div>
+
+
+
+
+
+
+
+                        <div class="next-activity">
+
+
+
+                            <span class="eyebrow">
+
+                                PRÓXIMA ATIVIDADE
+
+                            </span>
+
+
+
+                            <h3 id="nextSubject">
+
+                                Nenhuma matéria cadastrada
+
+                            </h3>
+
+
+
+                            <p>
+
+                                Restam
+
+                                <strong id="nextRemaining">
+
+                                    0h
+
+                                </strong>
+
+                            </p>
+
+
+
+                            <button class="primary-btn small" data-section="iniciar">
+
+                                Estudar agora
+
+                            </button>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+                <!-- ACOMPANHAMENTO -->
+
+
+
+                <div class="card">
+
+
+
+                    <div class="card-title">
+
+
+
+                        <div>
+
+
+
+                            <span class="eyebrow">
+
+                                ACOMPANHAMENTO
+
+                            </span>
+
+
+
+                            <h2>
+
+                                Últimos 7 dias
+
+                            </h2>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+                    <!--
+
+                IMPORTANTE:
+
+
+
+                A SEMANA SEMPRE COMEÇA DOMINGO.
+
+
+
+                O JavaScript vai preencher
+
+                os dias.
+
+
+
+                Quando o mês começar, por exemplo,
+
+                numa quinta-feira:
+
+
+
+                DOM | SEG | TER | QUA | QUI | SEX | SÁB
+
+                    |     |     |     |  1  |  2  |  3
+
+
+
+                Os espaços anteriores ficam vazios.
+
+            -->
+
+
+
+                    <div class="week-days" id="weekDays">
+
+
+
+                        <!-- preenchido pelo JavaScript -->
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="week-summary">
+
+
+
+                        <span>
+
+                            Horas
+
+                        </span>
+
+
+
+                        <strong id="weekHours">
+
+                            0h
+
+                        </strong>
+
+
+
+                        <span>
+
+                            Questões
+
+                        </span>
+
+
+
+                        <strong id="weekQuestions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- RESUMO RÁPIDO -->
+
+
+
+            <div class="card">
+
+
+
+                <div class="card-title">
+
+
+
+                    <div>
+
+
+
+                        <span class="eyebrow">
+
+                            RESUMO
+
+                        </span>
+
+
+
+                        <h2>
+
+                            Seu desempenho
+
+                        </h2>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <div class="stats-grid">
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Tempo estudado
+
+                        </span>
+
+
+
+                        <strong id="totalStudyTime">
+
+                            0h
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Questões
+
+                        </span>
+
+
+
+                        <strong id="totalQuestions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Aproveitamento
+
+                        </span>
+
+
+
+                        <strong id="totalAccuracy">
+
+                            0%
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Sessões registradas
+
+                        </span>
+
+
+
+                        <strong id="totalSessions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <!-- =====================================================
+
+     INICIAR
+
+\===================================================== -->
+
+
+
+        <section id="iniciar" class="section">
+
+
+
+            <div class="page-heading">
+
+                <span class="eyebrow">ESTUDO</span>
+
+                <h1>Iniciar estudo</h1>
+
+                <p>Escolha como deseja registrar seu estudo.</p>
+
+            </div>
+
+
+
+            <!-- MODOS DE ESTUDO -->
+
+            <div class="mode-tabs">
+
+                <button class="mode-tab active" data-study-mode="pomodoro">🍅 Pomodoro</button>
+
+                <button class="mode-tab" data-study-mode="stopwatch">⏱️ Cronômetro</button>
+
+                <button class="mode-tab" data-study-mode="manual">✍️ Inserir manualmente</button>
+
+            </div>
+
+
+
+            <!-- POMODORO -->
+
+            <div id="pomodoroModeBox" class="study-mode-box">
+
+                <div class="card">
+
+                    <form id="pomodoroForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <select id="sessionSubject" required>
+
+                                <option value="">Selecione uma matéria</option>
+
+                            </select>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo total
+
+                            <input type="text" id="sessionTotalMinutes" inputmode="numeric" autocomplete="off"
+                                placeholder="02:00:00" value="02:00:00" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo de foco por ciclo
+
+                            <input type="text" id="sessionFocusMinutes" inputmode="numeric" autocomplete="off"
+                                placeholder="00:50:00" value="00:50:00" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo de pausa por ciclo
+
+                            <input type="text" id="sessionBreakMinutes" inputmode="numeric" autocomplete="off"
+                                placeholder="00:10:00" value="00:10:00" required>
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" id="startPomodoroBtn" class="primary-btn">▶ Iniciar Pomodoro</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- CRONÔMETRO-->
+
+            <div id="stopwatchModeBox" class="study-mode-box hidden">
+
+                <div class="card">
+
+                    <form id="stopwatchForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <select id="stopwatchSubject" required>
+
+                                <option value="">Selecione uma matéria</option>
+
+                            </select>
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" class="primary-btn">▶ Iniciar cronômetro</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- INSERÇÃO MANUAL-->
+
+            <div id="manualModeBox" class="study-mode-box hidden">
+
+                <div class="card">
+
+                    <form id="manualStudyForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <select id="manualSubject" required>
+
+                                <option value="">Selecione uma matéria</option>
+
+                            </select>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo de estudo
+
+                            <input type="text" id="manualTime" inputmode="numeric" autocomplete="off"
+                                placeholder="00:00:00" value="00:00:00"
+                                aria-label="Tempo de estudo no formato horas:minutos:segundos">
+
+
+
+                        </label>
+
+
+
+                        <label>
+
+                            Quantidade de questões
+
+                            <input type="number" id="manualQuestions" min="0" value="0">
+
+                        </label>
+
+
+
+                        <label>
+
+                            Acertos
+
+                            <input type="number" id="manualCorrect" min="0" value="0">
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" class="primary-btn"> 💾Registrar estudo</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TIMER DO POMODORO -->
+
+            <div id="studyTimerCard" class="card timer-card hidden">
+
+                <span class="eyebrow" id="timerModeLabel">FOCO</span>
+
+                <h2 id="timerSubject">-</h2>
+
+                <div id="timerDisplay">50:00</div>
+
+                <p id="timerStatus">Sessão em andamento</p>
+
+                <div class="timer-actions">
+
+                    <button id="pauseTimer" class="secondary-btn">⏸ Pausar</button>
+
+                    <button id="finishTimer" class="danger-btn">⏹ Finalizar</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- TIMER DO CRONÔMETRO-->
+
+            <div id="stopwatchCard" class="card timer-card hidden">
+
+                <span class="eyebrow">CRONÔMETRO</span>
+
+                <h2 id="stopwatchSubjectLabel">-</h2>
+
+                <div id="stopwatchDisplay">00:00:00</div>
+
+                <p id="stopwatchStatus">Cronômetro em andamento</p>
+
+                <div class="timer-actions">
+
+                    <button id="pauseStopwatch" class="secondary-btn">⏸ Pausar</button>
+
+                    <button id="finishStopwatch" class="danger-btn">⏹ Finalizar</button>
+
+                </div>
+
+            </div>
+
+
+
+            <!-- JANELA DE FINALIZAÇÃO: APARECE APENAS AO FINALIZAR POMODORO/CRONÔMETRO -->
+
+            <div id="studyCompletionOverlay" class="study-completion-overlay hidden">
+
+                <div id="studyCompletionCard" class="card study-completion-modal">
+
+                    <div class="card-title">
+
+                        <div>
+
+                            <span class="eyebrow">ATIVIDADE FINALIZADA</span>
+
+                            <h2>Como foi seu estudo?</h2>
+
+                            <p>Informe as questões, os acertos e o tipo de estudo para salvar nas estatísticas.</p>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <form id="studyCompletionForm" class="form-grid">
+
+                        <label>
+
+                            Matéria
+
+                            <input type="text" id="completionSubject" readonly>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tempo estudado
+
+                            <input type="text" id="completionTime" inputmode="numeric" autocomplete="off"
+                                placeholder="00:00:00" aria-label="Tempo estudado no formato horas:minutos:segundos">
+
+                            <small class="completion-time-hint">Edite se precisar corrigir o tempo (HH:MM:SS).</small>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Quantidade de questões
+
+                            <input type="number" id="completionQuestions" min="0" value="0" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Acertos
+
+                            <input type="number" id="completionCorrect" min="0" value="0" required>
+
+                        </label>
+
+
+
+                        <label>
+
+                            Tipo de estudo
+
+                            <select id="completionCategory">
+
+                                <option value="Teoria">Teoria</option>
+
+                                <option value="Questões">Questões</option>
+
+
+
+                            </select>
+
+                        </label>
+
+
+
+                        <div class="form-actions">
+
+                            <button type="submit" class="primary-btn">✅ Salvar estudo</button>
+
+                        </div>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+
+
+            <datalist id="subjectsDatalist"></datalist>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <!-- =====================================================
+
+     CICLO
+
+\===================================================== -->
+
+
+
+        <section id="ciclo" class="section">
+
+
+
+
+
+            <div class="page-heading">
+
+
+
+                <span class="eyebrow">
+
+                    PLANO DE ESTUDOS
+
+                </span>
+
+
+
+                <h1>
+
+                    Seu ciclo
+
+                </h1>
+
+
+
+                <p>
+
+                    Veja quanto você já estudou de cada matéria.
+
+                </p>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- RESUMO DO CICLO -->
+
+            <div class="cycle-reset-actions">
+                <button type="button" id="openCycleReset" class="secondary-btn">
+                    🔄 Reiniciar matéria
+                </button>
+            </div>
+
+            <div class="cycle-page-summary">
+
+
+
+
+
+                <div class="cycle-summary-box">
+
+
+
+                    <span>
+
+                        PROGRESSO TOTAL
+
+                    </span>
+
+
+
+                    <strong id="cyclePagePercent">
+
+                        0%
+
+                    </strong>
+
+
+
+                </div>
+
+
+
+
+
+                <div class="cycle-summary-box">
+
+
+
+                    <span>
+
+                        PRÓXIMA ATIVIDADE
+
+                    </span>
+
+
+
+                    <strong id="cyclePageNextSubject">
+
+                        Nenhuma matéria cadastrada
+
+                    </strong>
+
+
+
+                    <p id="cyclePageNextRemaining">
+
+                        0h restantes
+
+                    </p>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- MATÉRIAS-->
+
+
+
+            <div class="card">
+
+
+
+                <div class="card-title">
+
+
+
+                    <div>
+
+
+
+                        <span class="eyebrow">
+
+                            MATÉRIAS
+
+                        </span>
+
+
+
+                        <h2>
+
+                            Progresso por matéria
+
+                        </h2>
+
+
+
+                    </div>
+
+
+
+
+
+                    <button class="text-btn" data-section="configuracoes">
+
+                        ⚙️ Configurar
+
+                    </button>
+
+
+
+                </div>
+
+
+
+
+
+                <div id="cycleSubjectsList" class="cycle-subjects-list">
+
+
+
+                    <!-- preenchido pelo JavaScript -->
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+<!-- JANELA REINICIAR MATÉRIA -->
+<div id="cycleResetOverlay" class="conc-modal-overlay hidden">
+    <div class="card conc-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="cycleResetTitle">
+
+        <div class="conc-modal-heading">
+            <h2 id="cycleResetTitle">🔄 Reiniciar matéria</h2>
+
+            <button type="button"
+                    class="secondary-btn"
+                    id="closeCycleReset"
+                    aria-label="Fechar">
+                ✕
+            </button>
+        </div>
+
+        <p>Selecione a matéria que deseja reiniciar.</p>
+
+        <label for="cycleResetSubject">Matéria</label>
+        <select id="cycleResetSubject">
+            <option value="">Selecione uma matéria</option>
+        </select>
+
+        <p>Selecione uma matéria ou a opção "Todas as matérias". O progresso do ciclo atual voltará para 0%. Seu histórico e suas estatísticas serão preservados.</p>
+
+        <div class="conc-modal-actions">
+            <button type="button"
+                    class="secondary-btn"
+                    id="cancelCycleReset">
+                Cancelar
+            </button>
+
+            <button type="button"
+                    class="primary-btn"
+                    id="confirmCycleReset"
+                    disabled>
+                🔄 Confirmar reinicialização
+            </button>
+        </div>
+    </div>
+</div>
+
+
+
+
+
+        <!-- CONFIRMAÇÃO EXTRA: REINICIAR TODAS AS MATÉRIAS -->
+<div id="cycleResetAllConfirmOverlay" class="conc-modal-overlay hidden">
+    <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="cycleResetAllTitle">
+        <div class="conc-modal-heading">
+            <h2 id="cycleResetAllTitle">⚠️ Reiniciar todas as matérias?</h2>
+            <button type="button" class="secondary-btn" id="closeCycleResetAll" aria-label="Fechar">✕</button>
+        </div>
+        <p>O progresso do ciclo atual de <strong>todas as matérias</strong> voltará para 0%.</p>
+        <p>As matérias cadastradas, os estudos anteriores, o histórico, as estatísticas e os simulados serão preservados.</p>
+        <div class="conc-modal-actions">
+            <button type="button" class="secondary-btn" id="cancelCycleResetAll">Cancelar</button>
+            <button type="button" class="primary-btn" id="confirmCycleResetAll">🔄 Sim, reiniciar todas</button>
+        </div>
+    </div>
+</div>
+
+        <!-- =====================================================
+
+     HISTÓRICO
+
+\===================================================== -->
+
+
+
+        <section id="historico" class="section">
+
+
+
+
+
+            <div class="page-heading">
+
+
+
+                <span class="eyebrow">
+
+                    REGISTROS
+
+                </span>
+
+
+
+                <h1>
+
+                    Histórico
+
+                </h1>
+
+
+
+                <p>
+
+                    Veja tudo o que você já estudou.
+
+                </p>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- FILTROS DO HISTÓRICO -->
+            <div class="stats-filters">
+
+                <button class="stats-filter active" data-history-filter="today">
+                    Dia
+                </button>
+
+                <button class="stats-filter" data-history-filter="week">
+                    Semana
+                </button>
+
+                <button class="stats-filter premium-filter" data-history-filter="month">
+                    🔒 Mês
+                </button>
+
+                <button class="stats-filter premium-filter" data-history-filter="year">
+                    🔒 Ano
+                </button>
+
+                <button class="stats-filter premium-filter" data-history-filter="all">
+                    🔒 Tudo
+                </button>
+
+                <button class="stats-filter premium-filter" data-history-filter="custom">
+                    🔒 Personalizado
+                </button>
+
+            </div>
+
+                <!-- SELEÇÃO DE DATA DO HISTÓRICO -->
+            <div id="historyDateSelector" class="history-date-selector">
+
+                <label for="historySelectedDate">
+                    Selecionar dia
+                </label>
+
+                <input
+                    type="text"
+                    id="historySelectedDate"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+
+            </div>
+            <!-- CALENDÁRIO PERSONALIZADO DO HISTÓRICO -->
+            <div id="historyCalendarOverlay" class="conc-modal-overlay hidden">
+                <div
+                    class="card conc-modal"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="historyCalendarTitle"
+                >
+                    <div class="conc-modal-heading">
+                        <h2 id="historyCalendarTitle">Selecionar dia</h2>
+
+                        <button
+                            type="button"
+                            class="secondary-btn"
+                            id="closeHistoryCalendar"
+                            aria-label="Fechar calendário"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div id="historyCalendarContent"></div>
+                </div>
+            </div>
+
+            <!-- SELEÇÃO DE PERÍODO DO HISTÓRICO -->
+            <div id="historyPeriodSelector" class="history-date-selector" hidden>
+
+                <label for="historySelectedPeriod">
+                    Selecionar período
+                </label>
+
+                <input
+                    type="text"
+                    id="historySelectedPeriod"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+
+            </div>
+
+
+            <!--
+
+        O JAVASCRIPT VAI ORGANIZAR ASSIM:
+
+
+
+        HOJE — 07 OUT
+
+
+
+        ┌─────────────────────────────┐
+
+        │ Direito Constitucional     │
+
+        │ Teoria                     │
+
+        │                             │
+
+        │ 01h 20min  |  30 questões │
+
+        │ 24 acertos                 │
+
+        └─────────────────────────────┘
+
+
+
+
+
+        ONTEM — 06 OUT
+
+
+
+        ┌─────────────────────────────┐
+
+        │ Português                  │
+
+        │ Questões                   │
+
+        │                             │
+
+        │ 00h 50min  |  25 questões │
+
+        │ 20 acertos                 │
+
+        └─────────────────────────────┘
+
+    -->
+
+
+
+            <div id="historyList" class="history-list">
+
+
+
+                <!-- preenchido pelo JavaScript -->
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <!-- =====================================================
+
+     ESTATÍSTICAS
+
+\===================================================== -->
+
+
+
+        <section id="estatisticas" class="section">
+
+
+
+
+
+            <div class="page-heading">
+
+
+
+                <span class="eyebrow">
+
+                    DESEMPENHO
+
+                </span>
+
+
+
+                <h1>
+
+                    Estatísticas
+
+                </h1>
+
+
+
+                <p>
+
+                    Analise sua evolução nos estudos.
+
+                </p>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- FILTROS -->
+
+
+
+            <div class="stats-filters">
+
+
+
+
+                <button class="stats-filter active" data-filter="today">
+
+                    Dia
+
+                </button>
+
+
+
+                <button class="stats-filter" data-filter="week">
+
+                    Semana
+
+                </button>
+
+
+
+                <button class="stats-filter premium" data-filter="month">
+
+                    Mês 🔒
+
+                </button>
+
+
+
+                <button class="stats-filter premium" data-filter="year">
+
+                    Ano 🔒
+
+                </button>
+
+
+
+                <button class="stats-filter premium" data-filter="all">
+
+                    Tudo 🔒
+
+                </button>
+
+
+
+                <button class="stats-filter premium" data-filter="custom">
+
+                    Personalizado 🔒
+
+                </button>
+
+
+
+            </div>
+
+            <!-- SELEÇÃO DE DIA DAS ESTATÍSTICAS -->
+            <div id="statsDateSelector" class="history-date-selector">
+                <label for="statsSelectedDate">Selecionar dia</label>
+                <input
+                    type="text"
+                    id="statsSelectedDate"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+            </div>
+
+            <!-- CALENDÁRIO PERSONALIZADO DAS ESTATÍSTICAS -->
+<div id="statsCalendarOverlay" class="conc-modal-overlay hidden">
+    <div
+        class="card conc-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="statsCalendarTitle"
+    >
+        <div class="conc-modal-heading">
+            <h2 id="statsCalendarTitle">Selecionar dia</h2>
+
+            <button
+                type="button"
+                class="secondary-btn"
+                id="closeStatsCalendar"
+                aria-label="Fechar calendário"
+            >
+                ✕
+            </button>
+        </div>
+
+        <div id="statsCalendarContent"></div>
+    </div>
+</div>
+
+            <!-- SELEÇÃO DE PERÍODO DAS ESTATÍSTICAS -->
+            <div id="statsPeriodSelector" class="history-date-selector" hidden>
+                <label for="statsSelectedPeriod">Selecionar período</label>
+                <input
+                    type="text"
+                    id="statsSelectedPeriod"
+                    placeholder="DD/MM/AAAA"
+                    readonly
+                >
+            </div>
+
+
+
+
+
+            <!-- SUBTABS -->
+
+
+
+            <div class="stats-tabs">
+
+
+
+                <button class="stats-tab active" data-stats="tempo">
+
+                    ⏱ Tempo
+
+                </button>
+
+
+
+                <button class="stats-tab" data-stats="categoria">
+
+                    📚 Categoria
+
+                </button>
+
+
+
+                <button class="stats-tab" data-stats="desempenho">
+
+                    🎯 Desempenho
+
+                </button>
+
+
+
+                <button class="stats-tab" data-stats="simulado">
+
+                    ✏️ Simulados
+
+                </button>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- TEMPO -->
+
+
+
+            <div id="statsTempo" class="stats-content active">
+
+
+
+                <div class="stats-grid">
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Tempo estudado
+
+                        </span>
+
+
+
+                        <strong id="statsStudyTime">
+
+                            0h
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Sessões
+
+                        </span>
+
+
+
+                        <strong id="statsSessions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Média por sessão
+
+                        </span>
+
+
+
+                        <strong id="statsAverageSession">
+
+                            0min
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <div class="chart-box">
+
+
+
+                    <h2>
+
+                        Tempo estudado
+
+                    </h2>
+
+
+
+                    <div id="timeChart" class="fake-chart">
+
+                        Gráfico será exibido aqui.
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- CATEGORIA -->
+
+
+
+            <div id="statsCategoria" class="stats-content">
+
+
+
+                <div class="chart-box">
+
+
+
+                    <h2>
+
+                        Tempo e Questões
+
+                    </h2>
+
+
+
+                    <div id="categoryBars" class="category-bars">
+
+                        <!-- preenchido pelo JS -->
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- DESEMPENHO -->
+
+
+
+            <div id="statsDesempenho" class="stats-content">
+
+
+
+                <div class="stats-grid">
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Questões
+
+                        </span>
+
+
+
+                        <strong id="statsQuestions">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Acertos
+
+                        </span>
+
+
+
+                        <strong id="statsCorrect">
+
+                            0
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+
+
+                    <div class="stat-card">
+
+
+
+                        <span>
+
+                            Aproveitamento
+
+                        </span>
+
+
+
+                        <strong id="statsAccuracy">
+
+                            0%
+
+                        </strong>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <div class="chart-box">
+
+
+
+                    <h2>
+
+                        Desempenho
+
+                    </h2>
+
+
+
+                    <div id="performanceChart" class="fake-chart">
+
+                        Gráfico será exibido aqui.
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- SIMULADOS -->
+
+
+
+            <div id="statsSimulado" class="stats-content">
+
+
+
+
+
+                <div class="chart-box">
+
+
+
+                    <div class="simulation-header">
+
+
+
+                        <div>
+
+
+
+                            <span class="eyebrow">
+
+                                EVOLUÇÃO
+
+                            </span>
+
+
+
+                            <h2>
+
+                                Desempenho nos simulados
+
+                            </h2>
+
+
+
+                        </div>
+
+
+
+
+
+                        <select id="simulationSelect">
+
+
+
+                            <option value="">
+
+                                Selecione um simulado
+
+                            </option>
+
+
+
+                        </select>
+
+                        <div id="simulationSelectedInfo" class="hidden"></div>
+
+
+                    </div>
+
+
+
+
+
+                    <div class="line-chart">
+
+
+
+                       <svg viewBox="0 0 800 300" preserveAspectRatio="none">
+
+    <g id="simulationChartBars"></g>
+
+</svg>
+
+
+
+
+
+                        <div id="simulationChartLabels" class="line-labels">
+
+                            <!-- labels -->
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+
+
+                <div class="chart-box">
+
+
+
+                    <h2>
+
+                        Aproveitamento por simulado
+
+                    </h2>
+                    <p class="simulation-average-help">O percentual considera a média geral do seu desempenho em todas as tentativas registradas para cada simulado.</p>
+
+
+
+                    <div id="simulationSubjectBars" class="simulation-bars">
+
+                        <!-- preenchido pelo JS -->
+
+                    </div>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+
+
+        <!-- =====================================================
+
+     SIMULADO
+
+\===================================================== -->
+
+
+
+        <section id="simulado" class="section">
+
+
+
+
+
+            <div class="page-heading">
+
+
+
+                <span class="eyebrow">
+
+                    SIMULADOS
+
+                </span>
+
+
+
+                <h1>
+
+                    Simulado
+
+                </h1>
+
+
+
+                <p>
+
+                    Faça um simulado salvo ou monte um novo.
+
+                </p>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- MODOS -->
+
+
+
+            <div class="mode-tabs">
+
+
+
+                <button class="mode-tab active" data-simulation-mode="existing">
+
+                    📂 Usar simulado criado
+
+                </button>
+
+
+
+                <button class="mode-tab" data-simulation-mode="new">
+
+                    ➕ Criar novo
+
+                </button>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- =================================================
+
+         USAR SIMULADO CRIADO
+
+    ================================================== -->
+
+
+
+            <div id="existingSimulationBox" class="simulation-mode-box">
+
+
+
+                <div class="card">
+
+
+
+                    <div class="card-title">
+
+
+
+                        <div>
+
+
+
+                            <span class="eyebrow">
+
+                                SIMULADOS SALVOS
+
+                            </span>
+
+
+
+                            <h2>
+
+                                Escolha um simulado
+
+                            </h2>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+                    <form id="existingSimulationForm" class="form-grid">
+
+
+
+                        <label>
+
+
+
+                            Simulado
+
+
+
+                            <select id="existingSimulationSelect" required>
+
+
+
+                                <option value="">
+
+                                    Selecione um simulado
+
+                                </option>
+
+
+
+                            </select>
+
+
+
+                        </label>
+
+
+
+
+
+                        <div id="selectedSimulationInfo" class="simulation-info">
+
+                            Selecione um simulado para ver os detalhes.
+
+                        </div>
+
+
+
+
+
+                        <div class="form-actions">
+
+
+
+                            <button type="submit" class="primary-btn">
+
+                                ▶ Iniciar simulado
+
+                            </button>
+
+
+
+                        </div>
+
+
+
+                    </form>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- =================================================
+
+         CRIAR NOVO SIMULADO
+
+    ================================================== -->
+
+
+
+            <div id="newSimulationBox" class="simulation-mode-box hidden">
+
+
+
+                <div class="card">
+
+
+
+                    <div class="card-title">
+
+
+
+                        <div>
+
+
+
+                            <span class="eyebrow">
+
+                                NOVO SIMULADO
+
+                            </span>
+
+
+
+                            <h2>
+
+                                Montar simulado
+
+                            </h2>
+
+
+
+                        </div>
+
+
+
+                    </div>
+
+
+
+
+
+                    <form id="simulationForm" class="form-grid">
+
+
+
+
+
+                        <label>
+
+
+
+                            Nome
+
+
+
+                            <input type="text" id="simulationName" placeholder="Ex: Simulado PMMA" required>
+
+
+
+                        </label>
+
+
+
+
+
+                        <label>
+                            Tempo da prova
+
+                            <input type="text" id="simulationDuration" inputmode="numeric" placeholder="00:00:00"
+                                value="02:00:00" pattern="[0-9]+:[0-5][0-9]:[0-5][0-9]" title="Use o formato HH:MM:SS"
+                                required>
+                        </label>
+
+                        <label>Quantidade total de questões
+                            <input type="number" id="simulationQuestionsInput" min="1" step="1" placeholder="Ex: 120"
+                                required>
+                        </label>
+
+                        <label>Cor do simulado
+                            <input type="color" id="simulationColorInput" value="#16c75b" aria-label="Escolher cor do simulado">
+                        </label>
+
+                        <div class="form-actions">
+
+
+
+                            <button type="submit" class="primary-btn">
+
+                                💾 Criar e salvar
+
+                            </button>
+
+
+
+                        </div>
+
+
+
+                    </form>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- TIMER DO SIMULADO -->
+
+
+
+            <div id="simulationTimer" class="card simulation-timer hidden">
+
+
+
+                <span class="eyebrow">
+
+                    SIMULADO EM ANDAMENTO
+
+                </span>
+
+
+
+
+
+                <h2 id="simulationTimerName">
+
+                    Simulado
+
+                </h2>
+
+                <p id="simulationTimerStatus">
+
+                    Tempo restante
+
+                </p>
+
+
+
+
+
+                <div id="simulationTimeBoard" class="simulation-time-board" aria-label="Quadro de horários da prova">
+                </div>
+                <div class="timer-actions">
+                    <button type="button" id="startSimulation" class="primary-btn">▶ Iniciar</button>
+                    <button type="button" id="pauseSimulation" class="secondary-btn hidden">⏸ Pausar</button>
+                    <button type="button" id="continueSimulation" class="primary-btn hidden">▶ Continuar</button>
+
+
+
+
+                    <button id="finishSimulation" class="danger-btn">
+
+                        ⏹ Finalizar simulado
+
+                    </button>
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+            <div id="simulationResultOverlay" class="conc-modal-overlay hidden" role="presentation">
+                <div class="card conc-modal simulation-result-modal" role="dialog" aria-modal="true"
+                    aria-labelledby="simulationResultTitle">
+                    <div class="conc-modal-heading">
+                        <h2 id="simulationResultTitle">Resultado do simulado</h2>
+                        <button type="button" id="cancelSimulationResult" class="icon-btn" aria-label="Fechar">✕</button>
+                    </div>
+                    <p id="simulationResultDescription">Informe seu desempenho e registre observações para identificar melhor esta tentativa.</p>
+                    <form id="simulationResultForm" class="conc-modal-form simulation-result-form">
+                        <div class="simulation-result-fields">
+                            <label>Total de questões
+                                <input id="simulationResultQuestions" type="number" readonly>
+                            </label>
+                            <label>Quantas questões você acertou?
+                                <input id="simulationResultCorrect" type="number" min="0" step="1" required>
+                            </label>
+                        </div>
+                        <div id="simulationResultSubjects" class="simulation-result-subjects"></div>
+                        <div class="simulation-observations-fields">
+                            <h3>Observações da tentativa</h3>
+                            <label>Plataforma utilizada
+                                <input id="simulationResultPlatform" type="text" maxlength="80" placeholder="Ex.: Qconcursos, Gran, Estratégia...">
+                            </label>
+                            <div class="simulation-result-fields">
+                                <label>Assistiu às aulas?
+                                    <select id="simulationResultWatchedClasses">
+                                        <option value="">Não informado</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                                <label>Fez redação?
+                                    <select id="simulationResultEssay">
+                                        <option value="">Não informado</option>
+                                        <option value="sim">Sim</option>
+                                        <option value="nao">Não</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <label>Comentários
+                                <textarea id="simulationResultComment" rows="3" maxlength="500" placeholder="Anotações sobre esta tentativa..."></textarea>
+                            </label>
+                        </div>
+                        <div class="conc-modal-actions">
+                            <button type="button" id="cancelSimulationResultSecondary" class="secondary-btn">Cancelar</button>
+                            <button type="submit" class="primary-btn">💾 Salvar resultado</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+<!-- CONFIRMAÇÃO PARA FINALIZAR SIMULADO -->
+<div id="simulationConfirmOverlay"
+     class="simulation-end-overlay hidden"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="simulationConfirmTitle">
+
+    <div class="card simulation-end-modal" style="width:min(480px,100%)">
+
+        <span class="eyebrow">FINALIZAR SIMULADO</span>
+
+        <h2 id="simulationConfirmTitle">
+            Deseja finalizar o simulado?
+        </h2>
+        <p>
+            Ao confirmar, o cronômetro será encerrado
+            e você poderá registrar seus acertos.
+        </p>
+
+        <div class="form-actions">
+            <button type="button"
+                    id="cancelSimulationConfirm"
+                    class="secondary-btn">
+                Cancelar
+            </button>
+
+            <button type="button"
+                    id="confirmSimulationFinish"
+                    class="primary-btn">
+                Finalizar simulado
+            </button>
+        </div>
+
+    </div>
+</div>
+
+
+        </section>
+
+
+
+
+
+
+
+        <!-- =====================================================
+
+     CONFIGURAÇÕES
+
+\===================================================== -->
+
+
+
+        <section id="configuracoes" class="section">
+
+
+
+
+
+            <div class="page-heading">
+
+
+
+                <span class="eyebrow">
+
+                    PERSONALIZAÇÃO
+
+                </span>
+
+
+
+                <h1>
+
+                    Configurações
+
+                </h1>
+
+
+
+                <p>
+
+                    Gerencie matérias, ciclo de estudos e simulados.
+
+                </p>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- ABAS DAS CONFIGURAÇÕES -->
+            <div class="settings-tabs" role="tablist" aria-label="Áreas das configurações">
+                <button type="button" class="settings-tab active" data-settings-tab="materias" role="tab"
+                    aria-selected="true">📚 Matérias</button>
+                <button type="button" class="settings-tab" data-settings-tab="ciclo" role="tab" aria-selected="false">🔄
+                    Ciclo de Estudos</button>
+                <button type="button" class="settings-tab" data-settings-tab="simulados" role="tab"
+                    aria-selected="false">📝 Banco de Simulados</button>
+            </div>
+
+            <!-- =================================================
+
+         MATÉRIAS
+
+    ================================================== -->
+
+
+
+            <div class="card settings-section settings-tab-panel" data-settings-panel="materias">
+
+
+
+                <div class="settings-section-header">
+
+
+
+                    <div>
+
+
+
+                        <span class="eyebrow">
+
+                            GERENCIAMENTO DE MATÉRIAS
+
+                        </span>
+
+
+
+                        <h2>
+
+                            Matérias
+
+                        </h2>
+
+
+
+                        <p>
+
+                            Adicione as matérias que fazem parte da sua preparação.
+
+                        </p>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <form id="subjectForm" class="form-grid">
+
+
+
+
+
+                    <label>
+
+
+
+                        Matéria
+
+
+
+                        <input type="text" id="subjectName" placeholder="Ex: Direito Constitucional" required>
+
+
+
+                    </label>
+
+
+                    <label>Cor da matéria<div class="subject-color-control"><input id="subjectColor" type="hidden"
+                                value="#22c55e"><button type="button" class="conc-color-trigger"
+                                data-color-for="subjectColor"><span class="conc-color-dot"
+                                    style="background:#22c55e"></span> Escolher cor</button></div></label>
+                    <div class="form-actions">
+
+
+
+                        <button type="submit" class="primary-btn">
+
+                            ➕ Adicionar matéria
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+                </form>
+
+
+
+
+
+
+
+                <div id="settingsSubjectsList" class="settings-list">
+
+
+
+                    <!-- preenchido pelo JS -->
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+
+
+
+
+            <!-- =================================================
+
+         SIMULADOS CONFIGURADOS
+
+    ================================================== -->
+
+
+
+            <div class="card settings-section settings-tab-panel" data-settings-panel="ciclo" hidden>
+                <div class="settings-section-header">
+                    <div>
+                        <span class="eyebrow">PLANEJAMENTO</span>
+                        <h2>🔄 Ciclo de Estudos</h2>
+                        <p>Escolha as matérias que participam do ciclo e configure suas metas.</p>
+                        <p>*Importante: Defina como você quer que o ciclo seja calculado: por tempo, por questões ou
+                            ambos. O cálculo será feito com base na soma das metas de cada matéria.</p>
+                    </div>
+                </div>
+                <div id="cycleSettingsList" class="settings-list"></div>
+                <div class="form-actions" style="margin-top:20px">
+                    <button type="button" id="saveCycleSettings" class="primary-btn">💾 Salvar ciclo</button>
+                    <button type="button" class="secondary-btn" data-section="ciclo">📚 Ver progresso</button>
+                </div>
+            </div>
+
+            <div class="card settings-section settings-tab-panel" data-settings-panel="simulados" hidden>
+
+
+
+                <div class="settings-section-header">
+
+
+
+                    <div>
+
+
+
+                        <span class="eyebrow">
+
+                            BANCO DE SIMULADOS
+
+                        </span>
+
+
+
+                        <h2>
+
+                            Meus simulados
+
+                        </h2>
+
+
+
+                        <p>
+
+                            Crie simulados que poderão ser reutilizados na área Simulado.
+
+                        </p>
+
+
+
+                    </div>
+
+
+
+                </div>
+
+
+
+
+
+                <form id="settingsSimulationForm" class="form-grid">
+
+
+
+
+
+                    <label>
+
+
+
+                        Nome do simulado
+
+
+
+                        <input type="text" id="settingsSimulationName" placeholder="Ex: PMMA — Geral" required>
+
+
+
+                    </label>
+
+
+
+
+
+                    <label>
+                        Tempo do simulado
+                        <input type="text" id="settingsSimulationTime" placeholder="00:00:00" value="00:00:00"
+                            inputmode="numeric" required>
+                    </label>
+
+
+
+
+
+                    <label>
+
+
+
+                        Quantidade de questões
+
+
+
+                        <input type="number" id="settingsSimulationQuestions" min="1" placeholder="Ex: 60" required>
+
+
+
+                    </label>
+
+                    <label>Cor do simulado
+                        <input type="color" id="settingsSimulationColor" value="#16c75b" aria-label="Escolher cor do simulado">
+                    </label>
+
+
+                    <div class="form-actions">
+
+
+
+                        <button type="submit" class="primary-btn">
+
+                            ➕ Criar simulado
+
+                        </button>
+
+
+
+                    </div>
+
+
+
+                </form>
+
+
+
+
+
+
+
+                <div id="settingsSimulationsList" class="settings-list">
+
+
+
+                    <!-- preenchido pelo JS -->
+
+
+
+                </div>
+
+
+
+            </div>
+
+
+
+        </section>
+
+
+
+
+
+        <!-- =====================================================
+
+     CRÉDITOS
+
+\===================================================== -->
+
+        <section id="creditos" class="section credits-page">
+
+            <div class="page-heading">
+
+                <span class="eyebrow">CALIBRE</span>
+
+                <h1>Créditos</h1>
+
+                <p>Conheça quem inspira e quem está por trás deste projeto.</p>
+
+            </div>
+
+
+
+            <!-- Gerenciamento de parceiros: visível apenas após validação ADMIN no JavaScript. -->
+            <div id="partnersAdminPanel" class="card hidden" hidden>
+                <div class="card-title">
+                    <div>
+                        <span class="eyebrow">ADMINISTRAÇÃO</span>
+                        <h2>Gerenciar parceiros</h2>
+                        <p>Cadastre e organize os parceiros exibidos nos Créditos.</p>
+                    </div>
+                    <button id="addPartnerBtn" class="primary-btn" type="button">+ Adicionar parceiro</button>
+                </div>
+            </div>
+
+            <!-- Formulário de parceiros: será ativado somente após integração segura com o Supabase. -->
+            <div id="partnerFormOverlay" class="conc-modal-overlay hidden" hidden>
+                <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="partnerFormTitle">
+                    <div class="conc-modal-heading">
+                        <h2 id="partnerFormTitle">Adicionar parceiro</h2>
+                        <button id="closePartnerForm" type="button" class="secondary-btn" aria-label="Fechar">✕</button>
+                    </div>
+                    <form id="partnerForm" class="conc-modal-form">
+                        <input id="partnerId" type="hidden">
+                        <label>Nome do parceiro
+                            <input id="partnerName" type="text" maxlength="120" required autocomplete="off">
+                        </label>
+                        <label>Instagram (usuário, sem @)
+                            <input id="partnerInstagram" type="text" maxlength="100" required autocomplete="off" placeholder="exemplo_perfil">
+                        </label>
+                        <label>URL da foto (opcional)
+                            <input id="partnerPhotoUrl" type="url" maxlength="2000" placeholder="https://...">
+                        </label>
+                        <div class="conc-modal-actions">
+                            <button id="cancelPartnerForm" type="button" class="secondary-btn">Cancelar</button>
+                            <button id="savePartnerBtn" type="submit" class="primary-btn">Salvar parceiro</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="credits-grid">
+
+<article class="card credits-created">
+
+                    <span class="credits-kicker">DESENVOLVIMENTO</span>
+
+                    <p class="credits-creator">
+
+                    <h2>
+
+                        <span>💻 ASP R2 Erik — Desenvolvedor</span>
+
+                    </h2>
+
+                    </p>
+
+                    <p class="credits-description">Projeto criado para ajudar na organização, constância e evolução dos
+                        estudos.</p>
+
+                </article>
+
+
+
+                <article class="card credits-verse">
+
+                    <span class="credits-kicker">PALAVRA DE MOTIVAÇÃO</span>
+
+                    <div class="credits-quote-mark" aria-hidden="true">✦</div>
+
+                    <blockquote>Para que todos vejam, e saibam, e considerem, e juntamente entendam que a mão do Senhor
+                        fez isto, e o Santo de Israel o criou.</blockquote>
+
+                    <p class="credits-reference">Isaí­as 41:20</p>
+
+                </article>
+
+            </div>
+
+
+
+            <footer class="credits-footer">
+
+            <span class="credits-footer-brand">
+                <img src="logo-calibre.png" class="footer-logo" alt="Logo CALIBRE">
+                CALIBRE
+            </span>
+                <p>© 2026 CALIBRE • Todos os direitos reservados.</p>
+
+            </footer>
+
+        </section>
+
+
+
+
+
+        <!-- SUPORTE — abertura de mensagem pré-preenchida no Gmail -->
+        <section id="suporte" class="section">
+            <div class="page-heading">
+                <span class="eyebrow">CENTRAL DE AJUDA</span>
+                <h1>Suporte</h1>
+                <p>Precisa de ajuda com o CALIBRE? Descreva sua solicitação.</p>
+            </div>
+            <div class="card calibre-support-card">
+                <form id="calibreSupportForm" class="calibre-support-form" novalidate>
+                    <label for="calibreSupportCategory">Assunto
+                        <select id="calibreSupportCategory" name="category" required>
+                            <option value="">Selecione um assunto</option>
+                            <option value="erro">Erro no sistema</option>
+                            <option value="pagamento">Pagamento / Assinatura</option>
+                            <option value="duvida">Dúvida</option>
+                            <option value="sugestao">Sugestão</option>
+                        </select>
+                    </label>
+                    <label for="calibreSupportMessage">Descreva sua solicitação
+                        <textarea id="calibreSupportMessage" name="message" rows="6" minlength="10" maxlength="3000" placeholder="Explique o que aconteceu ou como podemos ajudar..." required></textarea>
+                    </label>
+                    <p class="calibre-support-attachment-note">📎 Se precisar enviar um print, anexe a imagem diretamente no Gmail após abrir a mensagem.</p>
+                    <p id="calibreSupportStatus" class="calibre-support-status" role="status">O Gmail será aberto com sua mensagem preenchida. Confira e clique em Enviar no Gmail para concluir.</p>
+                    <div class="form-actions">
+                        <button type="submit" id="calibreSupportSubmit" class="primary-btn" aria-describedby="calibreSupportStatus">✉️ Enviar pelo Gmail</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+
+
+
+
+    <!-- CALIBRE — edição de nome e foto (e-mail permanece inalterado) -->
+    <div id="calibreProfileOverlay" class="calibre-profile-overlay hidden" hidden>
+        <div class="calibre-profile-dialog" role="dialog" aria-modal="true" aria-labelledby="calibreProfileTitle">
+            <div class="calibre-profile-heading">
+                <h2 id="calibreProfileTitle">Editar perfil</h2>
+                <button id="calibreProfileClose" type="button" class="calibre-profile-close" aria-label="Fechar">✕</button>
+            </div>
+            <form id="calibreProfileForm">
+                <div class="calibre-profile-photo-row">
+                    <img id="calibreProfilePreview" alt="Prévia da foto do perfil" hidden>
+                    <span id="calibreProfilePreviewFallback" aria-hidden="true">👤</span>
+                    <div>
+                        <label for="calibreProfilePhoto" class="calibre-profile-upload">📷 Escolher foto</label>
+                        <input id="calibreProfilePhoto" type="file" accept="image/png,image/jpeg,image/webp" hidden>
+                        <small>JPG, PNG ou WebP • até 5 MB</small>
+                    </div>
+                </div>
+                <label for="calibreProfileName">Nome de exibição</label>
+                <input id="calibreProfileName" type="text" minlength="2" maxlength="60" autocomplete="name" required>
+                <p class="calibre-profile-hint">Esse nome aparece na sua conta e na saudação do Painel. Seu e-mail não será alterado.</p>
+                <p id="calibreProfileStatus" role="status" aria-live="polite"></p>
+                <div class="calibre-profile-actions">
+                    <button id="calibreProfileCancel" type="button" class="secondary-btn">Cancelar</button>
+                    <button id="calibreProfileSave" type="submit" class="primary-btn">Salvar alterações</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast" class="toast">
+
+        Salvo com sucesso!
+
+    </div>
+
+
+
+    <!-- =====================================================
+
+     TOAST
+
+\===================================================== -->
+
+
+
+    <div id="toast" class="toast">
+
+        Salvo com sucesso!
+
+    </div>
+
+
+
+
+
+
+
+    <div id="simulationEditOverlay" class="subject-edit-overlay hidden" role="presentation">
+        <div class="card subject-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="simulationEditTitle">
+            <div class="subject-edit-heading">
+                <h2 id="simulationEditTitle">✏️ Editar simulado</h2><button type="button" id="closeSimulationEdit"
+                    class="icon-btn" aria-label="Fechar">✕</button>
+            </div>
+            <form id="simulationEditModalForm" class="subject-edit-form">
+                <input id="modalSimulationId" type="hidden">
+                <label>Nome do simulado<input id="modalSimulationName" type="text" required></label>
+                <label>Tempo do simulado (HH:MM:SS)<input id="modalSimulationTime" type="text" inputmode="numeric"
+                        placeholder="02:00:00" required></label>
+                <label>Quantidade de questões<input id="modalSimulationQuestions" type="number" min="1"
+                        required></label>
+                <label>Cor do simulado<input id="modalSimulationColor" type="color" value="#16c75b"></label>
+                <div class="subject-edit-actions"><button id="cancelSimulationModal" type="button"
+                        class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar
+                        alterações</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIÇÃO DE MATÉRIA EM JANELA -->
+    <div id="subjectEditOverlay" class="subject-edit-overlay hidden" role="presentation">
+        <div class="card subject-edit-dialog" role="dialog" aria-modal="true" aria-labelledby="subjectEditTitle">
+            <div class="subject-edit-heading">
+                <h2 id="subjectEditTitle">✏️ Editar matéria</h2><button type="button" id="closeSubjectEdit"
+                    class="icon-btn" aria-label="Fechar edição">✕</button>
+            </div>
+            <form id="subjectEditModalForm" class="subject-edit-form">
+                <input type="hidden" id="modalSubjectId">
+                <label>Nome da matéria<input id="modalSubjectName" type="text" required maxlength="120"></label>
+                <label>Horas planejadas<input id="modalSubjectHours" type="text" placeholder="00:00:00"
+                        inputmode="numeric" required></label>
+                <label>Questões planejadas<input id="modalSubjectQuestions" type="number" min="0" step="1"
+                        required></label>
+                <label>Cor da matéria<div class="subject-color-control"><input id="modalSubjectColor" type="hidden"
+                            value="#22c55e"><button type="button" class="conc-color-trigger"
+                            data-color-for="modalSubjectColor"><span class="conc-color-dot"
+                                style="background:#22c55e"></span> Escolher cor</button><span>Cor usada nos gráficos e
+                            no
+                            ciclo</span></div></label>
+                <div class="subject-edit-actions"><button type="button" id="cancelSubjectModal"
+                        class="secondary-btn">Cancelar</button><button type="submit" class="primary-btn">💾 Salvar
+                        alterações</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- =====================================================
+
+     SCRIPT
+
+\===================================================== -->
+
+
+
+
+    <!-- JANELAS PADRONIZADAS DO CALIBRE -->
+    <div id="historyDateOverlay" class="conc-modal-overlay hidden" role="presentation">
+        <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="historyDateTitle">
+            <div class="conc-modal-heading">
+                <h2 id="historyDateTitle">📅 Período personalizado</h2><button type="button" class="icon-btn"
+                    id="closeHistoryDates" aria-label="Fechar">✕</button>
+            </div>
+            <p>Escolha as datas para consultar seu histórico de estudos.</p>
+            <form id="historyDateForm" class="conc-modal-form">
+                <label>
+                    Data inicial
+                    <input
+                        id="historyDateStart"
+                        type="text"
+                        placeholder="DD/MM/AAAA"
+                        readonly
+                        required
+                    >
+                </label>
+
+                <label>
+                    Data final
+                    <input
+                        id="historyDateEnd"
+                        type="text"
+                        placeholder="DD/MM/AAAA"
+                        readonly
+                        required
+                    >
+                </label>
+                <p id="historyDateError" class="conc-modal-error hidden" role="alert">A data final não pode ser anterior
+                    à inicial.</p>
+                <div class="conc-modal-actions"><button type="button" class="secondary-btn"
+                        id="cancelHistoryDates">Cancelar</button><button type="submit" class="primary-btn">Aplicar
+                        filtro</button></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="subjectPaletteOverlay" class="conc-modal-overlay hidden" role="presentation">
+        <div class="card conc-modal" role="dialog" aria-modal="true" aria-labelledby="subjectPaletteTitle">
+            <div class="conc-modal-heading">
+                <h2 id="subjectPaletteTitle">🎨 Cor da matéria</h2><button type="button" class="icon-btn"
+                    id="closeSubjectPalette" aria-label="Fechar">✕</button>
+            </div>
+            <p>Escolha uma cor para identificar sua matéria no ciclo e nos gráficos.</p>
+            <div id="subjectPaletteOptions" class="conc-color-grid" role="group" aria-label="Cores disponíveis"></div>
+            <div class="conc-custom-picker">
+                <h3>✨ Criar minha própria cor</h3>
+                <div class="conc-color-preview-container">
+                    <div id="subjectColorPreview" class="conc-color-preview"></div>
+
+                    <div>
+                        <strong>Prévia da cor</strong>
+                        <span id="subjectColorPreviewHex">#22c55e</span>
+                    </div>
+                </div>
+                <label>
+                    Tonalidade
+                    <input id="subjectHue" type="range" min="0" max="360" value="140">
+                </label>
+
+                <label>
+                    Saturação
+                    <input id="subjectSaturation" type="range" min="0" max="100" value="70">
+                </label>
+
+                <label>
+                    Luminosidade
+                    <input id="subjectLightness" type="range" min="0" max="100" value="45">
+                </label>
+            </div>
+            <input type="hidden" id="subjectPaletteHex" value="#22c55e">
+            <div class="conc-modal-actions"><button type="button" class="secondary-btn"
+                    id="cancelSubjectPalette">Cancelar</button><button type="button" class="primary-btn"
+                    id="applySubjectPalette">Aplicar cor</button></div>
+        </div>
+    </div>
+
+    <!-- CALIBRE — informações da assinatura (somente leitura) -->
+    <div id="calibreSubscriptionOverlay" class="calibre-subscription-overlay" hidden>
+        <section class="calibre-subscription-dialog" role="dialog" aria-modal="true" aria-labelledby="calibreSubscriptionTitle" tabindex="-1">
+            <div class="calibre-subscription-heading">
+                <h2 id="calibreSubscriptionTitle">👑 Minha assinatura</h2>
+                <button id="calibreSubscriptionClose" type="button" aria-label="Fechar informações da assinatura">✕</button>
+            </div>
+            <div class="calibre-subscription-plan">
+                <span>PLANO ATUAL</span>
+                <strong id="calibreSubscriptionPlan">Consultando...</strong>
+            </div>
+            <div class="calibre-subscription-grid">
+                <div><span>Tempo restante</span><strong id="calibreSubscriptionRemaining">—</strong></div>
+                <div><span>Valor mensal</span><strong id="calibreSubscriptionPrice">—</strong></div>
+            </div>
+            <p id="calibreSubscriptionEnd" class="calibre-subscription-end"></p>
+            <p id="calibreSubscriptionNote" class="calibre-subscription-note" role="status"></p>
+            <button id="calibreSubscriptionDone" type="button" class="secondary-btn">Fechar</button>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="auth.js"></script>
+
+
+
+
+
+</body>
+
+
+
+</html>
