@@ -5582,7 +5582,7 @@ body.auth-locked > :not(#authScreen):not(#authAccount):not(script) { display:non
 
     /* Ícone do menu */
     .icon-btn {
-        font-size: 30px;
+        font-size: 36px;
     }
 
 }
@@ -5716,3 +5716,7 @@ footer img[src*="logo-calibre"] {
    <div class="cycle-subject-row" style="--subject-card-color: #7134df">
    Sem isso, a borda ficará verde (cor padrão acima).
    A barra de progresso não é alterada por este CSS. */
+#menuBtn {
+    font-size: 36px !important;
+    line-height: 1;
+}
