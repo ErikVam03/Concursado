@@ -2757,13 +2757,15 @@ function renderCycleSubjects() {
         row.className =
             "cycle-subject-row";
 
+        row.style.setProperty("--subject-card-color", getSubjectColor(subject.name));
+
 
         row.innerHTML = `
 
             <div class="cycle-subject-top">
 
                 <span class="cycle-subject-name">
-                    <span class="subject-color-dot" style="background:${getSubjectColor(subject.name)}"></span>${escapeHTML(
+                    ${escapeHTML(
             subject.name
         )}
                 </span>

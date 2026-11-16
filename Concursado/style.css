@@ -5688,3 +5688,31 @@ footer img[src*="logo-calibre"] {
     margin-right: -12px !important;
     object-fit: contain;
 }
+/* CALIBRE — cards do Ciclo no padrão das Configurações */
+/* Cole no FINAL do style.css */
+
+.cycle-subject-row {
+    --subject-card-color: #16c75b;
+    border-left: 4px solid var(--subject-card-color) !important;
+    background: linear-gradient(105deg,
+        color-mix(in srgb, var(--subject-card-color) 9%, #0e1c16),
+        #0e1c16 65%) !important;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+
+.cycle-subject-row:hover {
+    box-shadow: 0 10px 28px rgba(0,0,0,.22);
+    transform: translateY(-1px);
+}
+
+/* Oculta apenas a bolinha dentro dos cards do Ciclo */
+.cycle-subject-row .subject-color-dot {
+    display: none !important;
+}
+
+/* IMPORTANTE: para a borda assumir a cor específica de cada matéria,
+   o elemento .cycle-subject-row precisa receber a variável CSS
+   --subject-card-color com a cor cadastrada, por exemplo:
+   <div class="cycle-subject-row" style="--subject-card-color: #7134df">
+   Sem isso, a borda ficará verde (cor padrão acima).
+   A barra de progresso não é alterada por este CSS. */
